@@ -91,16 +91,6 @@ public class Acceptor {
     }
 
     /**
-     * Verifies the signature of a signed object
-     * @param so Signed object to be verified
-     * @param sender Replica id that supposably signed this object
-     * @return True if the signature is valid, false otherwise
-     */
-//    public boolean verifySignature(SignedObject so, int sender) {
-//        return this.verifier.validSignature(so, sender);
-//    }
-
-    /**
      * Makes a RTCollect object with this process private key
      * @param rtc RTCollect object to be signed
      * @return A SignedObject containing 'rtc'
@@ -185,8 +175,6 @@ public class Acceptor {
 
         if(log.isLoggable(Level.FINER))
             log.finer("PROPOSE for "+round.getNumber()+","+round.getExecution().getId()+" received from "+ sender);
-
-        //causetimeout() // malicious code to cause timeout
 
         // If message's round is 0, and the sender is the leader for the message's round,
         // execute the propose
