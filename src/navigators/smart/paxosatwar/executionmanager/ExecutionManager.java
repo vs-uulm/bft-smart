@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -70,7 +71,7 @@ public final class ExecutionManager{
 
     private boolean stopped = false; // Is the execution manager stopped?
     // When the execution manager is stopped, incoming paxos messages are stored here
-    private List<PaxosMessage> stoppedMsgs = new LinkedList<PaxosMessage>();
+    private Queue<PaxosMessage> stoppedMsgs = new LinkedList<PaxosMessage>();
     private Round stoppedRound = null; // round at which the current execution was stoppped
     private ReentrantLock stoppedMsgsLock = new ReentrantLock(); //lock for stopped messages
 
@@ -221,8 +222,8 @@ public final class ExecutionManager{
         }*/
 
         //process stopped messages
-        for (int i = 0; i < stoppedMsgs.size(); i++) {
-            acceptor.processMessage(stoppedMsgs.remove(i));
+        while(!stoppedMsgs.isEmpty()){
+            acceptor.processMessage(stoppedMsgs.remove());
         }
         stoppedMsgsLock.unlock();
         if(log.isLoggable(Level.FINE))

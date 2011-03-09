@@ -126,14 +126,12 @@ public class ClientData {
 		boolean result = pendingRequests.remove(request) || proposedRequests.remove(request);
 		//remove outdated messages from this client
 		for(Iterator<TOMMessage> it = pendingRequests.iterator();it.hasNext();){
-			TOMMessage msg = it.next();
-            if (msg.getSequence() < request.getSequence()) {
+            if (it.next().getSequence() < request.getSequence()) {
 				it.remove();
 		}
         }
 		for(Iterator<TOMMessage> it = proposedRequests.iterator();it.hasNext();){
-			TOMMessage msg = it.next();
-            if (msg.getSequence() < request.getSequence()) {
+            if (it.next().getSequence() < request.getSequence()) {
 				it.remove();
 		}
         }

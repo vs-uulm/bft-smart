@@ -23,6 +23,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
@@ -30,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -75,7 +77,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
     private Hashtable<Integer,NettyClientServerSession> sessionTable;
     private ReentrantReadWriteLock rl;
     private SecretKey authKey;
-    private List<TOMMessage> requestsReceived = Collections.synchronizedList(new ArrayList<TOMMessage>());
+    private Queue<TOMMessage> requestsReceived = new ArrayDeque<TOMMessage>(conf.getCommBuffering());
     private ReentrantLock lock = new ReentrantLock();
     private TOMUtil tomutil;
 
@@ -150,11 +152,9 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             lock.lock();
             requestsReceived.add(sm);
             if (requestsReceived.size()>=conf.getCommBuffering()){
-                for (int i=0; i<requestsReceived.size(); i++){
-                    //delivers message to TOMLayer
-                    requestReceiver.requestReceived(requestsReceived.get(i));
+                while(!requestsReceived.isEmpty()){
+                    requestReceiver.requestReceived(requestsReceived.remove());
                 }
-                requestsReceived.clear();
             }
             lock.unlock();
         }

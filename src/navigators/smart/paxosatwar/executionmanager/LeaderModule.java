@@ -81,11 +81,9 @@ public class LeaderModule {
      * @return The tuple for the specified round, or null if there is none
      */
     private ConsInfo findInfo(List<ConsInfo> l, Integer r) {
-        ConsInfo ret = null;
-        for (int i = 0; i < l.size(); i++) {
-            ret = l.get(i);
-            if (ret.round.equals(r)) {
-                return ret;
+        for (ConsInfo consInfo : l) {
+            if (consInfo.round.equals(r)) {
+                return consInfo;
             }
         }
         return null;
@@ -129,11 +127,9 @@ public class LeaderModule {
                 return ci.leaderId;
             }
         } else {
-            for (int i = 0; i < list.size(); i++) {
-                ConsInfo ci = list.get(i);
-                if (ci.round.equals(r)) {
-                    return ci.leaderId;
-                }
+            ConsInfo info = findInfo(list, r);
+            if(info!=null){
+                return info.leaderId;
             }
         }
         return null;
@@ -153,25 +149,6 @@ public class LeaderModule {
      *
      * @param c Execution ID of the consensus
      */
-     /******************* METODO ORIGINAL *************
-    public void removeStableConsenusInfos(int c) {
-        List list = leaderInfos.get(c + 1);
-
-        if (list == null) {//nunca vai acontecer isso!!!
-            System.err.println("- Executing a code that wasn't supposed to be executed :-)");
-            System.err.println("- And we have some reports there is a bug here!");
-            list = new LinkedList();
-            leaderInfos.put(c + 1, list);
-            List rm = leaderInfos.remove(c);
-            ConsInfo ci = (ConsInfo) rm.get(rm.size() - 1);
-            list.add(new ConsInfo(0, ci.leaderId));
-        } else {
-            leaderInfos.remove(c);
-        }
-    }
-    /******************* METODO ORIGINAL *************/
-    
-    /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO */
     private ReentrantLock leaderInfosLock = new ReentrantLock();
 
     public void removeStableConsenusInfo(Long c) {
