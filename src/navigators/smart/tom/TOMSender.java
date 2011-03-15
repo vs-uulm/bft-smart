@@ -34,21 +34,13 @@ import navigators.smart.tom.util.TOMConfiguration;
  */
 public abstract class TOMSender implements ReplyReceiver {
 
-    private int me; // process id
-    private int[] group; // group of replicas
+    private Integer me; // process id
+    private Integer[] group; // group of replicas
     private int sequence = 0; // sequence number
     private CommunicationSystemClientSide cs; // Client side comunication system
     private Lock lock = new ReentrantLock(); // lock to manage concurrent access to this object by other threads
     private boolean useSignatures = false;
     private Random rnd = new Random();
-
-    /**
-     * Creates a new instance of TOMulticastSender
-     *
-     * TODO: Isto pode mesmo estar vazio?
-     */
-    public TOMSender() {
-    }
 
     /**
      * This method initializes the object
@@ -60,6 +52,7 @@ public abstract class TOMSender implements ReplyReceiver {
      *
      * TODO: ver o q é isto de "client side comunication system"
      */
+    @SuppressWarnings("hiding")
     public void init(CommunicationSystemClientSide cs, TOMConfiguration conf, int sequence) {
         this.init(cs, conf);
         this.sequence = sequence;
@@ -73,12 +66,13 @@ public abstract class TOMSender implements ReplyReceiver {
      * @param cs Client side comunication system
      * @param conf Total order messaging configuration
      */
+    @SuppressWarnings({ "boxing", "hiding" })
     public void init(CommunicationSystemClientSide cs, TOMConfiguration conf) {
         this.cs = cs;
         this.cs.setReplyReceiver(this); // This object itself shall be a reply receiver
         this.me = conf.getProcessId();
 
-        this.group = new int[conf.getN()];
+        this.group = new Integer[conf.getN()];
         for (int i = 0; i < group.length; i++) {
             group[i] = i;
         }
@@ -130,6 +124,7 @@ public abstract class TOMSender implements ReplyReceiver {
      * @param m Data to be multicast
      * @param readOnly it is a readonly request
      */
+    @SuppressWarnings("boxing")
     public void doRandomTOUnicast(byte[] m, boolean readOnly) {
     	cs.send(useSignatures, rnd.nextInt(group.length), new TOMMessage(me, getNextSequenceNumber(), m, readOnly));
     }
@@ -140,6 +135,7 @@ public abstract class TOMSender implements ReplyReceiver {
      * @param m Data to be multicast
      * @param readOnly it is a readonly request
      */
+    @SuppressWarnings("boxing")
     public void doRandomTOUnicast(TOMMessage m) {
     	cs.send(useSignatures, rnd.nextInt(group.length), m);
     }
@@ -150,6 +146,7 @@ public abstract class TOMSender implements ReplyReceiver {
      * @param recv The receiver of the message
      * @param readOnly it is a readonly request
      */
+    @SuppressWarnings("boxing")
     public void doTOUnicast(byte[] m, int receiver, boolean readOnly) {
     	cs.send(useSignatures, receiver, new TOMMessage(me, getNextSequenceNumber(), m, readOnly));
     }
@@ -161,6 +158,7 @@ public abstract class TOMSender implements ReplyReceiver {
      * @param recv The receiver of the message
      * @param readOnly it is a readonly request
      */
+    @SuppressWarnings("boxing")
     public void doTOUnicast(int receiver, TOMMessage m) {
     	cs.send(useSignatures, receiver, m);
     }

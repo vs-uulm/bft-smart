@@ -34,7 +34,7 @@ public class RTInfo {
 
     private boolean[] timeout; // Replicas where this timeout also occured
     private TOMConfiguration conf; // TOM configuration
-    private int reqId; // ID of the request associated with this timer
+    private Integer reqId; // ID of the request associated with this timer
     private SignedObject[] collect; // Proofs
     private boolean collected = false; // Does the collect message was already sent?
     private boolean nlSent = false; // Does the new leader message was already sent?
@@ -46,13 +46,13 @@ public class RTInfo {
      * @param timeoutNum Number of the timeout
      * @param tom TOM layer
      */
-    public RTInfo(TOMConfiguration conf, int reqId) {
+    public RTInfo(TOMConfiguration conf, Integer reqId) {
         this.conf = conf;
         this.reqId = reqId;
         timeout = new boolean[conf.getN()];
     }
 
-    public int getRequestId() {
+    public Integer getRequestId() {
         return reqId;
     }
 
@@ -100,49 +100,21 @@ public class RTInfo {
      * Gets the new leader and consensus ID to be started after a TO-FREEZE
      * fase is finished
      *
-     * @param collect Proofs from other replicas
+     * @param othercollects Proofs from other replicas
      * @param f Maximum number of faulty replicas that can exist
      * @return The replica ID of the new leader and the id of the next consensus
      * to be executed
      */
-    public NextLeaderAndConsensusInfo getStartLeader(RTCollect[] collect, int f) {
-        /*
-        int[] result = new int[2];
-        int[] lastConsensus = new int[2 * f + 1];
+    @SuppressWarnings("boxing")
+	public NextLeaderAndConsensusInfo getStartLeader(RTCollect[] othercollects, int f) {
 
-        int p = 0;
-        for (int i = 0; i < collect.length && p < lastConsensus.length; i++) {
-            if (collect[i] != null) {
-                lastConsensus[p++] = collect[i].getLastConsensus();
-            }
-        }
-        Arrays.sort(lastConsensus);
-
-        for (int i = lastConsensus.length - 1; i > -1; i--) {
-            int c = 0;
-
-            for (int j = 0; j < lastConsensus.length; j++) {
-                if (lastConsensus[i] <= lastConsensus[j]) {
-                    c++;
-                }
-            }
-
-            if (c > f) {
-                //return last[i] + 1;
-                return result;
-            }
-        }
-
-        //return last[0];
-        return result;
-*/
         NextLeaderAndConsensusInfo[] last = new NextLeaderAndConsensusInfo[2 * f + 1];
 
         int p = 0;
-        for (int i = 0; i < collect.length && p < last.length; i++) {
-            if (collect[i] != null) {
-                last[p++] = new NextLeaderAndConsensusInfo(collect[i].getLastConsensus(),
-                        collect[i].getNewLeader());
+        for (int i = 0; i < othercollects.length && p < last.length; i++) {
+            if (othercollects[i] != null) {
+                last[p++] = new NextLeaderAndConsensusInfo(othercollects[i].getLastConsensus(),
+                        othercollects[i].getNewLeader());
             }
         }
         Arrays.sort(last);
@@ -199,16 +171,16 @@ public class RTInfo {
     }
 
     public class NextLeaderAndConsensusInfo implements Comparable<NextLeaderAndConsensusInfo> {
-        public long cons;
-        public int leader;
+        public Long cons;
+        public Integer leader;
 
-        public NextLeaderAndConsensusInfo(long cons, int leader) {
+        public NextLeaderAndConsensusInfo(Long cons, Integer leader) {
             this.cons = cons;
             this.leader = leader;
         }
 
         public int compareTo(NextLeaderAndConsensusInfo o) {
-            return (int) (cons - o.cons);
+            return (int) (cons.longValue() - o.cons.longValue());
         }
 
     }

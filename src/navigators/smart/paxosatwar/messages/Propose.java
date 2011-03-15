@@ -36,7 +36,7 @@ public class Propose extends VoteMessage {
      * @param value The proposed value 
      * @param proof The proof to be sent by the leader for all replicas
      */
-    public Propose(long id,int round,int from, byte[] value, Proof proof){
+    public Propose(Long id,Integer round,Integer from, byte[] value, Proof proof){
     	super(MessageFactory.PROPOSE,id,round,from, value);
         this.proof = proof;
     }

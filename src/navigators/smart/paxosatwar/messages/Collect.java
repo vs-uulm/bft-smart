@@ -16,7 +16,7 @@ public class Collect extends PaxosMessage {
      * @param from This should be this process ID
      * @param proof The proof to be sent by the leader for all replicas
      */
-    public Collect (long id,int round,int from, CollectProof proof){
+    public Collect (Long id,Integer round,Integer from, CollectProof proof){
     	super(MessageFactory.COLLECT,id,round,from);
         this.proof = proof;
     }

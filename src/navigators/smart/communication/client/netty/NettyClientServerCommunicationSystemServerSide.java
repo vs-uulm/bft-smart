@@ -67,9 +67,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 @ChannelPipelineCoverage("all")
 public class NettyClientServerCommunicationSystemServerSide extends SimpleChannelHandler implements CommunicationSystemServerSide  {
 
-     /**
-     * number of measures used to calculate statistics
-     */
+    private final static Logger log = Logger.getLogger(NettyClientServerCommunicationSystemServerSide.class.getCanonicalName());
     
     private static final String PASSWORD = "newcs";    
     private RequestReceiver requestReceiver;
@@ -164,69 +162,13 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             //delivers message to TOMLayer
             requestReceiver.requestReceived(sm);
         }
-        /*obtains and unlocks client lock (that guarantees one thread per client)
-        rl.readLock().lock();
-        Lock clientLock = ((NettyClientServerSession)sessionTable.get(sm.getSender())).getLock();        
-        int lastMsgReceived = ((NettyClientServerSession)sessionTable.get(sm.getSender())).getLastMsgReceived();
-        if (sm.getSequence() != lastMsgReceived+1)
-            System.out.println("(Netty message received) WARNING: Received request "+sm+" but last message received was "+lastMsgReceived);
-        ((NettyClientServerSession)sessionTable.get(sm.getSender())).setLastMsgReceived(sm.getSequence());
-        rl.readLock().unlock();
-        clientLock.unlock();
-         */
-         /*
-        lock.lock();
-        numReceivedMsgs++;
-        if (numReceivedMsgs == 1) {
-            lastMeasurementStart = System.currentTimeMillis();
-        } else if (numReceivedMsgs==BENCHMARK_PERIOD) {
-            long elapsedTime = System.currentTimeMillis() - lastMeasurementStart;
-            double opsPerSec_ = ((double)BENCHMARK_PERIOD)/(elapsedTime/1000.0);
-            long opsPerSec = Math.round(opsPerSec_);
-            if (opsPerSec>max)
-                max = opsPerSec;            
-            System.out.println("(Netty messageReceived) Last "+BENCHMARK_PERIOD+" NETTY messages were received at a rate of " + opsPerSec + " msgs per second");
-            System.out.println("(Netty messageReceived) Max NETTY through. until now: " + max + " ops per second");
-            System.out.println("(Netty messageReceived) Active clients: " + sessionTable.size());
-            numReceivedMsgs = 0;
-        }
-        lock.unlock();
-        */
-    }
-/*
-    @Override
-    public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        //System.out.println("Message sent");
-        TOMMessage sm = (TOMMessage) e.getMessage();
-        long duration = System.nanoTime() - (Long)session.getAttribute("startInstant");
-        int counter = (Integer) session.getAttribute("msgCount");        
-        session.setAttribute("msgCount",++counter);
-        Storage st = (Storage) session.getAttribute("storage");
-        if (counter>benchmarkPeriod/2){
-            st.store(duration);
-            session.setAttribute("storage",st);
         }
         
-        if (st.getCount()==benchmarkPeriod/2){
-                System.out.println("TOM delay: Average time for "+benchmarkPeriod/2+" executions (-10%) = "+st.getAverage(true)/1000+ " us ");
-                System.out.println("TOM delay: Standard desviation for "+benchmarkPeriod/2+" executions (-10%) = "+st.getDP(true)/1000 + " us ");
-                System.out.println("TOM delay: Average time for "+benchmarkPeriod/2+" executions (all samples) = "+st.getAverage(false)/1000+ " us ");
-                System.out.println("TOM delay: Standard desviation for "+benchmarkPeriod/2+" executions (all samples) = "+st.getDP(false)/1000 + " us ");
-                System.out.println("TOM delay: Maximum time for "+benchmarkPeriod/2+" executions (-10%) = "+st.getMax(true)/1000+ " us ");
-                System.out.println("TOM delay: Maximum time for "+benchmarkPeriod/2+" executions (all samples) = "+st.getMax(false)/1000+ " us ");
-                st = new Storage(benchmarkPeriod/2);
-                session.setAttribute("storage",st);
-                session.setAttribute("msgCount",0);
-        }
-    }
-*/
      @Override
     public void channelConnected(
             ChannelHandlerContext ctx, ChannelStateEvent e) {
-    	 
-        navigators.smart.tom.util.Logger.println("Session Created, active clients="+sessionTable.size());
-        //session.setAttribute("storage",st);
-        //session.setAttribute("msgCount",0);
+        if(log.isLoggable(Level.INFO))
+            log.info("New Connection from "+ ctx.getChannel().getRemoteAddress()+", active clients="+sessionTable.size());
         
     }
 
@@ -241,7 +183,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
         	Entry<Integer,NettyClientServerSession> m =  i.next();
             NettyClientServerSession value =  m.getValue();
             if (e.getChannel().equals(value.getChannel())) {
-                int key = m.getKey();
+                Integer key = m.getKey();
                 sessionTable.remove(key);
                 System.out.println("#Removed client channel with ID= " + key);
                 System.out.println("#active clients="+sessionTable.size());
@@ -256,7 +198,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
         this.requestReceiver = tl;
     }
 
-	public void send(int[] targets, TOMMessage sm) {
+	public void send(Integer[] targets, TOMMessage sm) {
 
         //replies are not signed in the current JBP version
         sm.signed = false;

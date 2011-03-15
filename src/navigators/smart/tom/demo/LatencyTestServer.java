@@ -44,13 +44,13 @@ public class LatencyTestServer extends ServiceReplica {
         TOMMessage reply = new TOMMessage(id,msg.getSequence(),
                 msg.getContent());
 
-        cs.send(new int[]{msg.getSender()},reply);
+        cs.send(new Integer[]{msg.getSender()},reply);
     }
     
     public void receiveUnorderedMessage(TOMMessage msg) {
         TOMMessage reply = new TOMMessage(id,msg.getSequence(),
                 msg.getContent());
-        cs.send(new int[]{msg.getSender()},reply);
+        cs.send(new Integer[]{msg.getSender()},reply);
     }
 
     public byte[] getState() {

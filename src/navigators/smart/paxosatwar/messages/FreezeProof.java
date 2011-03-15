@@ -31,9 +31,9 @@ import navigators.smart.tom.util.SerialisationHelper;
  */
 public final class FreezeProof {
 
-    private int pid; // Replica ID
-    private long eid; // Consensus's execution ID
-    private int round; // Round number
+    private Integer pid; // Replica ID
+    private Long eid; // Consensus's execution ID
+    private Integer round; // Round number
 
     private byte[] weak; // weakly accepted value
     private byte[] strong; // strongly accepted value
@@ -48,7 +48,7 @@ public final class FreezeProof {
      * @param strong Strongly accepted Value
      * @param decide Decided value
      */
-    public FreezeProof(int pid, long eid, int round,
+    public FreezeProof(Integer pid, Long eid, Integer round,
             byte[] weak, byte[] strong, byte[] decide) {
 
         this.pid = pid;
@@ -64,7 +64,7 @@ public final class FreezeProof {
      * Retrieves the replica ID
      * @return Replica ID
      */
-    public int getPid() {
+    public Integer getPid() {
 
         return pid;
 
@@ -74,7 +74,7 @@ public final class FreezeProof {
      * Retrieves the consensus's execution ID
      * @return Consensus's execution ID
      */
-    public long getEid() {
+    public Long getEid() {
 
         return eid;
 
@@ -84,7 +84,7 @@ public final class FreezeProof {
      * Retrieves the round number
      * @return Round number
      */
-    public int getRound() {
+    public Integer getRound() {
 
         return round;
 
@@ -133,6 +133,7 @@ public final class FreezeProof {
         return (obj == null)?"*":new String(obj);
     }
 
+    @SuppressWarnings("boxing")
     public FreezeProof(ByteBuffer in){
         pid = in.getInt();
         eid = in.getLong();
@@ -142,6 +143,7 @@ public final class FreezeProof {
         decide = SerialisationHelper.readByteArray(in);
     }
 
+    @SuppressWarnings("boxing")
     public void serialise(ByteBuffer out){
         out.putInt(pid);
         out.putLong(eid);
@@ -163,9 +165,9 @@ public final class FreezeProof {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + Arrays.hashCode(decide);
-		result = prime * result + (int) (eid ^ (eid >>> 32));
-		result = prime * result + pid;
-		result = prime * result + round;
+		result = prime * result + eid.hashCode();
+		result = prime * result + pid.hashCode();
+		result = prime * result + round.hashCode();
 		result = prime * result + Arrays.hashCode(strong);
 		result = prime * result + Arrays.hashCode(weak);
 		return result;
@@ -185,11 +187,11 @@ public final class FreezeProof {
 		FreezeProof other = (FreezeProof) obj;
 		if (!Arrays.equals(decide, other.decide))
 			return false;
-		if (eid != other.eid)
+		if (!eid.equals(other.eid))
 			return false;
-		if (pid != other.pid)
+		if (!pid.equals(other.pid))
 			return false;
-		if (round != other.round)
+		if (!round.equals(other.round))
 			return false;
 		if (!Arrays.equals(strong, other.strong))
 			return false;

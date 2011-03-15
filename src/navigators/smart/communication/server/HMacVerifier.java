@@ -35,9 +35,6 @@ public class HMacVerifier implements PTPMessageVerifier {
     private int macSize;
 
 
-     public HMacVerifier(){
-     }
-
       //TODO!
     public void authenticateAndEstablishAuthKey() {
         if (authKey != null) {

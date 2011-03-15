@@ -207,14 +207,14 @@ public class ProofVerifier {
      * @param proof Array of proofs which gives out the round number of next consensus's execution
      * @return The number of the round, or -1 if there is not one executing
      */
-    public int getNextExecRound(CollectProof[] proof) {
+    public Integer getNextExecRound(CollectProof[] proof) {
         for (int i = 0; i < proof.length; i++) {
             if (proof[i].getProofs(false) != null) {
-                int r = proof[i].getProofs(false).getRound();
+                Integer r = proof[i].getProofs(false).getRound();
                 int c = 1;
                 for (int j = i + 1; j < proof.length; j++) {
                     if (proof[j].getProofs(false) != null) {
-                        if (r == proof[j].getProofs(false).getRound()) {
+                        if (r.equals(proof[j].getProofs(false).getRound())) {
                             c++;
                         }
                     }
@@ -224,7 +224,7 @@ public class ProofVerifier {
                 }
             }
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -234,9 +234,9 @@ public class ProofVerifier {
      * @param proof Proof to be verified
      * @return True if valid, false otherwise
      */
-    public boolean validProof(long eid, int round, FreezeProof proof) {
+    public boolean validProof(Long eid, Integer round, FreezeProof proof) {
         // TODO: nao devia ser 'proof.getRound() <= round'?
-        return (proof != null) && (proof.getEid() == eid) && (proof.getRound() == round);
+        return (proof != null) && (proof.getEid().equals(eid)) && (proof.getRound().equals(round));
     }
 
     /**
@@ -246,7 +246,7 @@ public class ProofVerifier {
      * @param proofs Proofs to be verified
      * @return Array the the valid proofs
      */
-    public CollectProof[] checkValid(long eid, int round, CollectProof[] proofs) {
+    public CollectProof[] checkValid(Long eid, Integer round, CollectProof[] proofs) {
         if (proofs == null) {
             return null;
         }
@@ -283,13 +283,13 @@ public class ProofVerifier {
      * @param proof Proofs to verify the leader against
      * @return True if 'l' is the leader, false otherwise
      */
-    public boolean isTheLeader(int l, CollectProof[] proof) {
+    public boolean isTheLeader(Integer l, CollectProof[] proof) {
         int c = 0;
 
         // A replica is considered to really be the leader, if more than F
         // proofs have 'getLeader()' set to be 'l'
         for (int i = 0; i < proof.length; i++) {
-            if (proof[i] != null && proof[i].getLeader() == l) {
+            if (proof[i] != null && proof[i].getLeader().equals(l)) {
                 c++;
             }
         }

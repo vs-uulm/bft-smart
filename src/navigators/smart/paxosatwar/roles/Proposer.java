@@ -72,9 +72,9 @@ public class Proposer {
      * @param eid ID for the consensus's execution to be started
      * @param value Value to be proposed
      */
-    public void startExecution(long eid, byte[] value) {
+    public void startExecution(Long eid, byte[] value) {
         communication.send(manager.getAcceptors(),
-                factory.createPropose(eid, 0, value, null));
+                factory.createPropose(eid, Round.ROUND_ZERO, value, null));
     }
 
     /**
@@ -103,7 +103,7 @@ public class Proposer {
 
         CollectProof cp =  msg.getProof();
 
-        if (cp != null && verifier.validSignature(cp, msg.getSender())) {
+        if (cp != null && verifier.validSignature(cp, msg.getSender().intValue())) {
 //            CollectProof cp = null;
 //            try {
 //                cp = (CollectProof) proof.getObject();
@@ -121,7 +121,7 @@ public class Proposer {
                     // this replica is the current leader
                     (cp.getLeader() == conf.getProcessId())) {
 
-                int nextRoundNumber = msg.getRound() + 1;
+                Integer nextRoundNumber = Integer.valueOf(msg.getRound().intValue() + 1);
 
                 if(Logger.debug)
                     Logger.println("(Proposer.collectReceived) valid COLLECT for starting "+
@@ -129,7 +129,7 @@ public class Proposer {
 
                 Round round = execution.getRound(nextRoundNumber);
                 
-                round.setCollectProof(msg.getSender(),cp);
+                round.setCollectProof(msg.getSender().intValue(),cp);
 
                 if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
                     if(Logger.debug)

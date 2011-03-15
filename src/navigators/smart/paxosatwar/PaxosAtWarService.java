@@ -73,7 +73,7 @@ public class PaxosAtWarService implements ConsensusService{
         }
     }
 
-    public void decide(int execId, int batchsize, byte[] value) {
+    public void decide(Long execId, int batchsize, byte[] value) {
         MeasuringConsensus<?> cons = execmng.getExecution(execId).getConsensus();
 
         cons.batchSize = batchsize;
@@ -82,7 +82,7 @@ public class PaxosAtWarService implements ConsensusService{
 
     @Override
     public long getLastExecuted() {
-        return execmng.getRequestHandler().getLastExec();
+        return execmng.getRequestHandler().getLastExec().longValue();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class PaxosAtWarService implements ConsensusService{
         return msghandler;
     }
 
-    public int getId() {
+    public Integer getId() {
         return execmng.getProcessId();
     }
 
@@ -108,11 +108,12 @@ public class PaxosAtWarService implements ConsensusService{
         return "Consensus in execution: " + execmng.getRequestHandler().getInExec() + " last executed consensus: "+execmng.getRequestHandler().getLastExec();
     }
 
+    @SuppressWarnings("boxing")
     @Override
     public void deliverState(TransferableState state){
     	requestsTimer.unwatchAll(); //clear timer table TODO this is not fully BFT...
-        long lastCheckpointEid = state.lastCheckpointEid;
-        long lastEid = state.lastEid;
+        Long lastCheckpointEid = state.lastCheckpointEid;
+        Long lastEid = state.lastEid;
         if(state.leadermodulestate != null){
 	        try {
 				lm.setState(state.leadermodulestate);
@@ -121,10 +122,10 @@ public class PaxosAtWarService implements ConsensusService{
 			}
         }
         //add leaderinfo of the last checkpoint
-        lm.addLeaderInfo(lastCheckpointEid, state.lastCheckpointRound, state.lastCheckpointLeader);
+        lm.addLeaderInfo(Long.valueOf(lastCheckpointEid), state.lastCheckpointRound, state.lastCheckpointLeader);
         //add leaderinfo for previous message batches
         for (long eid = lastCheckpointEid + 1; eid <= lastEid; eid++) {
-                lm.addLeaderInfo(eid, state.getMessageBatch(eid).round, state.getMessageBatch(eid).leader);
+                lm.addLeaderInfo(Long.valueOf(eid), state.getMessageBatch(eid).round, state.getMessageBatch(eid).leader);
         }
         //deliver the state to executionmanager
         execmng.deliverState(state);
@@ -136,7 +137,7 @@ public class PaxosAtWarService implements ConsensusService{
      * @return The id of the final proposer
      */
     public int getProposer(Consensus<?> cons) {
-        return lm.getLeader(cons.getId(), cons.getDecisionRound());
+        return lm.getLeader(cons.getId(), cons.getDecisionRound()).intValue();
     }
 
     public void startDeliverState() {

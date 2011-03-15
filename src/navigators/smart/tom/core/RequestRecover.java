@@ -34,26 +34,28 @@ public class RequestRecover {
 
     private Semaphore wait = new Semaphore(0);
     private Semaphore mutex = new Semaphore(1);
-    private int[] group;
+    private Integer[] group;
     private TOMMessage msg;
     private TOMLayer tomLayer;
     private byte[] hash;
     private TOMConfiguration conf;
 
     /** Creates a new instance of RequestRecover */
+    @SuppressWarnings("boxing")
     public RequestRecover(TOMLayer tomLayer, TOMConfiguration conf) {
         this.tomLayer = tomLayer;
         this.conf = conf;
-        group = new int[conf.getN() - 1];
+        group = new Integer[conf.getN() - 1];
 
         int c = 0;
         for (int i = 0; i < conf.getN(); i++) {
-            if (i != conf.getProcessId()) {
+            if (i != conf.getProcessId().intValue()) {
                 group[c++] = i;
             }
         }
     }
 
+    @SuppressWarnings("hiding")
     public void recover(byte[] hash) {
         this.msg = null;
         this.hash = hash;
@@ -61,7 +63,7 @@ public class RequestRecover {
                 new RequestRecoveryMessage(hash, conf.getProcessId()));
     }
 
-    public void receive(TOMMessage msg, byte[] msgHash) {
+    public void receive(TOMMessage tommsg, byte[] msgHash) {
         try {
             this.mutex.acquire();
         } catch (Exception e) {
@@ -70,7 +72,7 @@ public class RequestRecover {
 
         if (this.hash != null) {
             if (Arrays.equals(msgHash, hash)) {
-                this.msg = msg;
+                this.msg = tommsg;
                 this.hash = null;
                 //br.ufsc.das.util.Logger.println("(RequestRecover) Mensagem recebida coincide com a que estavamos ah espera");
                 this.wait.release();

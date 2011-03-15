@@ -27,17 +27,20 @@ import java.util.HashSet;
  */
 public class StateManager {
 
+	public static final Long NOT_WAITING  = Long.valueOf(-1l);
+
     private StateLog log;
     private HashSet<SenderEid> senderEids = null;
     private HashSet<SenderState> senderStates = null;
     private int f;
     private int n;
     private int me;
-    private long lastEid;
-    private long waitingEid;
-    private int replica;
+    private Long lastEid;
+    private Long waitingEid;
+    private Integer replica;
     private byte[] state;
 
+    @SuppressWarnings("boxing")
     public StateManager(int k, int f, int n, int me) {
 
         this.log = new StateLog(k);
@@ -48,14 +51,15 @@ public class StateManager {
         this.me = me;
         this.replica = 0;
         this.state = null;
-        this.lastEid = -1;
-        this.waitingEid = -1;
+        this.lastEid = -1l;
+        this.waitingEid = -1l;
     }
 
-    public int getReplica() {
+    public Integer getReplica() {
         return replica;
     }
 
+    @SuppressWarnings("boxing")
     public void changeReplica() {
         do {
             replica = (replica + 1) % n;
@@ -70,7 +74,7 @@ public class StateManager {
         return state;
     }
     
-    public void addEID(int sender, long eid) {
+    public void addEID(Integer sender, Long eid) {
         senderEids.add(new SenderEid(sender, eid));
     }
 
@@ -78,42 +82,39 @@ public class StateManager {
         senderEids.clear();
     }
 
-    public void emptyEIDs(int eid) {
+    @SuppressWarnings("boxing")
+	public void emptyEIDs(Integer eid) {
         for (SenderEid m : senderEids)
             if (m.eid <= eid) senderEids.remove(m);
     }
 
-    public void addState(int sender, TransferableState state) {
-        senderStates.add(new SenderState(sender, state));
+    public void addState(Integer sender, TransferableState newstate) {
+        senderStates.add(new SenderState(sender, newstate));
     }
 
-    public void emptyStates() {
-        senderStates.clear();
-    }
-
-    public long getWaiting() {
+    public Long getAwaitedState() {
         return waitingEid;
     }
 
 
-    public void setWaiting(long wait) {
+    public void setAwaitedState(Long wait) {
         this.waitingEid = wait;
     }
-    public void setLastEID(long eid) {
+    public void setLastEID(Long eid) {
         lastEid = eid;
     }
 
-    public long getLastEID() {
+    public Long getLastEID() {
         return lastEid;
     }
 
-    public boolean moreThenF_EIDs(long eid) {
+    public boolean moreThenF_EIDs(Long eid) {
 
         long count = 0;
         HashSet<Integer> replicasCounted = new HashSet<Integer>();
 
         for (SenderEid m : senderEids) {
-            if (m.eid == eid && !replicasCounted.contains(m.sender)) {
+            if (m.eid.equals(eid) && !replicasCounted.contains(m.sender)) {
                 replicasCounted.add(m.sender);
                 count++;
             }
@@ -146,8 +147,8 @@ public class StateManager {
 
             for (int j = i; j < st.length; j++) {
 
-                if (st[i].senderstate.equals(st[j].senderstate) && st[j].senderstate.hasState) count++;
-                if (count > f) return st[j].senderstate;
+                if (st[i].state.equals(st[j].state) && st[j].state.hasState) count++;
+                if (count > f) return st[j].state;
             }
         }
 
@@ -164,10 +165,10 @@ public class StateManager {
 
     private class SenderEid {
 
-        private int sender;
-        private long eid;
+        private Integer sender;
+        private Long eid;
 
-        SenderEid(int sender, long eid) {
+        SenderEid(Integer sender, Long eid) {
             this.sender = sender;
             this.eid = eid;
         }
@@ -176,7 +177,7 @@ public class StateManager {
         public boolean equals(Object obj) {
             if (obj instanceof SenderEid) {
                 SenderEid m = (SenderEid) obj;
-                return (m.eid == this.eid && m.sender == this.sender);
+                return (m.eid.equals(this.eid) && m.sender.equals(this.sender));
             }
             return false;
         }
@@ -184,27 +185,30 @@ public class StateManager {
         @Override
         public int hashCode() {
             int hash = 1;
-            hash = hash * 31 + this.sender;
-            hash = hash * 31 + (int)this.eid;
+            hash = hash * 31 + this.sender.intValue();
+            hash = hash * 31 + this.eid.intValue();
             return hash;
         }
     }
 
+    /**
+     * This class iss a Holder for a transferred State object
+     */
     private class SenderState {
 
-        private int sender;
-        private TransferableState senderstate;
+        private Integer sender;
+        private TransferableState state;
 
-        SenderState(int sender, TransferableState state) {
+        SenderState(Integer sender, TransferableState state) {
             this.sender = sender;
-            this.senderstate = state;
+            this.state = state;
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof SenderState) {
                 SenderState m = (SenderState) obj;
-                return (this.senderstate.equals(m.senderstate) && m.sender == this.sender);
+                return (this.state.equals(m.state) && m.sender == this.sender);
             }
             return false;
         }
@@ -212,9 +216,20 @@ public class StateManager {
         @Override
         public int hashCode() {
             int hash = 1;
-            hash = hash * 31 + this.sender;
-            hash = hash * 31 + this.senderstate.hashCode();
+            hash = hash * 31 + this.sender.hashCode();
+            hash = hash * 31 + this.state.hashCode();
             return hash;
         }
     }
+
+	public boolean isWaitingForState() {
+		return !waitingEid.equals(NOT_WAITING);
+}
+
+	public void resetWaiting() {
+		waitingEid = NOT_WAITING;
+		senderStates.clear();
+        state = null;
+		
+	}
 }

@@ -32,25 +32,25 @@ import navigators.smart.tom.util.Logger;
  */
 public class Consensus<E> {
 
-    private long eid; // execution ID
-    private int decisionRound = 0;
+    private Long eid; // execution ID
+    private Integer decisionRound;
     private byte[] decision = null; // decided value
     private E deserializedDecision = null; // decided value (deserialized)
     private final Object sync = new Object();
 
-    public Consensus(long eid) {
+    public Consensus(Long eid) {
         this.eid = eid;
     }
 
-    public void decided(byte[] decision, int round) {
+    public void decided(byte[] value, Integer round) {
         synchronized (sync) {
-            this.decision = decision;
+            this.decision = value;
             this.decisionRound = round;
             sync.notifyAll();
         }
     }
 
-    public int getDecisionRound() {
+    public Integer getDecisionRound() {
         return decisionRound;
     }
 
@@ -91,7 +91,7 @@ public class Consensus<E> {
      * The Execution ID for this consensus
      * @return Execution ID for this consensus
      */
-    public long getId() {
+    public Long getId() {
         return eid;
     }
 
@@ -115,6 +115,7 @@ public class Consensus<E> {
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
+	@SuppressWarnings("boxing")
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -143,14 +144,14 @@ public class Consensus<E> {
 		Consensus<?> other = (Consensus<?>) obj;
 		if (!Arrays.equals(decision, other.decision))
 			return false;
-		if (decisionRound != other.decisionRound)
+		if (!decisionRound.equals(other.decisionRound))
 			return false;
 		if (deserializedDecision == null) {
 			if (other.deserializedDecision != null)
 				return false;
 		} else if (!deserializedDecision.equals(other.deserializedDecision))
 			return false;
-		if (eid != other.eid)
+		if (!eid.equals(other.eid))
 			return false;
 		return true;
 	}

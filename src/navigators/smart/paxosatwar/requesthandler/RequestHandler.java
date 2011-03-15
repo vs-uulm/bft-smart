@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.paxosatwar.executionmanager.Execution;
@@ -31,7 +33,6 @@ import navigators.smart.tom.core.timer.messages.ForwardedMessage;
 import navigators.smart.tom.core.timer.messages.RTCollect;
 import navigators.smart.tom.core.timer.messages.RTLeaderChange;
 import navigators.smart.tom.core.timer.messages.RTMessage;
-import navigators.smart.tom.util.Logger;
 import navigators.smart.tom.util.TOMConfiguration;
 import navigators.smart.tom.util.TOMUtil;
 
@@ -41,6 +42,10 @@ import navigators.smart.tom.util.TOMUtil;
  */
 public class RequestHandler extends Thread {
     
+    private static final Logger log = Logger.getLogger(RequestHandler.class.getCanonicalName());
+	
+    private static final Long IDLE = Long.valueOf(-1l);
+    
     private final ExecutionManager execManager; // Execution manager
 
     private final LeaderModule lm; // Leader module
@@ -49,8 +54,9 @@ public class RequestHandler extends Thread {
     private final TOMConfiguration conf;
 
       /** The id of the consensus being executed (or -1 if there is none) */
-    private long inExecution = -1;
-    private long lastExecuted = -1;
+    private Long inExecution = IDLE;
+    private Long lastExecuted = IDLE;
+    private Long nextExecution = Long.valueOf(0);
     private Map<Integer, RTInfo> timeoutInfo = new HashMap<Integer, RTInfo>();
     private ReentrantLock lockTI = new ReentrantLock();
 
@@ -91,15 +97,16 @@ public class RequestHandler extends Thread {
      * Sets which consensus was the last to be executed
      * @param last ID of the consensus which was last to be executed
      */
-    public void setLastExec(long last) { // TODO:  Condiçao de corrida?
+    public void setLastExec(Long last) { // TODO:  Condiçao de corrida?
         this.lastExecuted = last;
+        this.nextExecution = new Long(last.longValue()+1);
     }
 
     /**
      * Gets the ID of the consensus which was established as the last executed
      * @return ID of the consensus which was established as the last executed
      */
-    public long getLastExec() {
+    public Long getLastExec() {
         return this.lastExecuted;
     }
 
@@ -109,13 +116,13 @@ public class RequestHandler extends Thread {
      *
      * @param inEx ID of the consensus being executed at the moment
      */
-    public void setInExec(long inEx) {
-        if(Logger.debug)
-            Logger.println("(TOMLayer.setInExec) modifying inExec from " + this.inExecution + " to " + inEx);
+    public void setInExec(Long inEx) {
+        if(log.isLoggable(Level.FINEST))
+            log.finest("Modifying state from " + this.inExecution + " to " + inEx);
 
         proposeLock.lock();
         this.inExecution = inEx;
-        if (inEx == -1l && !tomlayer.isRetrievingState()) { //code of joao for state transfer
+        if (inEx.equals(IDLE) && !tomlayer.isRetrievingState()) { //code of joao for state transfer
             canPropose.signalAll();
         }
         proposeLock.unlock();
@@ -135,8 +142,17 @@ public class RequestHandler extends Thread {
      *
      * @return ID of the consensus currently beign executed (if no consensus ir executing, -1 is returned)
      */
-    public long getInExec() {
+    public Long getInExec() {
         return this.inExecution;
+    }
+
+    /**
+     * Checks whether the given execution is currently executed
+     * @param exec The execution to check
+     * @return true if it is currently executed, false if not
+     */
+    public boolean isInExec(Long exec) {
+    	return inExecution.equals(exec);
     }
 
     /**
@@ -150,20 +166,19 @@ public class RequestHandler extends Thread {
         long start=-1;
         int counter =0;
          */
+        if(log.isLoggable(Level.INFO))
+            log.info("Running."); // TODO: isto n podia passar para fora do ciclo?
         while (true) {
-            if(Logger.debug)
-                Logger.println("(TOMLayer.run) Running."); // TODO: isto n podia passar para fora do ciclo?
-
             // blocks until this replica learns to be the leader for the current round of the current consensus
             leaderLock.lock();
-            if(Logger.debug)
-                Logger.println("(TOMLayer.run) Next leader for eid=" + (getLastExec() + 1) + ": " + lm.getLeader(getLastExec() + 1, 0));
-            if (lm.getLeader(getLastExec() + 1, 0) != conf.getProcessId()) {
+            if(log.isLoggable(Level.FINER))
+                log.finer("Next leader for eid=" + (getNextExec()) + ": " + lm.getLeader(getNextExec()));
+            if (!lm.getLeader(getNextExec()).equals(conf.getProcessId())) {
                 iAmLeader.awaitUninterruptibly();
             }
             leaderLock.unlock();
-            if(Logger.debug)
-                Logger.println("(TOMLayer.run) I'm the leader.");
+             if(log.isLoggable(Level.FINER))
+                log.finer("I'm the leader.");
 
             // blocks until there are requests to be processed/ordered
             messagesLock.lock();
@@ -171,34 +186,33 @@ public class RequestHandler extends Thread {
                 haveMessages.awaitUninterruptibly();
             }
             messagesLock.unlock();
-            if(Logger.debug)
-                Logger.println("(TOMLayer.run) There are messages to be ordered.");
+             if(log.isLoggable(Level.FINER))
+                log.finer("There are messages to be ordered.");
 
             // blocks until the current consensus finishes
             proposeLock.lock();
-            if (getInExec() != -1 && !leaderChanged) { //there is some consensus running and the leader not changed
-                if(Logger.debug)
-                    Logger.println("(TOMLayer.run) Waiting that consensus " + getInExec() + " terminates.");
+            if (!isIdle() && !leaderChanged) { //there is some consensus running and the leader not changed
+                if(log.isLoggable(Level.FINER))
+                    log.finer("Waiting that consensus " + inExecution + " terminates.");
                 canPropose.awaitUninterruptibly();
             }
             proposeLock.unlock();
-            if(Logger.debug)
-                Logger.println("(TOMLayer.run) I can try to propose.");
-            if ((lm.getLeader(getLastExec() + 1, 0) == conf.getProcessId()) && //I'm the leader
+            if(log.isLoggable(Level.FINER))
+                    log.finer("I can try to propose.");
+            if ((lm.getLeader(getNextExec()).equals(conf.getProcessId())) && //I'm the leader
                     (tomlayer.clientsManager.hasPendingRequests()) && //there are messages to be ordered TODO this is double checking?
-                    (getInExec() == -1 || leaderChanged)) { //there is no consensus in execution
+                    (isIdle() || leaderChanged)) { //there is no consensus in execution
 
                 leaderChanged = false;
 
                 // Sets the current execution
-                long execId = getLastExec() + 1;
-                setInExec(execId);
+                setInExec(nextExecution);
 
                 //getExecution and if its not created create it
                 //TODO make this better
-                execManager.getExecution(execId);
+                execManager.getExecution(inExecution);
 
-                execManager.getProposer().startExecution(execId,tomlayer.createPropose());
+                execManager.getProposer().startExecution(inExecution,tomlayer.createPropose());
 
             /*
             if (counter>=BENCHMARK_PERIOD/2)
@@ -231,6 +245,10 @@ public class RequestHandler extends Thread {
         }
     }
 
+	public Long getNextExec() {
+		return nextExecution;
+	}
+
     /**
      * Invoked when a timeout for a TOM message is triggered.
      *
@@ -245,12 +263,12 @@ public class RequestHandler extends Thread {
             TOMMessage request = i.next();
             if (tomlayer.clientsManager.isPending(request.getId())) {
                 RTInfo rti = getTimeoutInfo(request.getId());
-                if (!rti.isTimeout(conf.getProcessId())) {
+                if (!rti.isTimeout(conf.getProcessId().intValue())) {
                     serializedRequestList.add(
                             new byte[][]{request.getBytes(), request.serializedMessageSignature});
-                    timeout(conf.getProcessId(), request, rti);
-                    if(Logger.debug)
-                        Logger.println("(TOMLayer.requestTimeout) Must send timeout for reqId=" + request.getId());
+                    timeout(conf.getProcessId().intValue(), request, rti);
+                    if(log.isLoggable(Level.FINE))
+                        log.fine("Must send timeout for reqId=" + request.getId());
                 }
             }
         }
@@ -264,10 +282,11 @@ public class RequestHandler extends Thread {
     }
 
     public void forwardRequestToLeader(TOMMessage request) {
-        int leaderId = lm.getLeader(getLastExec() + 1, 0);
-        if(Logger.debug)
-            Logger.println("(TOMLayer.forwardRequestToLeader) forwarding " + request + " to " + leaderId);
-        communication.send(new int[]{leaderId}, new ForwardedMessage(conf.getProcessId(), request));
+        @SuppressWarnings("boxing")
+		Integer leaderId = lm.getLeader(getLastExec() + 1, 0);
+        if(log.isLoggable(Level.FINE))
+                    log.fine("Forwarding " + request + " to " + leaderId);
+        communication.send(new Integer[]{leaderId}, new ForwardedMessage(conf.getProcessId(), request));
     }
 
     /**
@@ -275,6 +294,7 @@ public class RequestHandler extends Thread {
      *
      * @param request the message that caused the timeout
      */
+    @SuppressWarnings("boxing")
     public void sendTimeoutMessage(List<byte[][]> serializedRequestList) {
         communication.send(execManager.getOtherAcceptors(),
                 new RTMessage(TOMUtil.RT_TIMEOUT, -1, conf.getProcessId(), serializedRequestList));
@@ -286,15 +306,15 @@ public class RequestHandler extends Thread {
      * @param reqId ID of the message which triggered the timeout
      * @param collect Proof for the timeout
      */
-    public void sendCollectMessage(int reqId, RTCollect collect) {
+    public void sendCollectMessage(Integer reqId, RTCollect collect) {
         RTMessage rtm = new RTMessage(TOMUtil.RT_COLLECT, reqId,
                 conf.getProcessId(), verifier.sign(collect));
 
-        if (collect.getNewLeader() == conf.getProcessId()) {
+        if (collect.getNewLeader().equals(conf.getProcessId())) {
             RTInfo rti = getTimeoutInfo(reqId);
             collect((SignedObject) rtm.getContent(), conf.getProcessId(), rti);
         } else {
-            int[] target = {collect.getNewLeader()};
+            Integer[] target = {collect.getNewLeader()};
             this.communication.send(target, rtm);
         }
 
@@ -307,7 +327,7 @@ public class RequestHandler extends Thread {
      * @param timeout Timeout number
      * @param rtLC Proofs for the leader change
      */
-    public void sendNewLeaderMessage(int reqId, RTLeaderChange rtLC) {
+    public void sendNewLeaderMessage(Integer reqId, RTLeaderChange rtLC) {
         RTMessage rtm = new RTMessage(TOMUtil.RT_LEADER, reqId, conf.getProcessId(), rtLC);
         //br.ufsc.das.util.Logger.println("Atualizando leader para "+rtLC.newLeader+" a partir de "+rtLC.start);
         updateLeader(reqId, rtLC.start, rtLC.newLeader);
@@ -324,12 +344,12 @@ public class RequestHandler extends Thread {
      * @param newLeader Replica ID of the new leader
      * @param timeout Timeout number
      */
-    private void updateLeader(int reqId, long start, int newLeader) {
-        lm.addLeaderInfo(start, 0, newLeader); // update the leader
+	private void updateLeader(Integer reqId, Long start, Integer newLeader) {
+        lm.addLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
         leaderChanged = true;
 
         leaderLock.lock(); // Signal the TOMlayer thread, if this replica is the leader
-        if (lm.getLeader(getLastExec() + 1, 0) == conf.getProcessId()) {
+        if (lm.getLeader(getNextExec()).equals(conf.getProcessId())) {
             iAmLeader.signal();
         }
         leaderLock.unlock();
@@ -349,8 +369,8 @@ public class RequestHandler extends Thread {
         switch (msg.getRTType()) {
             case TOMUtil.RT_TIMEOUT:
                  {
-                     if(Logger.debug)
-                        Logger.println("(TOMLayer.deliverTimeoutRequest) receiving timeout message from " + msg.getSender());
+                     if(log.isLoggable(Level.FINE))
+                        log.fine("Receiving timeout message from " + msg.getSender());
                     List<byte[][]> serializedRequestList = (List<byte[][]>) msg.getContent();
 
                     for (Iterator<byte[][]> i = serializedRequestList.iterator(); i.hasNext();) {
@@ -360,7 +380,7 @@ public class RequestHandler extends Thread {
                             return;
                         }
 
-                        TOMMessage request;
+                        TOMMessage request = null;
 
                         //deserialize the message
                         try {
@@ -368,35 +388,34 @@ public class RequestHandler extends Thread {
                             request = new TOMMessage(buf);
                         } catch (Exception e) {
                             e.printStackTrace();
-                            tomlayer.clientsManager.getClientsLock().unlock();
-                            if(Logger.debug)
-                                Logger.println("(TOMLayer.deliverTimeoutRequest) invalid request.");
+                            if(log.isLoggable(Level.WARNING))
+                                log.warning("Invalid request.");
                             return;
                         }
 
                         request.setBytes(serializedRequest[0]);
                         request.serializedMessageSignature = serializedRequest[1];
 
-                        if (tomlayer.clientsManager.requestReceived(request, false)) { //Is this a pending message?
+                        if (tomlayer.clientsManager.requestReceived(request, false, true)) { //Is this a pending message?
                             RTInfo rti = getTimeoutInfo(request.getId());
-                            timeout(msg.getSender(), request, rti);
+                            timeout(msg.getSender().intValue(), request, rti);
                         }
                     }
                 }
                 break;
             case TOMUtil.RT_COLLECT:
                  {
-                     if(Logger.debug)
-                        Logger.println("(TOMLayer.deliverTimeoutRequest) receiving collect for message " + msg.getReqId() + " from " + msg.getSender());
+                     if(log.isLoggable(Level.FINE))
+                        log.fine("Receiving collect for message " + msg.getReqId() + " from " + msg.getSender());
                     SignedObject so = (SignedObject) msg.getContent();
-                    if (verifier.verifySignature(so, msg.getSender())) { // valid signature?
+                    if (verifier.verifySignature(so, msg.getSender().intValue())) { // valid signature?
                         try {
                             RTCollect rtc = (RTCollect) so.getObject();
-                            int reqId = rtc.getReqId();
+                            Integer reqId = rtc.getReqId();
 
-                            int nl = chooseNewLeader();
+                            Integer nl = chooseNewLeader();
 
-                            if (nl == conf.getProcessId() && nl == rtc.getNewLeader()) { // If this is process the new leader?
+                            if (conf.getProcessId().equals(nl) && nl.equals(rtc.getNewLeader())) { // If this is process the new leader?
                                 RTInfo rti = getTimeoutInfo(reqId);
                                 collect(so, msg.getSender(), rti);
                             }
@@ -410,14 +429,14 @@ public class RequestHandler extends Thread {
                 break;
             case TOMUtil.RT_LEADER:
                  {
-                     if(Logger.debug)
-                        Logger.println("1 recebendo newLeader de " + msg.getSender());
+                     if(log.isLoggable(Level.FINE))
+                        log.fine("I received newLeader from " + msg.getSender());
                     RTLeaderChange rtLC = (RTLeaderChange) msg.getContent();
-                    RTCollect[] rtc = getValid(msg.getReqId(), rtLC.proof);
+                    RTCollect[] rtc = getValidProofs(msg.getReqId(), rtLC.proof);
 
                     if (rtLC.isAGoodStartLeader(rtc, conf.getF())) { // Is it a legitm and valid leader?
-                        if(Logger.debug)
-                            Logger.println("Atualizando leader para " + rtLC.newLeader + " a partir de " + rtLC.start);
+                        if(log.isLoggable(Level.FINE))
+                            log.fine("Updating leader to " + rtLC.newLeader + " onwards from from round " + rtLC.start);
                         updateLeader(msg.getReqId(), rtLC.start, rtLC.newLeader);
                     //FALTA... eliminar dados referentes a consensos maiores q start.
                     }
@@ -433,7 +452,7 @@ public class RequestHandler extends Thread {
      * @param reqId ID of the message which triggered the timeout
      * @return The timeout information
      */
-    public RTInfo getTimeoutInfo(int reqId) {
+    public RTInfo getTimeoutInfo(Integer reqId) {
         lockTI.lock();
         RTInfo ti = timeoutInfo.get(reqId);
         if (ti == null) {
@@ -450,7 +469,7 @@ public class RequestHandler extends Thread {
      * @param reqId ID of the message which triggered the timeout
      * @return The timeout information
      */
-    private void removeTimeoutInfo(int reqId) {
+    private void removeTimeoutInfo(Integer reqId) {
         lockTI.lock();
         timeoutInfo.remove(reqId);
         lockTI.unlock();
@@ -466,10 +485,10 @@ public class RequestHandler extends Thread {
     public void timeout(int acceptor, TOMMessage request, RTInfo rti) {
         rti.setTimeout(acceptor);
 
-        int reqId = rti.getRequestId();
+        Integer reqId = rti.getRequestId();
 
-        if (rti.countTimeouts() > execManager.quorumF && !rti.isTimeout(conf.getProcessId())) {
-            rti.setTimeout(conf.getProcessId());
+        if (rti.countTimeouts() > execManager.quorumF && !rti.isTimeout(conf.getProcessId().intValue())) {
+            rti.setTimeout(conf.getProcessId().intValue());
 
             List<byte[][]> serializedRequestList = new LinkedList<byte[][]>();
             serializedRequestList.add(
@@ -490,16 +509,12 @@ public class RequestHandler extends Thread {
              */
             execManager.stop();
 
-            int newLeader = chooseNewLeader();
+            Integer newLeader = chooseNewLeader();
 
-            long last = -1;
-            if (getInExec() != -1) {
-                last = getInExec();
-            } else {
-                last = getLastExec();
-            }
-            if(Logger.debug)
-                Logger.println("(TOMLayer.timeout) sending COLLECT to " + newLeader +
+            Long last = isIdle() ? getLastExec() : inExecution;
+
+            if(log.isLoggable(Level.FINE))
+                        log.fine("Sending COLLECT to " + newLeader +
                     " for " + reqId + " with last execution = " + last);
             sendCollectMessage(reqId, new RTCollect(newLeader, last, reqId));
         }
@@ -509,17 +524,13 @@ public class RequestHandler extends Thread {
      * Invoked by the TOM layer when a collect message is received, and to
      * compute the necessary tasks
      * @param c Proof from the replica that sent the message
-     * @param a ID of the replica which sent the message
+     * @param sender ID of the replica which sent the message
      */
-    public void collect(SignedObject c, int a, RTInfo rti) {
-        if(Logger.debug)
-            Logger.println("COLLECT 1");
-        rti.setCollect(a, c);
+    public void collect(SignedObject c, Integer sender, RTInfo rti) {
+        rti.setCollect(sender.intValue(), c);
 
         if (rti.countCollect() > 2 * conf.getF() && !rti.isNewLeaderSent()) {
             rti.setNewLeaderSent();
-            if(Logger.debug)
-                Logger.println("COLLECT 2");
 
             SignedObject collect[] = rti.getCollect();
 
@@ -533,8 +544,6 @@ public class RequestHandler extends Thread {
                     }
                 }
             }
-            if(Logger.debug)
-                Logger.println("COLLECT 3");
             RTInfo.NextLeaderAndConsensusInfo nextLeaderCons =
                     rti.getStartLeader(rtc, conf.getF());
             RTLeaderChange rtLC = new RTLeaderChange(collect, nextLeaderCons.leader,
@@ -544,8 +553,9 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private int chooseNewLeader() {
-        int lastRoundNumber = 0; //the number of the last round successfully executed
+    @SuppressWarnings("boxing")
+	private Integer chooseNewLeader() {
+        Integer lastRoundNumber = Round.ROUND_ZERO; //the number of the last round successfully executed
 
         Execution lastExec = execManager.getExecution(getLastExec());
         if (lastExec != null) {
@@ -566,14 +576,14 @@ public class RequestHandler extends Thread {
      * @param proof Array of signed objects containing the proofs to be verified
      * @return The sub-set of proofs that are valid
      */
-    private RTCollect[] getValid(int reqId, SignedObject[] proof) {
+    private RTCollect[] getValidProofs(Integer reqId, SignedObject[] proof) {
         Collection<RTCollect> valid = new HashSet<RTCollect>();
         try {
             for (int i = 0; i < proof.length; i++) {
                 if (proof[i] != null && verifier.verifySignature(proof[i], i)) { // is the signature valid?
                     RTCollect rtc = (RTCollect) proof[i].getObject();
                     // Does this proof refers to the specified message id and timeout?
-                    if (rtc != null && rtc.getReqId() == reqId) {
+                    if (rtc != null && rtc.getReqId().equals(reqId)) {
                         valid.add(rtc);
                     }
 
@@ -586,12 +596,12 @@ public class RequestHandler extends Thread {
         return valid.toArray(new RTCollect[0]); // return the valid proofs ans an array
     }
 
-     public void setNoExec() {
-         if(Logger.debug)
-            Logger.println("(TOMLayer.setNoExec) modifying inExec from " + this.inExecution + " to " + -1);
+     public void setIdle() {
+         if(log.isLoggable(Level.FINEST))
+            log.finest("Setting Requesthandler to idle after " + this.inExecution);
 
         proposeLock.lock();
-        this.inExecution = -1;
+        this.inExecution = IDLE;
         //ot.addUpdate();
         canPropose.signalAll();
         proposeLock.unlock();
@@ -603,6 +613,10 @@ public class RequestHandler extends Thread {
         messagesLock.unlock();
     }
 
+    	public boolean isIdle() {
+		return inExecution.equals(IDLE);
+}
+
     /* ISTO SAO MAIS COISAS DO JOAO, PARA RETIRAR A THREAD OUTOFCONTEXT */
     public void processOutOfContext() {
 
@@ -610,13 +624,18 @@ public class RequestHandler extends Thread {
 
         while (true) {
 
-            long nextExecution = getLastExec() + 1;
+            Long nextExecution = getNextExec();
             if (execManager.thereArePendentMessages(nextExecution)) {
-                Logger.println("(TOMLayer.processOutOfContext) starting processing out of context messages for consensus " + nextExecution);
+                if (log.isLoggable(Level.FINER)) {
+                    log.finer("Starting processing out of context messages for consensus " + nextExecution);
+                }
                 execution = execManager.getExecution(nextExecution);
-                Logger.println("(TOMLayer.processOutOfContext) finished processing out fo context messages for consensus " + nextExecution);
+                if (log.isLoggable(Level.FINER)) {
+                    log.finer("Finished processing out fo context messages for consensus " + nextExecution);
+                }
+            } else {
+                break;
             }
-            else break;
         }
     }
     /********************************************************************/

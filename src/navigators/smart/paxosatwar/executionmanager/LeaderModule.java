@@ -19,6 +19,7 @@
 package navigators.smart.paxosatwar.executionmanager;
 
 import java.io.ByteArrayInputStream;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -29,6 +30,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 /**
  * This class manages information about the leader of each round of each consensus
  * @author edualchieri
@@ -40,12 +42,15 @@ public class LeaderModule {
     // of the process that was the leader for that round
     private SortedMap<Long,List<ConsInfo>> leaderInfos = new TreeMap<Long,List<ConsInfo>>();
 
+    
+
     /**
      * Creates a new instance of LeaderModule
      */
+    @SuppressWarnings("boxing")
     public LeaderModule() {
-        addLeaderInfo(-1, 0, 0);
-        addLeaderInfo(0, 0, 0);
+        addLeaderInfo(Long.valueOf(-1l), ROUND_ZERO, 0);
+        addLeaderInfo(Long.valueOf(0), ROUND_ZERO, 0);
     }
 
     /**
@@ -54,7 +59,7 @@ public class LeaderModule {
      * @param r Rounds of the consensus where the replica is a leader
      * @param l ID of the leader
      */
-    public void addLeaderInfo(long c, int r, int l) {
+    public void addLeaderInfo(Long c, Integer r, Integer l) {
         List<ConsInfo> list = leaderInfos.get(c);
         if (list == null) {
             list = new LinkedList<ConsInfo>();
@@ -75,11 +80,11 @@ public class LeaderModule {
      * @param r Number of the round tobe searched
      * @return The tuple for the specified round, or null if there is none
      */
-    private ConsInfo findInfo(List<ConsInfo> l, int r) {
+    private ConsInfo findInfo(List<ConsInfo> l, Integer r) {
         ConsInfo ret = null;
         for (int i = 0; i < l.size(); i++) {
             ret = l.get(i);
-            if (ret.round == r) {
+            if (ret.round.equals(r)) {
                 return ret;
             }
         }
@@ -93,9 +98,9 @@ public class LeaderModule {
      * @param c ID of the consensus established as being decided
      * @param l ID of the replica established as being the leader for the round 0 of the next consensus
      */
-    public void decided(long c, int l) {
+    public void decided(Long c, Integer l) {
         if (leaderInfos.get(c) == null) {
-            addLeaderInfo(c + 1, 0, l);
+            addLeaderInfo(Long.valueOf(c.longValue() + 1), ROUND_ZERO, l);
         }
     }
 
@@ -106,7 +111,7 @@ public class LeaderModule {
      * @param r Round number for the specified consensus
      * @return The replica ID of the leader
      */
-    public int getLeader(long c, int r) {
+    public Integer getLeader(Long c, Integer r) {
         /***/
         List<ConsInfo> list = leaderInfos.get(c);
         if (list == null) {
@@ -115,7 +120,7 @@ public class LeaderModule {
             list = new LinkedList<ConsInfo>();
             leaderInfos.put(c, list);
 
-            List<ConsInfo> before = leaderInfos.get(c - 1);
+            List<ConsInfo> before = leaderInfos.get(Long.valueOf(c.longValue() - 1));
 
             if (before != null && before.size() > 0) {
                 //the leader for this round will be the leader of
@@ -126,14 +131,21 @@ public class LeaderModule {
         } else {
             for (int i = 0; i < list.size(); i++) {
                 ConsInfo ci = list.get(i);
-                if (ci.round == r) {
+                if (ci.round.equals(r)) {
                     return ci.leaderId;
                 }
             }
         }
-        return -1;
-        /***/
-        //return 0;
+        return null;
+    }
+    
+    /**
+     * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number 0
+     * @param c consensus's execution ID
+     * @return The replica ID of the leader
+     */
+    public Integer getLeader(Long c) {
+    	return getLeader(c, ROUND_ZERO);
     }
 
     /**
@@ -162,21 +174,23 @@ public class LeaderModule {
     /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO */
     private ReentrantLock leaderInfosLock = new ReentrantLock();
 
-    public void removeStableConsenusInfo(long c) {
+    public void removeStableConsenusInfo(Long c) {
 
         leaderInfosLock.lock();
 
-        List<ConsInfo> list = leaderInfos.get(c + 1);
+        Long next = Long.valueOf(c.longValue() + 1);
+        	
+        List<ConsInfo> list = leaderInfos.get(next);
 
         if (list == null) {//nunca vai acontecer isso!!!
             System.err.println("- Executing a code that wasn't supposed to be executed :-)");
             System.err.println("- And we have some reports there is a bug here!");
             list = new LinkedList<ConsInfo>();
-            leaderInfos.put(c + 1l, list);
+            leaderInfos.put(next, list);
             List<ConsInfo> rm = leaderInfos.remove(c);
             if (rm != null && rm.size()>0) {
                 ConsInfo ci = rm.get(rm.size() - 1);
-                list.add(new ConsInfo(0, ci.leaderId));
+                list.add(new ConsInfo(ci.leaderId));
             }
         } else {
             leaderInfos.remove(c);
@@ -186,49 +200,49 @@ public class LeaderModule {
     }
     
     /**Removes all stable consensusinfos older than c **/
-    public void removeAllStableConsenusInfo(long c) {
+    public void removeAllStableConsenusInfo(Long c) {
+    	Long next = Long.valueOf(c.longValue() + 1);
 
         leaderInfosLock.lock();
-
-        List<ConsInfo> list = leaderInfos.get(c + 1);
+        List<ConsInfo> list = leaderInfos.get(next);
 
         if (list == null) {//nunca vai acontecer isso!!!
             System.err.println("- Executing a code that wasn't supposed to be executed :-)");
             System.err.println("- And we have some reports there is a bug here!");
             list = new LinkedList<ConsInfo>();
-            leaderInfos.put(c + 1l, list);
+            leaderInfos.put(next, list);
             List<ConsInfo> rm = leaderInfos.remove(c);
             if (rm != null && rm.size()>0) {
                 ConsInfo ci = rm.get(rm.size() - 1);
-                list.add(new ConsInfo(0, ci.leaderId));
+                list.add(new ConsInfo(ci.leaderId));
             }
         } else {
-            leaderInfos.headMap(c+1).clear(); //remove all older infos
+            leaderInfos.headMap(next).clear(); //remove all older infos
         }
 
         leaderInfosLock.unlock();
     }
 
-    public void removeMultipleStableConsenusInfos(long cStart, long cEnd) {
-
+    public void removeMultipleStableConsenusInfos(Long cStart, Long cEnd) {
+    	Long next = Long.valueOf(cEnd.longValue() + 1);
         leaderInfosLock.lock();
 
-        List<ConsInfo> list = leaderInfos.get(cEnd + 1);
+        List<ConsInfo> list = leaderInfos.get(next);
 
         if (list == null) {//nunca vai acontecer isso!!!
             //System.err.println("- Executing a code that wasn't supposed to be executed :-)");
             //System.err.println("- And we have some reports there is a bug here!");
             list = new LinkedList<ConsInfo>();
-            leaderInfos.put(cEnd + 1l, list);
+            leaderInfos.put(next, list);
             List<ConsInfo> rm = leaderInfos.get(cEnd);
             if (rm != null) {
                     ConsInfo ci = rm.get(rm.size() - 1);
-                    list.add(new ConsInfo(0, ci.leaderId));
+                    list.add(new ConsInfo(ci.leaderId));
             }
         }
 
-        for (long c = cStart; c <= cEnd; c++) {
-                leaderInfos.remove(c);
+        for (long c = cStart.longValue(); c <= cEnd.longValue(); c++) {
+                leaderInfos.remove(Long.valueOf(c));
         }
 
         leaderInfosLock.unlock();
@@ -265,12 +279,16 @@ public class LeaderModule {
      */
     private class ConsInfo {
 
-        public int round;
-        public int leaderId;
+        public Integer round;
+        public Integer leaderId;
 
-        public ConsInfo(int r, int l) {
-            this.round = r;
+        public ConsInfo(Integer l) {
+            this.round = ROUND_ZERO;
             this.leaderId = l;
         }
+        public ConsInfo(Integer round, Integer l) {
+        	this.round = round;
+        	this.leaderId = l;
     }
+}
 }

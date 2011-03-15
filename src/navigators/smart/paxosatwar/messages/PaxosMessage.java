@@ -30,8 +30,8 @@ import navigators.smart.tom.core.messages.SystemMessage;
  */
 public class PaxosMessage extends SystemMessage {
 
-    private long number; //execution ID for this message TODO: Isto n devia chamar-se 'eid'?
-    private int round; // Round number to which this message belongs to
+    private Long number; //execution ID for this message TODO: Isto n devia chamar-se 'eid'?
+    private Integer round; // Round number to which this message belongs to
     private int paxosType; // Message type
 
     /**
@@ -42,8 +42,8 @@ public class PaxosMessage extends SystemMessage {
     public PaxosMessage( ByteBuffer in) {
         super(Type.PAXOS_MSG,in);
         paxosType = in.getInt();
-		number = in.getLong();
-		round = in.getInt();
+		number = Long.valueOf(in.getLong());
+		round = Integer.valueOf(in.getInt());
 		
     }
 
@@ -53,8 +53,7 @@ public class PaxosMessage extends SystemMessage {
      * @param round Round number
      * @param from This should be this process ID
      */
-    public PaxosMessage(int paxosType, long id,int round,int from){
-
+	public PaxosMessage(int paxosType, Long id, Integer round, Integer from) {
         super(SystemMessage.Type.PAXOS_MSG, from);
 
         this.paxosType = paxosType;
@@ -99,8 +98,8 @@ public class PaxosMessage extends SystemMessage {
         super.serialise(out);
 
         out.putInt(paxosType);
-		out.putLong(number);
-		out.putInt(round);
+		out.putLong(number.longValue());
+		out.putInt(round.intValue());
 
     }
     
@@ -148,7 +147,7 @@ public class PaxosMessage extends SystemMessage {
      * Retrieves the round number to which this message belongs
      * @return Round number to which this message belongs
      */
-    public int getRound() {
+    public Integer getRound() {
 
         return round;
 
@@ -158,7 +157,7 @@ public class PaxosMessage extends SystemMessage {
      * Returns the consensus execution ID of this message
      * @return Consensus execution ID of this message
      */
-    public long getNumber() {
+    public Long getNumber() {
 
         return number;
 
@@ -213,9 +212,9 @@ public class PaxosMessage extends SystemMessage {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + (int) (number ^ (number >>> 32));
+		result = prime * result + (int) (number.longValue() ^ (number.longValue() >>> 32));
 		result = prime * result + paxosType;
-		result = prime * result + round;
+		result = prime * result + round.intValue();
 		return result;
 	}
 
@@ -231,11 +230,11 @@ public class PaxosMessage extends SystemMessage {
 		if (!(obj instanceof PaxosMessage))
 			return false;
 		PaxosMessage other = (PaxosMessage) obj;
-		if (number != other.number)
+		if (!number.equals(other.number))
 			return false;
 		if (paxosType != other.paxosType)
 			return false;
-		if (round != other.round)
+		if (!round.equals(other.round))
 			return false;
 		return true;
 	}

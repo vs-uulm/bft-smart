@@ -33,12 +33,12 @@ public class NettyClientServerSession {
     private Channel channel;
     private Mac macSend;
     private Mac macReceive;
-    private int replicaId;
+    private Integer replicaId;
     private PublicKey pKey;
     private Lock lock;
     private int lastMsgReceived;
 
-    public NettyClientServerSession(Channel channel, Mac macSend, Mac macReceive, int replicaId, PublicKey pKey, Lock lock) {
+    public NettyClientServerSession(Channel channel, Mac macSend, Mac macReceive, Integer replicaId, PublicKey pKey, Lock lock) {
         this.channel = channel;
         this.macSend = macSend;
         this.macReceive = macReceive;
@@ -63,7 +63,7 @@ public class NettyClientServerSession {
         return channel;
     }
 
-    public int getReplicaId() {
+    public Integer getReplicaId() {
         return replicaId;
     }
 

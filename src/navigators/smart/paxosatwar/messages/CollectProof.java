@@ -37,7 +37,7 @@ public final class CollectProof {
     private final FreezeProof proofNext;
 
     // The new leader id
-    private final int newLeader;
+    private final Integer newLeader;
 
     private byte[] signature;
 
@@ -49,7 +49,7 @@ public final class CollectProof {
      * @param proofNext Proofs to next consensus, if have next - after the freezed one
      * @param newLeader The new leader id
      */
-    public CollectProof(FreezeProof proofIn, FreezeProof proofNext, int newLeader) {
+    public CollectProof(FreezeProof proofIn, FreezeProof proofNext, Integer newLeader) {
 
         this.proofIn = proofIn;
         this.proofNext = proofNext;
@@ -80,12 +80,13 @@ public final class CollectProof {
     * Retrieves the leader ID
     * @return The leader ID
     */
-    public int getLeader(){
+    public Integer getLeader(){
 
         return this.newLeader;
 
     }
 
+    @SuppressWarnings("boxing")
     public CollectProof (ByteBuffer in) {
         proofIn = new FreezeProof(in);
         proofNext = new FreezeProof(in);
@@ -97,7 +98,7 @@ public final class CollectProof {
         if(serialisedForm == null){
             proofIn.serialise(out);
             proofNext.serialise(out);
-            out.putInt(newLeader);
+            out.putInt(newLeader.intValue());
         } else {
             SerialisationHelper.writeByteArray(serialisedForm, out);
         }
@@ -114,7 +115,7 @@ public final class CollectProof {
             //serialise without signature
             proofIn.serialise(buf);
             proofNext.serialise(buf);
-            buf.putInt(newLeader);
+            buf.putInt(newLeader.intValue());
             serialisedForm = buf.array();
         }
         return serialisedForm;
@@ -135,7 +136,7 @@ public final class CollectProof {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + newLeader;
+		result = prime * result + newLeader.hashCode();
 		result = prime * result + ((proofIn == null) ? 0 : proofIn.hashCode());
 		result = prime * result + ((proofNext == null) ? 0 : proofNext.hashCode());
 		result = prime * result + Arrays.hashCode(serialisedForm);
@@ -155,7 +156,7 @@ public final class CollectProof {
 		if (!(obj instanceof CollectProof))
 			return false;
 		CollectProof other = (CollectProof) obj;
-		if (newLeader != other.newLeader)
+		if (!newLeader.equals(other.newLeader))
 			return false;
 		if (proofIn == null) {
 			if (other.proofIn != null)

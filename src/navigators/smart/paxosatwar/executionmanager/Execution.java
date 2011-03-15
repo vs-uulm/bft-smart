@@ -38,7 +38,7 @@ public class Execution {
 
     private boolean decided; // Is this execution decided?
     private long initialTimeout; // Initial timeout for rounds
-    private int decisionRound = -1; // round at which a desision was made
+    private Integer decisionRound = Integer.valueOf(-1); // round at which a desision was made
 
     public ReentrantLock lock = new ReentrantLock(); //this execution lock (called by other classes)
 
@@ -60,7 +60,7 @@ public class Execution {
      * This is the execution ID
      * @return Execution ID
      */
-    public long getId() {
+    public Long getId() {
         return consensus.getId();
     }
 
@@ -77,7 +77,7 @@ public class Execution {
      * @return MeasuringConsensus instance to which this execution works for
      */
 	@SuppressWarnings("rawtypes")
-	public MeasuringConsensus getConsensus() { // TODO: Why is it called getConsensus?
+    public MeasuringConsensus getConsensus() {
         return consensus;
     }
 
@@ -86,7 +86,7 @@ public class Execution {
      * @param number The number of the round
      * @return The round
      */
-    public Round getRound(int number) {
+    public Round getRound(Integer number) {
         return getRound(number,true);
     }
 
@@ -96,7 +96,7 @@ public class Execution {
      * @param create if the round is to be created if not existent
      * @return The round
      */
-    public Round getRound(int number, boolean create) {
+    public Round getRound(Integer number, boolean create) {
         roundsLock.lock();
 
         Round round = rounds.get(number);
@@ -119,7 +119,7 @@ public class Execution {
         roundsLock.lock();
 
         for(Integer key : rounds.keySet().toArray(new Integer[0])) {
-            if(key > limit) {
+            if(key.intValue() > limit) {
                 Round round = rounds.remove(key);
                 round.setRemoved();
                 round.getTimeoutTask().cancel(true);
@@ -147,6 +147,7 @@ public class Execution {
      */
     public Round getLastRound() {
         roundsLock.lock();
+        @SuppressWarnings("boxing")
         Round r = rounds.get(rounds.size() - 1);
         roundsLock.unlock();
         return r;

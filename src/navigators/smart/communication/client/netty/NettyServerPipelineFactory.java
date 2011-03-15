@@ -23,6 +23,8 @@ import static org.jboss.netty.channel.Channels.pipeline;
 import java.util.Hashtable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
 import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
@@ -39,6 +41,8 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
  * @version $Rev: 643 $, $Date: 2009/09/08 00:11:57 $
  */
 public class NettyServerPipelineFactory implements ChannelPipelineFactory {
+
+    private static Logger log = Logger.getLogger(NettyClientPipelineFactory.class.getCanonicalName());
 
     NettyClientServerCommunicationSystemServerSide ncs;
     boolean isClient;

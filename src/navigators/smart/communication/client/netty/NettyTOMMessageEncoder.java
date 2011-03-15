@@ -43,7 +43,7 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
     private ReentrantReadWriteLock rl;
     private boolean useMAC;
 
-    public NettyTOMMessageEncoder(Hashtable<Integer,NettyClientServerSession> sessionTable/*, int macLength*/, ReentrantReadWriteLock rl, int signatureLength, boolean useMAC){
+    public NettyTOMMessageEncoder(Hashtable<Integer,NettyClientServerSession> sessionTable, ReentrantReadWriteLock rl, int signatureLength, boolean useMAC){
         this.sessionTable = sessionTable;
         this.rl = rl;
         this.signatureLength = signatureLength;
@@ -95,7 +95,7 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
         Channels.write(ctx, e.getFuture(), buf);        
     }
 
-    byte[] produceMAC(int id, byte[] data){
+    byte[] produceMAC(Integer id, byte[] data){
         rl.readLock().lock();
         Mac macSend = sessionTable.get(id).getMacSend();
         rl.readLock().unlock();

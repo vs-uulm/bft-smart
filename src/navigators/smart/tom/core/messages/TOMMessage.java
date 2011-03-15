@@ -33,13 +33,12 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
     private boolean readOnlyRequest = false; //this is a read only request
 
     //the fields bellow are not serialized!!!
-    private transient int id; // ID for this message. It should be unique
+    private transient Integer id; // ID for this message. It should be unique
 
     public transient long timestamp = 0; // timestamp to be used by the application
     public transient byte[] nonces = null; // nonces to be used by the applciation
 
-    //Esses dois Campos servem pra que?
-    public transient int destination = -1; // message destination
+    public transient Integer destination = null; // message destination
     public transient boolean signed = false; // is this message signed?
 //    public transient boolean includesClassHeader = false; //are class header serialized
 
@@ -47,6 +46,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
     public transient boolean timeout = false;//this message was timed out?
 
     //the bytes received from the client and its MAC and signature
+//    public transient byte[] serializedMessage = null;
     public transient byte[] serializedMessageSignature = null;
     public transient byte[] serializedMessageMAC = null;
 
@@ -70,7 +70,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
      * @param sequence Sequence number defined by the client
      * @param content Content of the message
      */
-    public TOMMessage(int sender, int sequence, byte[] content) {
+    public TOMMessage(Integer sender, int sequence, byte[] content) {
         this(sender,sequence,content,false);
     }
 
@@ -82,7 +82,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
      * @param content Content of the message
      * @param readOnlyRequest it is a read only request
      */
-    public TOMMessage(int sender, int sequence, byte[] content, boolean readOnlyRequest) {
+    public TOMMessage(Integer sender, int sequence, byte[] content, boolean readOnlyRequest) {
         super(Type.TOM_MSG,sender);
         this.sequence = sequence;
 
@@ -124,7 +124,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
      * Retrieves the ID for this message. It should be unique
      * @return The ID for this message.
      */
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -161,16 +161,14 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
 
         TOMMessage mc = (TOMMessage) o;
 
-        return (mc.getSender() == sender) && (mc.getSequence() == sequence);
-        /* return (mc.getSender() == sender) && (mc.getSequence() == sequence) &&
-                Arrays.equals(mc.getContent(), this.content); */
+        return (mc.getSender().equals( sender)) && (mc.getSequence() == sequence);
     }
 
     @Override
     public int hashCode() {
         int hash = 5;
         hash = 59 * hash + this.sequence;
-        hash = 59 * hash + this.getSender();
+        hash = 59 * hash + this.getSender().intValue();
         return hash;
     }
 
@@ -231,6 +229,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
     /**
      * Used to build an unique id for the message
      */
+    @SuppressWarnings("boxing")
     private void buildId() {
         id = (sender << 20) | sequence;
     }
@@ -240,8 +239,8 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
      * @param id Message ID
      * @return Process ID of the sender
      */
-    public static int getSenderFromId(int id) {
-        return id >>> 20;
+    public static Integer getSenderFromId(Integer id) {
+        return Integer.valueOf(id.intValue() >>> 20);
     }
 
 //    public static byte[] messageToBytes(TOMMessage m) {
@@ -262,6 +261,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
 //        return m;
 //    }
 
+    @SuppressWarnings("boxing")
     public int compareTo(TOMMessage tm) {
         final int BEFORE = -1;
         final int EQUAL = 0;

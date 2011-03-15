@@ -30,10 +30,12 @@ import navigators.smart.paxosatwar.messages.CollectProof;
  */
 public class Round {
 
+	public static final Integer ROUND_ZERO = Integer.valueOf(0);
+	
     private transient Execution execution; // Execution where the round belongs to
     private transient ScheduledFuture<?> timeoutTask; // Timeout ssociated with this round
-    private int number; // Round's number
-    private int me; // Process ID
+    private Integer number; // Round's number
+    private Integer me; // Process ID
     private boolean[] weakSetted;
     private boolean[] strongSetted;
     private byte[][] weak; // weakling accepted values from other processes
@@ -56,7 +58,8 @@ public class Round {
      * @param number Number of the round
      * @param timeout Timeout duration for this round
      */
-    protected Round(Execution parent, int number, long timeout) {
+	@SuppressWarnings("boxing")
+	protected Round(Execution parent, Integer number, long timeout) {
         this.execution = parent;
         this.number = number;
 
@@ -64,7 +67,7 @@ public class Round {
 
         this.me = manager.getProcessId();
 
-        int[] acceptors = manager.getAcceptors();
+        Integer[] acceptors = manager.getAcceptors();
         int n = acceptors.length;
 
         weakSetted = new boolean[n];
@@ -73,7 +76,7 @@ public class Round {
         Arrays.fill(weakSetted, false);
         Arrays.fill(strongSetted, false);
 
-        if (number == 0) {
+        if (number.intValue() == 0) {
             this.weak = new byte[n][];
             this.strong = new byte[n][];
             this.decide = new byte[n][];
@@ -136,7 +139,7 @@ public class Round {
      * Retrieves this round's number
      * @return This round's number
      */
-    public int getNumber() {
+    public Integer getNumber() {
         return number;
     }
 
@@ -310,7 +313,7 @@ public class Round {
      * Establishes that a replica locally freezed this round
      * @param acceptor replica that locally freezed this round
      */
-    public void addFreeze(int acceptor) {
+    public void addFreeze(Integer acceptor) {
         if (freeze == null) {
             freeze = new TreeSet<Integer>();
         }
@@ -417,7 +420,7 @@ public class Round {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((execution == null) ? 0 : execution.hashCode());
-		result = prime * result + number;
+		result = prime * result + number.hashCode();
 		return result;
 	}
 
@@ -438,7 +441,7 @@ public class Round {
 				return false;
 		} else if (!execution.equals(other.execution))
 			return false;
-		if (number != other.number)
+		if (!number.equals(other.number))
 			return false;
 		return true;
 	}

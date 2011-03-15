@@ -32,13 +32,13 @@ public class MessageFactory{
     public static final int FREEZE  = 44785;
     public static final int COLLECT = 44786;
 
-    private int from; // Replica ID of the process which sent this message
+    private Integer from; // Replica ID of the process which sent this message
 
     /**
      * Creates a message factory
      * @param from Replica ID of the process which sent this message
      */
-    public MessageFactory(int from) {
+    public MessageFactory(Integer from) {
 
         this.from = from;
 
@@ -52,7 +52,7 @@ public class MessageFactory{
      * @param proof Proofs from other replicas
      * @return A paxos message of the PROPOSE type, with the specified id, round, value, and proof
      */
-    public Propose createPropose(long id, int round, byte[] value,
+    public Propose createPropose(Long id, Integer round, byte[] value,
             Proof proof) {
 
         return new Propose(id,round, from, value, proof);
@@ -66,7 +66,7 @@ public class MessageFactory{
      * @param value Weakly accepted value
      * @return A paxos message of the WEAK type, with the specified id, round, and value
      */
-	public VoteMessage createWeak(long id, int round, byte[] value) {
+	public VoteMessage createWeak(Long id, Integer round, byte[] value) {
 
         return new VoteMessage(WEAK,id,round, from, value);
 
@@ -79,7 +79,7 @@ public class MessageFactory{
      * @param value Strongly accepted value
      * @return A paxos message of the STRONG type, with the specified id, round, and value
      */
-	public VoteMessage createStrong(long id, int round, byte[] value) {
+	public VoteMessage createStrong(Long id, Integer round, byte[] value) {
 
         return new VoteMessage(STRONG,id,round, from, value);
 
@@ -92,7 +92,7 @@ public class MessageFactory{
      * @param value Decided value
      * @return A paxos message of the DECIDE type, with the specified id, round, and value
      */
-	public VoteMessage createDecide(long id, int round, byte[] value) {
+	public VoteMessage createDecide(Long id, Integer round, byte[] value) {
 
          return new VoteMessage(DECIDE,id,round, from, value);
 
@@ -104,7 +104,7 @@ public class MessageFactory{
      * @param round Round number
      * @return A paxos message of the FREEZE type, with the specified id, and round
      */
-	public PaxosMessage createFreeze(long id, int round) {
+	public PaxosMessage createFreeze(Long id, Integer round) {
 
         return new PaxosMessage(FREEZE,id,round, from);
 
@@ -117,7 +117,7 @@ public class MessageFactory{
      * @param proof The proof to be sent by the leader for all replicas
      * @return A paxos message of the COLLECT type, with the specified id, round, and proof
      */
-    public Collect createCollect(long id, int round, CollectProof proof) {
+    public Collect createCollect(Long id, Integer round, CollectProof proof) {
 
         return new Collect (id,round, from, proof);
 

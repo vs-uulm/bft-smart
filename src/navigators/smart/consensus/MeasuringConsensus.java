@@ -38,7 +38,7 @@ public class MeasuringConsensus<E> extends Consensus<E>{
      * @param eid The execution ID for this consensus
      * @param startTime The consensus start time
      */
-    public MeasuringConsensus(long eid, long startTime) {
+    public MeasuringConsensus(Long eid, long startTime) {
         super(eid);
         this.startTime = startTime;
     }

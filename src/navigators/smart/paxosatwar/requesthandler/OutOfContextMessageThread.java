@@ -83,7 +83,7 @@ public class OutOfContextMessageThread extends Thread {
                 outOfContextLock();
                 /******************************************************************/
 
-                long nextExecution = requesthandler.getLastExec() + 1;
+                Long nextExecution = requesthandler.getNextExec();
                 if (execMng.thereArePendentMessages(nextExecution)) {
                     if(log.isLoggable(Level.FINER))
                         log.finer("Starting processing out of context messages for consensus " + nextExecution);

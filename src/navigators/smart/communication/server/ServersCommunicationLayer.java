@@ -90,7 +90,8 @@ public class ServersCommunicationLayer extends Thread {
 		} 
 	}
 
-	public final void send(int[] targets, SystemMessage sm) {
+	@SuppressWarnings("boxing")
+	public final void send(Integer[] targets, SystemMessage sm) {
 
 		byte[] data = sm.getBytes();
 
@@ -158,7 +159,7 @@ public class ServersCommunicationLayer extends Thread {
 						latch.countDown();
 					} else {
 						// reconnection
-						connections[remoteId].reconnect(newSocketChannel);
+						connections[remoteId].connect(newSocketChannel);
 					}
 				} else {
 					newSocketChannel.close();

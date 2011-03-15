@@ -61,7 +61,7 @@ public interface ConsensusService {
      * Returns the id of this replicas consensus service
      * @return The consensusservice id
      */
-    public int getId();
+    public Integer getId();
 
     /**
      * Notifies the service of a successful state transfer to indicate leaderchanges

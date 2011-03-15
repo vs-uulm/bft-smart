@@ -15,7 +15,6 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.clientsmanagement;
 
 import java.security.PublicKey;
@@ -30,19 +29,13 @@ import navigators.smart.tom.util.TOMConfiguration;
 public class ClientData {
 
     ReentrantLock clientLock = new ReentrantLock();
-
-    private int clientId;
+    private Integer clientId;
     private PublicKey publicKey = null;
-
     private int lastMessageReceived = -1;
     private long lastMessageReceivedTime = 0;
-
     private int lastMessageExecuted = -1;
-
     private PendingRequests pendingRequests = new PendingRequests();
-    
     private Queue<TOMMessage> proposedRequests = new LinkedList<TOMMessage>();
-    
     private TOMMessage lastReplySent = null;
 
     /**
@@ -50,18 +43,15 @@ public class ClientData {
      *
      * @param clientId
      */
-    public ClientData(int clientId) {
+    public ClientData(Integer clientId) {
         this.clientId = clientId;
     }
 
-    public int getClientId() {
+    public Integer getClientId() {
         return clientId;
     }
 
-//    public PendingRequests getPendingRequests() {
-//        return pendingRequests;
-//    }
-
+    @SuppressWarnings("boxing")
     public PublicKey getPublicKey() {
         if(publicKey == null) {
             publicKey = TOMConfiguration.getRSAPublicKey(clientId);
@@ -114,11 +104,11 @@ public class ClientData {
 		return !pendingRequests.isEmpty();
 	}
 
-	public TOMMessage getRequestById(int reqId) {
+    public TOMMessage getRequestById(Integer reqId) {
 		TOMMessage ret =  pendingRequests.getById(reqId);
 		if (ret == null){
 			for(TOMMessage msg : proposedRequests){
-				if(msg.getId() == reqId){
+                if (msg.getId().equals(reqId)) {
 					ret = msg;
 					break;
 				}
@@ -137,14 +127,16 @@ public class ClientData {
 		//remove outdated messages from this client
 		for(Iterator<TOMMessage> it = pendingRequests.iterator();it.hasNext();){
 			TOMMessage msg = it.next();
-			if(msg.getSequence()<request.getSequence())
+            if (msg.getSequence() < request.getSequence()) {
 				it.remove();
 		}
+        }
 		for(Iterator<TOMMessage> it = proposedRequests.iterator();it.hasNext();){
 			TOMMessage msg = it.next();
-			if(msg.getSequence()<request.getSequence())
+            if (msg.getSequence() < request.getSequence()) {
 				it.remove();
 		}
+        }
 		return result;
 	}
 

@@ -46,7 +46,7 @@ public class Test {
         int id = conf.getProcessId();
         int n = conf.getN();
 
-        int[] targets = new int[n-1];
+        Integer[] targets = new Integer[n-1];
 
         System.out.println("n = "+n);
 
@@ -79,7 +79,7 @@ public class Test {
                 System.out.println("Roundtrip "+((System.nanoTime()-time)/1000.0)+" us");
             } else {
                 TOMMessage m = (TOMMessage) inQueue.take();
-                scl.send(new int[]{m.getSender()}, new TOMMessage(id,i,m.getContent()));
+                scl.send(new Integer[]{m.getSender()}, new TOMMessage(id,i,m.getContent()));
             }
         }
 
@@ -102,7 +102,7 @@ public class Test {
                 st.storeDuration(System.nanoTime()-time);
             } else {
                 TOMMessage m = (TOMMessage) inQueue.take();
-                scl.send(new int[]{m.getSender()}, new TOMMessage(id,i,m.getContent()));
+                scl.send(new Integer[]{m.getSender()}, new TOMMessage(id,i,m.getContent()));
             }
         }
 

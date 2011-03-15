@@ -33,8 +33,8 @@ public class RTLeaderChange implements Serializable {
 	 */
 	private static final long serialVersionUID = -2335883456723868265L;
 	public SignedObject[] proof; // Proofs for the new leader
-    public int newLeader; // Replica ID of the new leader
-    public long start; // ID of the consensus to be started
+    public Integer newLeader; // Replica ID of the new leader
+    public Long start; // ID of the consensus to be started
 
     /**
      * Creates a new instance of RTLeaderChangeMessage
@@ -42,7 +42,7 @@ public class RTLeaderChange implements Serializable {
      * @param nl Replica ID of the new leader
      * @param start ID of the consensus to be started
      */
-    public RTLeaderChange(SignedObject[] proof, int nl, long start) {
+    public RTLeaderChange(SignedObject[] proof, Integer nl, Long start) {
         this.proof = proof;
         this.newLeader = nl;
         this.start = start;
@@ -59,7 +59,7 @@ public class RTLeaderChange implements Serializable {
     public boolean isAGoodStartLeader(RTCollect[] collect, int f) {
         int c = 0;
         for (int i = 0; i < collect.length; i++) {
-            if (collect[i] != null && collect[i].getNewLeader() == newLeader) {
+            if (collect[i] != null && collect[i].getNewLeader().equals(newLeader)){
                 c++;
             }
         }
@@ -71,7 +71,7 @@ public class RTLeaderChange implements Serializable {
 
         c = 0;
         for (int i = 0; i < collect.length; i++) {
-            if (collect[i] != null && (start-1) <= collect[i].getLastConsensus()) {
+            if (collect[i] != null && (start.longValue()-1) <= collect[i].getLastConsensus()) {
                 c++;
             }
         }

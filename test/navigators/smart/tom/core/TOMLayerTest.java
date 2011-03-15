@@ -44,7 +44,7 @@ public class TOMLayerTest {
 	public void setUp() throws Exception {
 		recv = mock(TOMReceiver.class);
 		cs = mock(ServerCommunicationSystem.class);
-		conf  = new TOMConfiguration(0,"config");
+		conf  = new TOMConfiguration(0,"./config");
 		tl = new TOMLayer(recv, cs, conf);
 		
 	}
@@ -80,13 +80,13 @@ public class TOMLayerTest {
 		TOMMessage msg = mock(TOMMessage.class);
 		when(msg.isReadOnlyRequest()).thenReturn(true);
 		tl.requestReceived(msg);
-		verify(recv).receiveMessage(msg);
+		verify(recv).receiveUnorderedMessage(msg);
 		msg = mock(TOMMessage.class);
 		when(msg.isReadOnlyRequest()).thenReturn(false);
 		ConsensusService srv = mock(ConsensusService.class);
 		tl.setConsensusService(srv);
 		tl.requestReceived(msg);
-		verify(recv,never()).receiveMessage(msg);
+		verify(recv,never()).receiveUnorderedMessage(msg);
 		verify(srv).notifyNewRequest(msg);
 	}
 
@@ -117,7 +117,7 @@ public class TOMLayerTest {
 		TOMMessage msg = new TOMMessage(0, 0, TestHelper.createTestByte());
 		TOMMessage[] array = new TOMMessage[1];
 		array[0] = msg;
-		Consensus<TOMMessage[]> cons = new Consensus<TOMMessage[]>(0);
+		Consensus<TOMMessage[]> cons = new Consensus<TOMMessage[]>(0l);
 		cons.setDeserialisedDecision(array);
 		ConsensusService srv = mock(ConsensusService.class);
 		tl.setConsensusService(srv);
@@ -143,7 +143,7 @@ public class TOMLayerTest {
 		TOMMessage[] array = new TOMMessage[1];
 		array[0] = msg;
 		msgs[0] = msg.getBytes();
-		Consensus<TOMMessage[]> cons = new Consensus<TOMMessage[]>(0);
+		Consensus<TOMMessage[]> cons = new Consensus<TOMMessage[]>(0l);
 		cons.setDeserialisedDecision(array);
 		ConsensusService srv = mock(ConsensusService.class);
 		tl.setConsensusService(srv);
@@ -158,13 +158,13 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testRequestStateTransfer() {
-		int[] otherAcceptors = new int[2];
+		Integer[] otherAcceptors = new Integer[2];
 		otherAcceptors[0]=0;
 		otherAcceptors[1]=1;
-		tl.requestStateTransfer(2, otherAcceptors, 0, 0);
-		verify(cs,never()).send(otherAcceptors, new SMMessage(2, 0, TOMUtil.SM_REQUEST, 0, null));
-		tl.requestStateTransfer(2, otherAcceptors, 1, 0);
-		verify(cs).send(otherAcceptors, new SMMessage(2, 0, TOMUtil.SM_REQUEST, 0, null));
+		tl.requestStateTransfer(2, otherAcceptors, 0, 0l);
+		verify(cs,never()).send(otherAcceptors, new SMMessage(2, 0l, TOMUtil.SM_REQUEST, 0, null));
+		tl.requestStateTransfer(2, otherAcceptors, 1, 0l);
+		verify(cs).send(otherAcceptors, new SMMessage(2, 0l, TOMUtil.SM_REQUEST, 0, null));
 	}
 
 	/**
@@ -189,11 +189,11 @@ public class TOMLayerTest {
 	@Test
 	public void testIsRetrievingState() {
 		assertFalse(tl.isRetrievingState());
-		int[] otherAcceptors = new int[2];
+		Integer[] otherAcceptors = new Integer[2];
 		otherAcceptors[0]=0;
 		otherAcceptors[1]=1;
-		tl.requestStateTransfer(2, otherAcceptors, 0, 1);
-		tl.requestStateTransfer(2, otherAcceptors, 1, 1);
+		tl.requestStateTransfer(2, otherAcceptors, 0, 1l);
+		tl.requestStateTransfer(2, otherAcceptors, 1, 1l);
 		assertTrue(tl.isRetrievingState());
 	}
 

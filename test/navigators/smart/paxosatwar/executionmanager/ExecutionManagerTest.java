@@ -22,9 +22,9 @@ public class ExecutionManagerTest {
 	private ExecutionManager mng;
 	Acceptor acceptor;
 	Proposer proposer ;
-	int[] acceptors = {0,1,2,3};
+	Integer[] acceptors = {0,1,2,3};
 	int f;
-	int me;
+	Integer me;
 	long initialTimeout;
 	TOMLayer tom ;
 	LeaderModule lm;
@@ -50,50 +50,50 @@ public class ExecutionManagerTest {
 
 	@Test
 	public void testCheckLimits_initial() {
-		int[] others = {1,2,3}; //list of the other acceptors
+		Integer[] others = {1,2,3}; //list of the other acceptors
 		
 		//test initial configuration
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertTrue(mng.checkLimits(new Propose( 0, 0, 1,null,null)));
-		assertFalse(mng.thereArePendentMessages(0));
+		assertTrue(mng.checkLimits(new Propose( 0l, 0, 1,null,null)));
+		assertFalse(mng.thereArePendentMessages(0l));
 		//test initial ooc message
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message with state transfer
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 99, 0, 1,null,null)));
-		verify(tom).requestStateTransfer(me, others, 1, 99);
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose( 99l, 0, 1,null,null)));
+		verify(tom).requestStateTransfer(me, others, 1, 99l);
+		assertTrue(mng.thereArePendentMessages(1l));
 	}
 	
 	@Test
 	public void testCheckLimits_normal() {
-		int[] others = {1,2,3}; //list of the other acceptors
+		Integer[] others = {1,2,3}; //list of the other acceptors
 		//test normal configuration
 		when(handlr.getLastExec()).thenReturn(0l);
 		when(handlr.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertTrue(mng.checkLimits(new Propose(1, 0, 1,null,null)));
-		assertFalse(mng.thereArePendentMessages(1));
+		assertTrue(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertFalse(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg
 		when(handlr.getLastExec()).thenReturn(0l);
 		when(handlr.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(2, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(2));
+		assertFalse(mng.checkLimits(new Propose(2l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(2l));
 		//test normal execution ooc msg with state transfer
 		when(handlr.getLastExec()).thenReturn(0l);
 		when(handlr.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(101, 0, 1,null,null)));
-		verify(tom).requestStateTransfer(me, others, 1, 101);
+		assertFalse(mng.checkLimits(new Propose(101l, 0, 1,null,null)));
+		verify(tom).requestStateTransfer(me, others, 1, 101l);
 		assertTrue(mng.thereArePendentMessages(101l));
 	}
 	
@@ -104,20 +104,20 @@ public class ExecutionManagerTest {
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(0, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(0));
+		assertFalse(mng.checkLimits(new Propose(0l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(0l));
 		//test initial ooc message
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message with state transfer
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(99, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));		
+		assertFalse(mng.checkLimits(new Propose(99l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 	}
 
 	@Test
@@ -128,19 +128,19 @@ public class ExecutionManagerTest {
 		when(handlr.getLastExec()).thenReturn(0l);
 		when(handlr.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg
 		when(handlr.getLastExec()).thenReturn(0l);
 		when(handlr.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(2, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(2));
+		assertFalse(mng.checkLimits(new Propose(2l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(2l));
 		//test normal execution ooc msg with state transfer
 		when(handlr.getLastExec()).thenReturn(0l);
 		when(handlr.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(101, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(101l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(101l));
 	}
 	
@@ -150,14 +150,14 @@ public class ExecutionManagerTest {
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2, 0, 1, new byte[0])));
-		assertTrue(mng.thereArePendentMessages(2));
+		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
+		assertTrue(mng.thereArePendentMessages(2l));
 	}
 
 	@Test
@@ -166,18 +166,18 @@ public class ExecutionManagerTest {
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
-		mng.removeExecution(1);
-		assertFalse(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
+		mng.removeExecution(1l);
+		assertFalse(mng.thereArePendentMessages(1l));
 		//test initial ooc message
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2, 0, 1, new byte[0])));
-		assertTrue(mng.thereArePendentMessages(2));
-		mng.removeExecution(2);
-		assertFalse(mng.thereArePendentMessages(2));
+		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
+		assertTrue(mng.thereArePendentMessages(2l));
+		mng.removeExecution(2l);
+		assertFalse(mng.thereArePendentMessages(2l));
 	}
 
 	@Test
@@ -186,39 +186,39 @@ public class ExecutionManagerTest {
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		
 		//test initial ooc message
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2, 0, 1, new byte[0])));
-		assertTrue(mng.thereArePendentMessages(2));
+		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
+		assertTrue(mng.thereArePendentMessages(2l));
 		mng.removeOutOfContexts(0);
-		assertTrue(mng.thereArePendentMessages(1));
-		assertTrue(mng.thereArePendentMessages(2));
+		assertTrue(mng.thereArePendentMessages(1l));
+		assertTrue(mng.thereArePendentMessages(2l));
 		mng.removeOutOfContexts(1);
-		assertFalse(mng.thereArePendentMessages(1));
-		assertTrue(mng.thereArePendentMessages(2));
+		assertFalse(mng.thereArePendentMessages(1l));
+		assertTrue(mng.thereArePendentMessages(2l));
 		mng.removeOutOfContexts(2);
-		assertFalse(mng.thereArePendentMessages(2));
+		assertFalse(mng.thereArePendentMessages(2l));
 	}
 
 	@Test
 	public void testGetExecution() {
-		Execution exec = mng.getExecution(0);
+		Execution exec = mng.getExecution(0l);
 		assertEquals(exec, mng.removeExecution(exec.getId()));
 		
 		//test initial ooc message
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		PaxosMessage msg = new Propose( 1, 0, 1, null, null);
-		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1, 0, 1,new byte[0]);
+		PaxosMessage msg = new Propose( 1l, 0, 1, null, null);
+		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1l, 0, 1,new byte[0]);
 		assertFalse(mng.checkLimits(msg));
 		assertFalse(mng.checkLimits(weak));
-		exec = mng.getExecution(1);
+		exec = mng.getExecution(1l);
 		verify(acceptor).processMessage(msg);
 		verify(acceptor).processMessage(weak);
 		assertEquals(exec, mng.removeExecution(exec.getId()));
@@ -226,19 +226,19 @@ public class ExecutionManagerTest {
 
 	@Test
 	public void testDecided() {
-		mng.getExecution(0);
-		mng.decided(new Consensus<Object>(0));
-		verify(handlr).setLastExec(0);
-		verify(acceptor).executeAcceptedPendent(1);
+		mng.getExecution(0l);
+		mng.decided(new Consensus<Object>(0l));
+		verify(handlr).setLastExec(0l);
+		verify(acceptor).executeAcceptedPendent(1l);
 
 		//verify with removal of stable consensus
-		mng.getExecution(0);
-		mng.decided(new Consensus<Object>(3));
-		verify(handlr,times(2)).setInExec(-1); //verify  both resets of inExec
-		verify(handlr).setLastExec(3);
-		verify(lm).removeStableConsenusInfo(0);
-		assertNull(mng.removeExecution(0));
-		verify(acceptor).executeAcceptedPendent(4);
+		mng.getExecution(0l);
+		mng.decided(new Consensus<Object>(3l));
+		verify(handlr,times(2)).setIdle(); //verify  both resets of inExec
+		verify(handlr).setLastExec(3l);
+		verify(lm).removeStableConsenusInfo(0l);
+		assertNull(mng.removeExecution(0l));
+		verify(acceptor).executeAcceptedPendent(4l);
 	}
 
 	@Test
@@ -246,16 +246,16 @@ public class ExecutionManagerTest {
 		when(handlr.getLastExec()).thenReturn(-1l);
 		when(handlr.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(1, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(1));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		
-		TransferableState state = new TransferableState(0,0,0,10l,null,null,null,null);
-		mng.getExecution(5);
+		TransferableState state = new TransferableState(0l,0,0,10l,null,null,null,null);
+		mng.getExecution(5l);
 		mng.deliverState(state);
-		verify(handlr).setLastExec(10);
-		verify(handlr).setNoExec();
-		assertNull(mng.removeExecution(5));
-		assertFalse(mng.thereArePendentMessages(1));
+		verify(handlr).setLastExec(10l);
+		verify(handlr).setIdle();
+		assertNull(mng.removeExecution(5l));
+		assertFalse(mng.thereArePendentMessages(1l));
 	}
 
 }

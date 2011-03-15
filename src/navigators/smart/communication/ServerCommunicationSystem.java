@@ -175,7 +175,7 @@ import navigators.smart.tom.util.TOMConfiguration;
      * @param targets the target receivers of the message
      * @param sm the message to be sent
      */
-    public void send(int[] targets, SystemMessage sm) {
+    public void send(Integer[] targets, SystemMessage sm) {
         if(sm.type.equals(SystemMessage.Type.TOM_MSG)) {
             //Logger.println("(ServerCommunicationSystem.send) C: "+sm);
             clientsConn.send(targets, (TOMMessage)sm);

@@ -48,7 +48,7 @@ public final class ForwardedMessage extends SystemMessage {
         request.serializedMessageSignature = serReqSign;
     }
 
-    public ForwardedMessage(int senderId, TOMMessage request) {
+    public ForwardedMessage(Integer senderId, TOMMessage request) {
         super(Type.FORWARDED, senderId);
         this.request = request;
     }

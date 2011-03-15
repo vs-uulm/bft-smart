@@ -33,13 +33,14 @@ public class RequestRecoveryMessage extends SystemMessage {
 
     //TODO: Nao faz mais sentido chamar a isto "type" ?
     private int id; // Message type (RR_REQUEST, RR_REPLY, RR_DELIVERED)
-    private int consId; // Consensus's ID to which the request recover refers to
+    private Integer consId; // Consensus's ID to which the request recover refers to
     private byte[] hash; // Hash of the request being recovered
     private TOMMessage msg; // TOM message containing the request being recovered
 
     /**
      * Creates a new instance of RecoveryRequestMessage
      */
+    @SuppressWarnings("boxing")
     public RequestRecoveryMessage(ByteBuffer in) throws IOException, ClassNotFoundException {
         super(Type.RR_MSG,in);
         consId = in.getInt();
@@ -54,8 +55,7 @@ public class RequestRecoveryMessage extends SystemMessage {
      * @param hash Hash of the request being recovered
      * @param from ID of the process which sent the message
      */
-    public RequestRecoveryMessage(byte[] hash, int from) {
-
+    public RequestRecoveryMessage(byte[] hash, Integer from) {
         super(Type.RR_MSG,from);
         this.hash = hash;
         this.id = TOMUtil.RR_REQUEST;
@@ -66,8 +66,7 @@ public class RequestRecoveryMessage extends SystemMessage {
      * @param msg TOM message containing the request being recovered
      * @param from ID of the process which sent the message
      */
-    public RequestRecoveryMessage(TOMMessage msg, int from) {
-
+    public RequestRecoveryMessage(TOMMessage msg, Integer from) {
         super(Type.RR_MSG,from);
         this.msg = msg;
         this.id = TOMUtil.RR_REPLY;
@@ -79,9 +78,8 @@ public class RequestRecoveryMessage extends SystemMessage {
      * @param from ID of the process which sent the message
      * @param consId  Consensus's ID to which the request recover refers to
      */
-    public RequestRecoveryMessage(byte[] hash, int from, int consId) {
+    public RequestRecoveryMessage(byte[] hash, Integer from, Integer consId) {
         super(Type.RR_MSG,from);
-
         this.hash = hash;
         this.id = TOMUtil.RR_DELIVERED;
         this.consId = consId;
@@ -91,7 +89,7 @@ public class RequestRecoveryMessage extends SystemMessage {
      * Retrieves the consensus's ID to which the request recover refers to
      * @return The consensus's ID to which the request recover refers to
      */
-    public int getConsId() {
+    public Integer getConsId() {
         return this.consId;
     }
 
@@ -125,7 +123,7 @@ public class RequestRecoveryMessage extends SystemMessage {
     public void serialise(ByteBuffer out) {
 
         super.serialise(out);
-        out.putInt(consId);
+        out.putInt(consId.intValue());
         out.putInt(id);
 
         SerialisationHelper.writeByteArray(hash, out);

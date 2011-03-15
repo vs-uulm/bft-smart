@@ -44,7 +44,7 @@ public class LatencyTestServerReplica0 extends ServiceReplica {
         TOMMessage reply = new TOMMessage(id,msg.getSequence(),
                 msg.getContent());
 
-        cs.send(new int[]{msg.getSender()},reply);
+        cs.send(new Integer[]{msg.getSender()},reply);
     }
 
     public static void main(String[] args){

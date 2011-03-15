@@ -39,7 +39,7 @@ public interface TOMRequestReceiver {
      *
      * @param msg The request delivered by the TOM layer
      */
-    public void receiveMessage(TOMMessage msg);
+    public void receiveUnorderedMessage(TOMMessage msg);
 
     /**
      * This method is used by the TOM Layer to retrieve the state of the application. This must be

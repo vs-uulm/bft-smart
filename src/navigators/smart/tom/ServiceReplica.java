@@ -40,7 +40,7 @@ import navigators.smart.tom.util.TOMConfiguration;
  */
 public abstract class ServiceReplica extends TOMReceiver implements Runnable {
 
-    private int id; // replica ID
+    private Integer id; // replica ID
     private ServerCommunicationSystem cs = null; // Server side comunication system
     private BlockingQueue<TOMMessage> requestQueue; // Queue of messages received from the TOM layer
     private Thread replicaThread; // Thread that runs the replica code
@@ -49,7 +49,7 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
      * Constructor
      * @param id Replica ID
      */
-    public ServiceReplica(int id) throws IOException {
+    public ServiceReplica(Integer id) throws IOException {
         super(new TOMConfiguration(id,"./config"));
         this.id = id;
         this.init();
@@ -90,7 +90,7 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
             }
             msg.requestTotalLatency = System.currentTimeMillis()-msg.consensusStartTime;
             // Deliver the message to the application, and get the response
-            byte[] response = executeCommand(msg.getSender(), msg.timestamp,
+            byte[] response = executeCommand(msg.getSender().intValue(), msg.timestamp,
                     msg.nonces, msg.getContent(), msg.getDebugInfo());
 
             /** ISTO E CODIGO DO JOAO, PARA TRATAR DOS CHECKPOINTS */
@@ -101,7 +101,7 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
             /********************************************************/
             
             // send reply to the client
-            cs.send(new int[]{msg.getSender()}, new TOMMessage(id, msg.getSequence(),
+            cs.send(new Integer[]{msg.getSender()}, new TOMMessage(id, msg.getSequence(),
                     response));
         }
     }
@@ -111,7 +111,6 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
      *
      * @param msg The request delivered by the TOM layer
      */
-    @Override
     public void receiveOrderedMessage(TOMMessage msg) {
         requestQueue.add(msg);
     }
@@ -121,8 +120,7 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
      *
      * @param msg The request delivered by the TOM layer
      */
-    @Override
-    public void receiveMessage(TOMMessage msg) {
+    public void receiveUnorderedMessage(TOMMessage msg) {
         requestQueue.add(msg);
     }
 

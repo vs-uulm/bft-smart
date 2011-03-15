@@ -105,14 +105,14 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
             buf.putLong(totalOps);
             TOMMessage reply = new TOMMessage(id,msg.getSequence(),
                     command);
-            cs.send(new int[]{msg.getSender()},reply);
+            cs.send(new Integer[]{msg.getSender()},reply);
         }
         else {
             //echo msg to client
             //System.out.println("Echoing msg to client");
             TOMMessage reply = new TOMMessage(id,msg.getSequence(),
                     msg.getContent());
-            cs.send(new int[]{msg.getSender()},reply);
+            cs.send(new Integer[]{msg.getSender()},reply);
         }
 
         //do throughput calculations
@@ -181,7 +181,7 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
     	//unused
     }
 
-    public void receiveMessage(TOMMessage msg) {
+    public void receiveUnorderedMessage(TOMMessage msg) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

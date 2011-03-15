@@ -34,29 +34,30 @@ public class StateLog {
 	private static final Logger log = Logger.getLogger(StateLog.class.getCanonicalName());
 
     private BatchInfo[] messageBatches; // batches received since the last checkpoint.
-    private long lastCheckpointEid; // Execution ID for the last checkpoint
-    private int lastCheckpointRound; // Decision round for the last checkpoint
-    private int lastCheckpointLeader; // Leader for the last checkpoint
+    private Long lastCheckpointEid; // Execution ID for the last checkpoint
+    private Integer lastCheckpointRound; // Decision round for the last checkpoint
+    private Integer lastCheckpointLeader; // Leader for the last checkpoint
     private byte[] state; // State associated with the last checkpoint
     private byte[] stateHash; // Hash of the state associated with the last checkpoint
     private int position; // next position in the array of batches to be written
-    private long lastEid; // Execution ID for the last messages batch delivered to the application
+    private Long lastEid; // Execution ID for the last messages batch delivered to the application
     private byte[] lmstate; //Ithe state of the leadermodule
 
     /**
      * Constructs a State log
      * @param k The chekpoint period
      */
+    @SuppressWarnings("boxing")
     public StateLog(int k) {
 
         this.messageBatches = new BatchInfo[k - 1];
-        this.lastCheckpointEid = -1;
+        this.lastCheckpointEid = -1l;
         this.lastCheckpointRound = -1;
         this.lastCheckpointLeader = -1;
         this.state = null;
         this.stateHash = null;
         this.position = 0;
-        this.lastEid = -1;
+        this.lastEid = -1l;
         this.lmstate = null;
     }
     
@@ -70,7 +71,8 @@ public class StateLog {
      * @param stateHash
      * @param lmstate
      */
-    public void newCheckpoint(long lastCPEid, int lastCPRound, int lastCPLeader, long lastEid, byte[] state, byte[] stateHash, byte[] lmstate) {
+    @SuppressWarnings("hiding")
+	public void newCheckpoint(Long lastCPEid, Integer lastCPRound, Integer lastCPLeader, Long lastEid, byte[] state, byte[] stateHash, byte[] lmstate) {
 
         for (int i = 0; i < this.messageBatches.length; i++)
             messageBatches[i] = null;
@@ -89,7 +91,7 @@ public class StateLog {
      * Sets the execution ID for the last checkpoint
      * @param lastCheckpointEid Execution ID for the last checkpoint
      */
-    public void setLastCheckpointEid(long lastCheckpointEid) {
+    public void setLastCheckpointEid(Long lastCheckpointEid) {
 
         this.lastCheckpointEid = lastCheckpointEid;
     }
@@ -98,7 +100,7 @@ public class StateLog {
      * Retrieves the execution ID for the last checkpoint
      * @return Execution ID for the last checkpoint, or -1 if none was obtained
      */
-    public long getLastCheckpointEid() {
+    public Long getLastCheckpointEid() {
         return lastCheckpointEid ;
     }
 
@@ -106,7 +108,7 @@ public class StateLog {
      * Sets the decision round for the last checkpoint
      * @param lastCheckpointEid Decision round for the last checkpoint
      */
-    public void setLastCheckpointRound(int lastCheckpointRound) {
+    public void setLastCheckpointRound(Integer lastCheckpointRound) {
         this.lastCheckpointRound = lastCheckpointRound;
     }
 
@@ -114,7 +116,7 @@ public class StateLog {
      * Retrieves the decision round for the last checkpoint
      * @return Decision round for the last checkpoint, or -1 if none was obtained
      */
-    public int getLastCheckpointRound() {
+    public Integer getLastCheckpointRound() {
         return lastCheckpointRound ;
     }
 
@@ -122,7 +124,7 @@ public class StateLog {
      * Sets the leader for the last checkpoint
      * @param lastCheckpointEid Leader for the last checkpoint
      */
-    public void setLastCheckpointLeader(int lastCheckpointLeader) {
+    public void setLastCheckpointLeader(Integer lastCheckpointLeader) {
 
         this.lastCheckpointLeader = lastCheckpointLeader;
     }
@@ -131,7 +133,7 @@ public class StateLog {
      * Retrieves the leader for the last checkpoint
      * @return Leader for the last checkpoint, or -1 if none was obtained
      */
-    public int getLastCheckpointLeader() {
+    public Integer getLastCheckpointLeader() {
 
         return lastCheckpointLeader;
     }
@@ -140,7 +142,7 @@ public class StateLog {
      * Sets the execution ID for the last messages batch delivered to the application
      * @param lastEid the execution ID for the last messages batch delivered to the application
      */
-    public void setLastEid(long lastEid) {
+    public void setLastEid(Long lastEid) {
         this.lastEid = lastEid;
     }
 
@@ -148,7 +150,7 @@ public class StateLog {
      * Retrieves the execution ID for the last messages batch delivered to the application
      * @return Execution ID for the last messages batch delivered to the application
      */
-    public long getLastEid() {
+    public Long getLastEid() {
         return lastEid;
     }
 
@@ -175,7 +177,7 @@ public class StateLog {
      * @param batch The batch of messages to be kept.
      * @return True if the batch was added to the log, false otherwise
      */
-    public void addMessageBatch(byte[] batch, int round, int leader) {
+    public void addMessageBatch(byte[] batch, Integer round, int leader) {
 
         if (position < messageBatches.length) {
 
@@ -189,7 +191,8 @@ public class StateLog {
      * @param eid Execution ID associated with the batch to be fetched
      * @return The batch of messages associated with the batch correspondent execution ID
      */
-    public BatchInfo getMessageBatch(int eid) {
+    @SuppressWarnings("boxing")
+	public BatchInfo getMessageBatch(Integer eid) {
         if (eid > lastCheckpointEid && eid <= lastEid) {
             return messageBatches[(int)(eid - lastCheckpointEid - 1)];
         }
@@ -216,7 +219,8 @@ public class StateLog {
      * @param eid Execution ID correspondent to desired state
      * @return TransferableState Object containing this log information
      */
-    public TransferableState getTransferableState(long eid, boolean setState) {
+    @SuppressWarnings("boxing")
+	public TransferableState getTransferableState(Long eid, boolean setState) {
 
         if (lastCheckpointEid > -1 ) {
 

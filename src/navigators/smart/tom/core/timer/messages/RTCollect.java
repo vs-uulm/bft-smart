@@ -30,9 +30,9 @@ public class RTCollect implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = -6846631994024920503L;
-	private int newLeader; // New leader for the next consensus being started
-    private long lastConsensus; // Last consensus executed, or being executed
-    private int reqId; // Request ID associated with the timeout
+	private Integer newLeader; // New leader for the next consensus being started
+    private Long lastConsensus; // Last consensus executed, or being executed
+    private Integer reqId; // Request ID associated with the timeout
     
     /**
      * Creates a new instance of TimerRequestCollect
@@ -40,7 +40,7 @@ public class RTCollect implements Serializable{
      * @param lastConsensus Last consensus executed, or being executed
      * @param reqId Request ID associated with the timeout
      */
-    public RTCollect(int newLeader, long lastConsensus, int reqId) {
+    public RTCollect(Integer newLeader, Long lastConsensus, Integer reqId) {
         this.newLeader = newLeader;
         this.lastConsensus = lastConsensus;
         this.reqId = reqId;
@@ -50,7 +50,7 @@ public class RTCollect implements Serializable{
      * Retrieves the new leader for the next consensus being started
      * @return The new leader for the next consensus being started
      */
-    public int getNewLeader(){
+    public Integer getNewLeader(){
         return this.newLeader;
     }
 
@@ -58,7 +58,7 @@ public class RTCollect implements Serializable{
      * Retrieves the request ID associated with the timeout
      * @return The request ID associated with the timeout
      */
-    public int getReqId(){
+    public Integer getReqId(){
         return this.reqId;
     }
 
@@ -66,7 +66,7 @@ public class RTCollect implements Serializable{
      * Retrieves the last consensus executed, or being executed
      * @return The last consensus executed, or being executed
      */
-    public long getLastConsensus(){
+    public Long getLastConsensus(){
         return this.lastConsensus;
     }
 }

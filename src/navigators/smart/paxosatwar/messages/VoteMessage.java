@@ -20,7 +20,7 @@ public class VoteMessage extends PaxosMessage {
      * @param from This should be this process ID
      * @param value The proposed value 
      */
-    public VoteMessage( int paxosType, long id,int round,int from, byte[] value){
+    public VoteMessage( int paxosType, Long id,Integer round,Integer from, byte[] value){
     	super(paxosType,id,round,from);
         this.value = value;
     }
@@ -42,7 +42,7 @@ public class VoteMessage extends PaxosMessage {
 		return ret += 4 + (value!=null ? value.length : 0 ); // +4 (length field) + value.length
 	}
 
-	public VoteMessage(int paxosType, long id, int round, int from) {
+	public VoteMessage(int paxosType, Long id, Integer round, Integer from) {
 		super(paxosType, id, round, from);
 	}
 

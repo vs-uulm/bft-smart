@@ -85,6 +85,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     
     private TOMUtil tomutil;
 
+    @SuppressWarnings("boxing")
     public NettyClientServerCommunicationSystemClientSide(TOMConfiguration conf) {
         try {
             SecretKeyFactory fac = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
@@ -175,7 +176,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             ChannelHandlerContext ctx, ChannelStateEvent e) {
     	Channel ch = e.getChannel();
     	ChannelBuffer id = ChannelBuffers.buffer(4);
-    	id.writeInt(conf.getProcessId());
+    	id.writeInt(conf.getProcessId().intValue());
     	ChannelFuture f = ch.write(id);
     	f.awaitUninterruptibly();
         System.out.println("Channel connected");
@@ -204,10 +205,11 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
                     // Set up the default event pipeline.
                     bootstrap.setPipelineFactory(new NettyClientPipelineFactory(this, true, sessionTable, authKey, macDummy.getMacLength(), conf, rl, tomutil.getSignatureSize(), new ReentrantLock()));
                     // Start the connection attempt.
-                    ChannelFuture future = bootstrap.connect(conf.getRemoteAddress(ncss.getReplicaId()));
+                    ChannelFuture future = bootstrap.connect(conf.getRemoteAddress(ncss.getReplicaId().intValue()));
                     //creates MAC stuff
                     Mac macSend = ncss.getMacSend();
                     Mac macReceive = ncss.getMacReceive();
+                    @SuppressWarnings("boxing")
                     NettyClientServerSession cs = new NettyClientServerSession(future.getChannel(), macSend, macReceive, ncss.getReplicaId(), TOMConfiguration.getRSAPublicKey(ncss.getReplicaId()), new ReentrantLock());
                     sessionTable.remove(ncss.getReplicaId());
                     sessionTable.put(ncss.getReplicaId(), cs);
@@ -232,7 +234,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
         this.trr = trr;
     }
 
-    public void send(boolean sign, int[] targets, TOMMessage sm) {
+    public void send(boolean sign, Integer[] targets, TOMMessage sm) {
     	if(sign){
     		//checks if msg is serialized and signs it then
     		sign(sm);
@@ -242,7 +244,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             writeToChannel(sm,targets[i]);
         }
     }
-    public void send(boolean sign, int target, TOMMessage sm) {
+    public void send(boolean sign, Integer target, TOMMessage sm) {
     	if(sign){
     		//checks if msg is serialized and signs it then
     		sign(sm);
@@ -250,7 +252,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     	writeToChannel(sm,target);
     }
 
-    private void writeToChannel(TOMMessage sm, int destination) {
+    private void writeToChannel(TOMMessage sm, Integer destination) {
     	sm.destination = destination;
         rl.readLock().lock();
         Channel channel = sessionTable.get(destination).getChannel();

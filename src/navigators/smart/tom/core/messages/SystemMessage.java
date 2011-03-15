@@ -36,14 +36,14 @@ public abstract class SystemMessage {
 
     public enum Type {
 
-        TOM_MSG((byte) 1),
-        FORWARDED((byte) 2),
-        PAXOS_MSG((byte) 3),
-        RR_MSG((byte) 4),
-        RT_MSG((byte) 5),
-        SM_MSG((byte)6);
+        TOM_MSG(Byte.valueOf((byte) 1)),
+        FORWARDED(Byte.valueOf((byte) 2)),
+        PAXOS_MSG(Byte.valueOf((byte) 3)),
+        RR_MSG(Byte.valueOf((byte) 4)),
+        RT_MSG(Byte.valueOf((byte) 5)),
+        SM_MSG(Byte.valueOf((byte) 6));
 
-        public final byte type;
+        public final Byte type;
 
         private static Map<Byte,Type> mapping = new HashMap<Byte, Type>();
         
@@ -54,18 +54,18 @@ public abstract class SystemMessage {
             }
         }
 
-        Type (byte type) {
+        Type (Byte type) {
             this.type = type;
         }
 
         public static Type getByByte(byte type){
-            return mapping.get(type);
+            return mapping.get(Byte.valueOf(type));
         }
         
     }
     
     public final Type type;
-    protected final int sender; // ID of the process which sent the message
+    protected final Integer sender; // ID of the process which sent the message
     protected byte[] msgdata; //serialised version of this message
 
     /**
@@ -76,7 +76,7 @@ public abstract class SystemMessage {
     public SystemMessage(Type type, ByteBuffer in){
         this.type = type;
         in.get();
-        sender = in.getInt();
+        sender = Integer.valueOf(in.getInt());
     }
     
     /**
@@ -88,7 +88,7 @@ public abstract class SystemMessage {
     public SystemMessage(Type type, DataInput in) throws IOException{
     	this.type = type;
     	in.readByte();
-    	sender = in.readInt();
+    	sender = Integer.valueOf(in.readInt());
     }
     
 	/**
@@ -96,7 +96,7 @@ public abstract class SystemMessage {
      * @param type The type id of this message for preformant serialisation
      * @param sender ID of the process which sent the message
      */
-    public SystemMessage(Type type, int sender){
+    public SystemMessage(Type type, Integer sender){
         this.type = type;
         this.sender = sender;
     }
@@ -105,7 +105,7 @@ public abstract class SystemMessage {
      * Returns the ID of the process which sent the message
      * @return
      */
-    public final int getSender() {
+    public final Integer getSender() {
         return sender;
     }
 
@@ -114,8 +114,8 @@ public abstract class SystemMessage {
      * @param out
      */
     public void serialise(ByteBuffer out){
-        out.put(type.type);
-        out.putInt(sender);
+        out.put(type.type.byteValue());
+        out.putInt(sender.intValue());
     }
     
     /**
@@ -161,7 +161,7 @@ public abstract class SystemMessage {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + Arrays.hashCode(msgdata);
-		result = prime * result + sender;
+		result = prime * result + sender.intValue();
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
 		return result;
 	}
@@ -180,7 +180,7 @@ public abstract class SystemMessage {
 		SystemMessage other = (SystemMessage) obj;
 		if (!Arrays.equals(msgdata, other.msgdata))
 			return false;
-		if (sender != other.sender)
+		if (!sender.equals(other.sender))
 			return false;
 		if (type == null) {
 			if (other.type != null)

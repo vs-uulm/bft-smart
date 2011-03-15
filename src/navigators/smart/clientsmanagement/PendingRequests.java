@@ -35,9 +35,6 @@ public class PendingRequests extends LinkedList<TOMMessage> {
 
 	private static final long serialVersionUID = -7796606820273416224L;
 
-	public PendingRequests() {
-    }
-
     public TOMMessage remove(byte[] serializedMessage) {
         for(ListIterator<TOMMessage> li = listIterator(); li.hasNext(); ) {
             TOMMessage msg = li.next();
@@ -49,10 +46,10 @@ public class PendingRequests extends LinkedList<TOMMessage> {
         return null;
     }
 
-    public TOMMessage removeById(int id){
+    public TOMMessage removeById(Integer id){
         for(ListIterator<TOMMessage> li = listIterator(); li.hasNext(); ) {
             TOMMessage msg = li.next();
-            if(msg.getId() == id) {
+            if(msg.getId().equals(id)) {
                 li.remove();
                 return msg;
             }
@@ -60,15 +57,6 @@ public class PendingRequests extends LinkedList<TOMMessage> {
         return null;
     }
 
-     // I think this method can be removed in future versions of JBP
-    public int[] getIds(){
-        int ids[] = new int[size()];
-        for(int i = 0; i < ids.length; i++){
-            ids[i] = get(i).getId();
-        }
-
-        return ids;
-    }
 
     public TOMMessage get(byte[] serializedMessage){
         for(ListIterator<TOMMessage> li = listIterator(); li.hasNext(); ) {
@@ -81,20 +69,20 @@ public class PendingRequests extends LinkedList<TOMMessage> {
     }
 
 
-    public TOMMessage getById(int id){
+    public TOMMessage getById(Integer id){
         for(ListIterator<TOMMessage> li = listIterator(); li.hasNext(); ) {
             TOMMessage msg = li.next();
-            if(msg.getId() == id) {
+            if(msg.getId().equals(id)) {
                 return msg;
             }
         }
         return null;
     }
 
-    public boolean contains(int id){
+    public boolean contains(Integer id){
         for(ListIterator<TOMMessage> li = listIterator(); li.hasNext(); ) {
             TOMMessage msg = li.next();
-            if(msg.getId() == id) {
+            if(msg.getId().equals(id)) {
                 return true;
             }
         }

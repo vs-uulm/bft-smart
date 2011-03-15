@@ -42,10 +42,11 @@ public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
         this.conf = conf;
     }
 
+    @SuppressWarnings("boxing")
     public ConsensusService newInstance(TOMLayer tom) {
 
          // Get group of replicas
-        int[] group = new int[conf.getN()];
+        Integer[] group = new Integer[conf.getN()];
         for (int i = 0; i < group.length; i++) {
             group[i] = i;
         }

@@ -37,16 +37,16 @@ public class BatchInfo implements Serializable {
 	 */
 	private static final long serialVersionUID = 7251994215265951672L;
 	public final byte[] batch;
-    public final int round;
+    public final Integer round;
     public final int leader;
 
 
     public BatchInfo () {
         this.batch = null;
-        this.round = -1;
+        this.round = null;
         this.leader = -1;
     }
-    public BatchInfo(byte[] batch, int round, int leader) {
+    public BatchInfo(byte[] batch, Integer round, int leader) {
         this.batch = batch;
         this.round = round;
         this.leader = leader;
@@ -56,7 +56,7 @@ public class BatchInfo implements Serializable {
     public boolean equals(Object obj) {
         if (obj instanceof BatchInfo) {
             BatchInfo bi = (BatchInfo) obj;
-            return Arrays.equals(this.batch, bi.batch) && this.round == bi.round && this.leader == bi.leader;
+            return Arrays.equals(this.batch, bi.batch) && this.round.equals(bi.round) && this.leader == bi.leader;
         }
         return false;
     }
@@ -73,7 +73,7 @@ public class BatchInfo implements Serializable {
             hash = hash * 31 + 0;
         }
 
-        hash = hash * 31 + this.round;
+        hash = hash * 31 + this.round.intValue();
         hash = hash * 31 + this.leader;
 
         return hash;

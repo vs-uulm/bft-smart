@@ -33,7 +33,7 @@ import navigators.smart.tom.util.SerialisationHelper;
 public class SMMessage extends SystemMessage {
 
     private TransferableState state; // State log
-    private long eid; // Execution ID up to which the sender needs to be updated
+    private Long eid; // Execution ID up to which the sender needs to be updated
     private int sm_type; // Message type
     private int replica; // Replica that should send the state
     
@@ -47,7 +47,7 @@ public class SMMessage extends SystemMessage {
      * @param replica Replica that should send the state
      * @param state State log
      */
-    public SMMessage(int sender, long eid, int type, int replica, TransferableState state) {
+    public SMMessage(Integer sender, Long eid, int type, int replica, TransferableState state) {
 
         super(Type.SM_MSG, sender);
         this.state = state;
@@ -56,6 +56,7 @@ public class SMMessage extends SystemMessage {
         this.replica = replica;
     }
 
+    @SuppressWarnings("boxing")
     public SMMessage(ByteBuffer in) throws IOException, ClassNotFoundException {
         super(Type.SM_MSG, in);
         eid = in.getLong();
@@ -83,7 +84,7 @@ public class SMMessage extends SystemMessage {
      * Retrieves the execution ID up to which the sender needs to be updated
      * @return The execution ID up to which the sender needs to be updated
      */
-    public long getEid() {
+    public Long getEid() {
         return eid;
     }
 
@@ -98,7 +99,7 @@ public class SMMessage extends SystemMessage {
     @Override
     public void serialise(ByteBuffer out) {
         super.serialise(out);
-        out.putLong(eid);
+        out.putLong(eid.longValue());
         out.putInt(sm_type);
         out.putInt(replica);
         SerialisationHelper.writeByteArray(serialisedstate, out);

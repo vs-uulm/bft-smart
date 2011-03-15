@@ -32,7 +32,7 @@ import navigators.smart.tom.util.SerialisationHelper;
 public class RTMessage extends SystemMessage {
    
     private int rtType; // message type (RT_TIMEOUT, RT_COLLECT, RT_LEADER)
-    private int reqId; // Request ID associated with the timeout
+    private Integer reqId; // Request ID associated with the timeout
     private Object content; // content of this message. Varies according to the message type
     private transient byte[] serialisedcontent;
 
@@ -42,6 +42,7 @@ public class RTMessage extends SystemMessage {
      * @throws IOException 
      * @throws ClassNotFoundException
      */
+    @SuppressWarnings("boxing")
     public RTMessage(ByteBuffer in) throws IOException, ClassNotFoundException{
         super(Type.RT_MSG, in);
         rtType = in.getInt();
@@ -56,7 +57,7 @@ public class RTMessage extends SystemMessage {
      * @param from Replica ID of the sender
      * @param content Content of this message. Varies according to the message type
      */
-    public RTMessage(int rtType, int reqId, int from, Object content) {
+    public RTMessage(int rtType, Integer reqId, Integer from, Object content) {
         super(Type.RT_MSG,from);
         this.rtType = rtType;
         this.reqId = reqId;
@@ -75,7 +76,7 @@ public class RTMessage extends SystemMessage {
      * Retrieves the request ID associated with the timeout
      * @return The request ID associated with the timeout
      */
-    public int getReqId(){
+    public Integer getReqId(){
         return this.reqId;
     }
 
@@ -93,7 +94,7 @@ public class RTMessage extends SystemMessage {
     public void serialise(ByteBuffer out) {
         super.serialise(out);
         out.putInt(rtType);
-        out.putInt(reqId);
+        out.putInt(reqId.intValue());
         SerialisationHelper.writeByteArray(serialisedcontent, out);
         
     }
