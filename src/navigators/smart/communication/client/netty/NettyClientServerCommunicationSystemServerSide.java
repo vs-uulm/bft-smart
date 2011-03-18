@@ -77,7 +77,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
     private Hashtable<Integer,NettyClientServerSession> sessionTable;
     private ReentrantReadWriteLock rl;
     private SecretKey authKey;
-    private Queue<TOMMessage> requestsReceived = new ArrayDeque<TOMMessage>(conf.getCommBuffering());
+    private Queue<TOMMessage> requestsReceived;
     private ReentrantLock lock = new ReentrantLock();
     private TOMUtil tomutil;
 
@@ -85,7 +85,9 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
         try {            
             SecretKeyFactory fac = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
             PBEKeySpec spec = new PBEKeySpec(PASSWORD.toCharArray());
-            authKey = fac.generateSecret(spec);            
+            authKey = fac.generateSecret(spec);
+            
+            requestsReceived = new ArrayDeque<TOMMessage>(conf.getCommBuffering());
 
             this.conf = conf;
             sessionTable = new Hashtable<Integer,NettyClientServerSession>();
