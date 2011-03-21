@@ -32,7 +32,6 @@ import navigators.smart.tom.util.TOMConfiguration;
 
 public class ThroughputLatencyTestServer extends TOMReceiver {
     
-    private ServerCommunicationSystem cs;
     private Integer id;
     private int interval;
     private long numDecides=0;
