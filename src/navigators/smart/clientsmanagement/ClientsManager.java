@@ -224,7 +224,6 @@ public class ClientsManager {
 
         clientData.clientLock.lock();
         /******* BEGIN CLIENTDATA CRITICAL SECTION ******/
-
         //pjsousa: added simple flow control mechanism to avoid out of memory exception
         // TODO no sequence enforcement is made here, rework this when needed
         if (conf.getUseControlFlow() != 0) {
@@ -261,8 +260,8 @@ public class ClientsManager {
 	            if (clientData.getLastMessageReceived() >= request.getSequence()) {
 	                //I already have/had this message
 	                accounted = true;
-                    if (log.isLoggable(Level.WARNING)) {
-                        log.warning("Ignoring message " + request + " from client " + clientData.getClientId() + "(last received = "
+                    if (log.isLoggable(Level.FINE)) {
+                        log.fine("Ignoring message " + request + " from client " + clientData.getClientId() + "(last received = "
                                 + clientData.getLastMessageReceived() + "), msg was already handled! " + fromClient);
                     }
 	            } else {
