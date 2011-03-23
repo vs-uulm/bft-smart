@@ -15,7 +15,6 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.tom.demo;
 
 import java.io.ByteArrayInputStream;
@@ -34,13 +33,12 @@ import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
 
-
 public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
     
     private Storage st;
     private int exec;
     private int argSize;
-    private Semaphore sm = new Semaphore(1);
+    private final Object sm = new Object();
     private Semaphore mutex = new Semaphore(1);
     private int count = 0;
     private CommunicationSystemClientSide cs;
@@ -83,12 +81,6 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
         max=0;
         measurementEpoch = 0;
         
-        try {
-			sm.acquire(); //burn acquire so that thread waits for release
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} 
-
         //create the communication system
         cs = CommunicationSystemClientSideFactory.getCommunicationSystemClientSide(conf);
         this.init(cs, conf);
@@ -97,10 +89,10 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
     public void run(){
         try{
+
         	int sleeptime = 1000;
             System.out.println("(" + myId + ") Sleeping " + sleeptime/1000 +" seconds waiting for other threads!");
             Thread.sleep(sleeptime);
-
             while(true){
 //                myId += exec;
 
@@ -110,12 +102,14 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                 command1.putInt(-1);
                 currentId = -1;
                 
-                if(multicast)
+                synchronized (sm) {
+                    if (multicast) {
                 	this.doTOMulticast(command1.array());
-                else 
+                    } else {
                 	doTOUnicast(target,createTOMMsg(command1.array()));
-                
-                this.sm.acquire();	//wait for reply
+                    }
+                    this.sm.wait();	//wait for reply
+                }
                 
                 //create msg for # of ops request after signing (id has to be taken before
                 TOMMessage msg = createTOMMsg(command1.array());
@@ -139,13 +133,14 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                	//requests current number of ops processed by the servers
                 currentId = -1;
                 
-                if(multicast)
+                synchronized (sm) {
+                    if (multicast) {
                 	this.TOMulticast(msg);
-                else
+                    } else {
                 	doTOUnicast(target,msg);
-                
-                this.sm.acquire();
-                
+                    }
+                    this.sm.wait();
+                }
                 measurementEpoch++;
 
                 currentId = myId;
@@ -160,12 +155,14 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                     }
                     last_send_instant = System.nanoTime();
                     
-                    if(multicast)
+                        synchronized (sm) {
+                            if (multicast) {
                     	this.TOMulticast(generatedMsgs.get(i));
-                    else
+                            } else {
                     	this.doTOUnicast(target,generatedMsgs.get(i));
-                    
-                    this.sm.acquire();
+                            }
+                            this.sm.wait();
+                        }
 
                     if (interval > 0) {
                         //sleeps interval ms before sending next request
@@ -211,8 +208,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
         try {
             DataInputStream dis = new DataInputStream(new ByteArrayInputStream(response));
             id = dis.readInt();
-            if (id==-1)
+            if (id == -1) {
                numOps = dis.readLong();
+            }
         } catch (IOException ex) {
             Logger.getLogger(ThroughputLatencyTestClient.class.getName()).log(Level.SEVERE, null, ex);
             return;
@@ -230,7 +228,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
 				count = 0;
 				currentId += 1;
-				this.sm.release();
+                synchronized (sm) {
+                    this.sm.notify();
+                }
 			} else if (id == -1) {
 				long opsSinceLastCount;
 				long timeInterval;
@@ -239,8 +239,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 					timeInterval = receive_instant - initialTimestamp[reply.getSender()];
 					double opsPerSec_ = opsSinceLastCount / (timeInterval / 1000000000.0);
 					long opsPerSec = Math.round(opsPerSec_);
-					if (opsPerSec > max)
+                    if (opsPerSec > max) {
 						max = opsPerSec;
+                    }
 					System.out.println("Reply #ops from "+reply.getSender());
 					System.out.println("(" + myId + "-" + measurementEpoch + ")Time elapsed since epoch start: "
 							+ (timeInterval / 1000000000.0) + " seconds");
@@ -255,7 +256,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
 				if (count >= f+1) {
 					count = 0;
-					this.sm.release();
+                    synchronized (sm) {
+                        this.sm.notify();
+                    }
 				}
 
 			}
