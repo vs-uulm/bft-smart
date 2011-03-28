@@ -144,7 +144,7 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
             System.out.println("("+dataActual+") Maximum throughput until now: " + max + " ops per second");
             */
             //TODO: colocar impressão do consensus batch size
-            System.out.println("Msg: "+msg.getId() +" Duration of exec: "+(System.currentTimeMillis()-lastDecideTimeInstant)/1000 + "s Ops/sec: " + opsPerSec);
+            //System.out.println("Msg: "+msg.getId() +" Duration of exec: "+(System.currentTimeMillis()-lastDecideTimeInstant)/1000 + "s Ops/sec: " + opsPerSec);
             
             if (st.getCount()==averageIterations){
                 System.out.println("#Average/Std dev. throughput: "+st.getAverage(true)+"/"+st.getDP(true));
