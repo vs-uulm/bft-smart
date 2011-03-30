@@ -28,6 +28,7 @@ import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
+import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 
 public class ThroughputLatencyTestServer extends TOMReceiver {
@@ -36,16 +37,17 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
     private int interval;
     private long numDecides=0;
     private long lastDecideTimeInstant;
-    private long max=0;
+    private double max=0;
     private long totalOps;
 //    private long startTimeInstant;
     private int averageIterations;
     Storage st;
     //Storage consensusLatencySt;
-    Storage totalLatencySt1;
-    Storage batchSt1;
-    Storage totalLatencySt2;
-    Storage batchSt2;
+//    Storage totalLatencySt1;
+//    Storage batchSt1;
+//    Storage totalLatencySt2;
+//    Storage batchSt2;
+    private SynchronizedDescriptiveStatistics averageOps;
     
     public ThroughputLatencyTestServer(Integer id, int interval, int averageIterations) throws IOException {
         super(new TOMConfiguration(id, "./config"));
@@ -53,12 +55,8 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         this.interval = interval;
         this.totalOps = 0;
         this.averageIterations = averageIterations;
-        this.st = new Storage(averageIterations);
-        //this.consensusLatencySt = new Storage(interval*averageIterations);
-        this.totalLatencySt1 = new Storage(interval);
-        this.totalLatencySt2 = new Storage(averageIterations);
-        this.batchSt1 = new Storage(interval);
-        this.batchSt2 = new Storage(averageIterations);
+        st = new Storage(averageIterations);
+        averageOps = new SynchronizedDescriptiveStatistics(averageIterations);
         System.out.println("#ThroughputLatencyTestServer throughput interval= "+interval+ " msgs");
         System.out.println("#ThroughputLatencyTestServer average throughput interval= "+averageIterations+ " throughput intervals ");
     }
@@ -117,24 +115,25 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
 
         //do throughput calculations
         numDecides++;
-        //consensusLatencySt.store(msg.consensusExecutionTime);
-        totalLatencySt1.storeDuration(msg.requestTotalLatency);
-        batchSt1.storeDuration(msg.consensusBatchSize);
+
+//        totalLatencySt1.storeDuration(msg.requestTotalLatency);
+//        batchSt1.storeDuration(msg.consensusBatchSize);
 
         if (numDecides == 1) {
             lastDecideTimeInstant = receiveInstant;
         } else if (numDecides==interval) {
             long elapsedTime = receiveInstant - lastDecideTimeInstant;
             //double opsPerSec_ = ((double)interval)/(elapsedTime/1000.0);
-            double opsPerSec_ = interval/(((double)elapsedTime/1000));
-            long opsPerSec = Math.round(opsPerSec_);
+            double opsPerSec = interval/(((double)elapsedTime/1000));
             if (opsPerSec>max)
                 max = opsPerSec;
-            st.storeDuration(opsPerSec);
-            batchSt2.storeDuration(batchSt1.getAverage(true));
-            totalLatencySt2.storeDuration(totalLatencySt1.getAverage(true));
-            batchSt1.reset();
-            totalLatencySt1.reset();
+            
+            averageOps.addValue(opsPerSec);
+            st.storeDuration( Math.round(opsPerSec));
+//            batchSt2.storeDuration(batchSt1.getAverage(true));
+//            totalLatencySt2.storeDuration(totalLatencySt1.getAverage(true));
+//            batchSt1.reset();
+//            totalLatencySt1.reset();
 
             /*
             DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
@@ -146,16 +145,18 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
             //TODO: colocar impressão do consensus batch size
             //System.out.println("Msg: "+msg.getId() +" Duration of exec: "+(System.currentTimeMillis()-lastDecideTimeInstant)/1000 + "s Ops/sec: " + opsPerSec);
             
-            if (st.getCount()==averageIterations){
+            if (averageOps.getN()==averageIterations){
                 System.out.println("#Average/Std dev. throughput: "+st.getAverage(true)+"/"+st.getDP(true));
+                System.out.println("#Average/Std dev. throughput: "+averageOps.getMean()+"/"+averageOps.getStandardDeviation());
                 System.out.println("#Peak throughput: "+max);
                 //System.out.println("#Average/Std dev. consensus latency: " + consensusLatencySt.getAverage(true) + "/" + consensusLatencySt.getDP(true));
-                System.out.println("#Average/Std dev. total latency: " + totalLatencySt2.getAverage(true) + "/" + totalLatencySt2.getDP(true));
-                System.out.println("#Average/Std dev. batch size: " + batchSt2.getAverage(true) + "/" + batchSt2.getDP(true));
+//                System.out.println("#Average/Std dev. total latency: " + totalLatencySt2.getAverage(true) + "/" + totalLatencySt2.getDP(true));
+//                System.out.println("#Average/Std dev. batch size: " + batchSt2.getAverage(true) + "/" + batchSt2.getDP(true));
                 st.reset();
+                averageOps.clear();
                 //consensusLatencySt.reset();
-                totalLatencySt2.reset();
-                batchSt2.reset();
+//                totalLatencySt2.reset();
+//                batchSt2.reset();
             }
             numDecides = 0;           
         }
