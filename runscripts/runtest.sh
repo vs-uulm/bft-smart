@@ -6,8 +6,6 @@ SCRIPT=`readlink -f $0`
 SCRIPTPATH=`dirname $SCRIPT`
 cd $SCRIPTPATH/..
 
-pwd 
-
 count=` awk '!/^#/ && NF {a++} END{print a}' config/hosts.config`
 dir=`pwd`
 seqfile=SEQNR
@@ -39,6 +37,7 @@ echo $(( ++seqnr )) > ${seqfile}
 for (( i = 0 ; i < count ; i++))
 do
 	host=`awk ' $1 == '$i' { print $2} ' config/hosts.config`
+	echo "Killing process on $host"
 	ssh $host "kill \`cat $dir/${host}_PID\`"
 	rm ${host}_PID
 done
