@@ -17,7 +17,7 @@ SCRIPTPATH=`dirname $SCRIPT`
 cd $SCRIPTPATH/..
 
 count=` awk '!/^#/ && NF {a++} END{print a}' config/hosts.config`
-clientcount==` awk '!/^#/ && NF {a++} END{print a}' config/clients.config`
+clientcount=` awk '!/^#/ && NF {a++} END{print a}' config/clients.config`
 dir=`pwd`
 seqfile=SEQNR
 
@@ -42,6 +42,7 @@ do
 done
 tmux select-layout -t "testrun:0" even-vertical
 #start clients
+echo "Found $clientcount clients to start!"
 for (( i=0 ; i < clientcount; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/client.config`
