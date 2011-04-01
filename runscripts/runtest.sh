@@ -47,8 +47,9 @@ for (( i=0 ; i < clientcount; i++ ))
 do
 	host=`awk '$1 == '$i' {print $2}' config/clients.config`
 	cmd="cd $dir; runscripts/throughputtest_client.sh $numthreads $((currid += numthreads)) $nummsgs $epochs $argsize $interval $multicast"
+	echo $cmd
 	if [ $i -eq 0 ] ; then
-		tmux new-window -s testrun "ssh $host \"$cmd\""
+		tmux new-window -t testrun:1 "ssh $host \"$cmd\""
 		tmux set-window-option -t testrun:1 remain-on-exit on
 	else 
 		tmux split-window -v "ssh $host \"$cmd\""
