@@ -45,7 +45,7 @@ tmux select-layout -t "testrun:0" even-vertical
 echo "Found $clientcount clients to start!"
 for (( i=0 ; i < clientcount; i++ )) 
 do
-	host=`awk '$1 == '$i' {print $2}' config/clientis.config`
+	host=`awk '$1 == '$i' {print $2}' config/clients.config`
 	cmd="cd $dir; runscripts/throughputtest_client.sh $numthreads $((currid += numthreads)) $nummsgs $epochs $argsize $interval $multicast"
 	if [ $i -eq 0 ] ; then
 		tmux new-window -s testrun "ssh $host \"$cmd\""
