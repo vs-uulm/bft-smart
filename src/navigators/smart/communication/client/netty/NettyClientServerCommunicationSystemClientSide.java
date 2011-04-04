@@ -66,6 +66,8 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 @ChannelPipelineCoverage("all")
 public class NettyClientServerCommunicationSystemClientSide extends SimpleChannelUpstreamHandler implements CommunicationSystemClientSide {
 
+    private static final Logger log = Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getCanonicalName());
+
 //    private static final int MAGIC = 59;
 //    private static final int CONNECT_TIMEOUT = 3000;
     private static final String PASSWORD = "newcs";
@@ -110,7 +112,17 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
                     bootstrap.setPipelineFactory(new NettyClientPipelineFactory(this, true, sessionTable, authKey, macDummy.getMacLength(), conf, rl, signatureLength, new ReentrantLock()));
 
                     // Start the connection attempt.
-                    ChannelFuture future = bootstrap.connect(conf.getRemoteAddress(i));
+                    ChannelFuture future = null;
+                    do {
+                        if(future != null){
+                            log.warning("Failed to connect to replica " + i + " at " + conf.getRemoteAddress(i)+" - trying again.");
+                        }
+                        log.info("Connecting to replica " + i + " at " + conf.getRemoteAddress(i));
+                        future = bootstrap.connect(conf.getRemoteAddress(i));
+                        future.awaitUninterruptibly();
+
+                    } while (!future.isSuccess());
+                    log.info("Connected to replica " + i + " at " + conf.getRemoteAddress(i));
 
                     //creates MAC stuff
                     Mac macSend = Mac.getInstance(conf.getHmacAlgorithm());
@@ -125,18 +137,18 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 
 
                 } catch (InvalidKeyException ex) {
-                    Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
+                    log.log(Level.SEVERE, null, ex);
                 }
             }
         } catch (InvalidKeySpecException ex) {
-            Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         } catch (InvalidKeyException ex) {
-        	Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (SignatureException ex) {
-			Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
-		}
+            log.log(Level.SEVERE, null, ex);
+        } catch (SignatureException ex) {
+            log.log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
@@ -176,7 +188,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             //sleeps 10 seconds before trying to reconnect
             Thread.sleep(10000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         }
         //System.out.println("Channel closed");
         rl.writeLock().lock();
@@ -201,7 +213,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
                     sessionTable.put(ncss.getReplicaId(), cs);
                     //System.out.println("RE-Connecting to replica "+ncss.getReplicaId()+" at " + conf.getRemoteAddress(ncss.getReplicaId()));
                 } catch (NoSuchAlgorithmException ex) {
-                    Logger.getLogger(NettyClientServerCommunicationSystemClientSide.class.getName()).log(Level.SEVERE, null, ex);
+                    log.log(Level.SEVERE, null, ex);
                 }
             }
 
