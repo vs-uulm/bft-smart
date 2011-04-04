@@ -34,7 +34,8 @@ do
 	cmd="cd $dir; runscripts/throughputtest.sh $i $seqnr $dir"
 	if [ $i -eq 0 ] ; then
 		tmux new-session -d -s testrun "ssh $host \"$cmd\""
-		tmux set-window-option -t testrun:0 remain-on-exit on
+		tmux set-window-option -g -t testrun:0 remain-on-exit on
+		tmux set-option -g -t testrun set-remain-on-exit on
 	else 
 		tmux split-window -v "ssh $host \"$cmd\""
 	fi
@@ -45,16 +46,14 @@ echo "Found $clientcount clients to start!"
 for (( i=0 ; i < clientcount; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/clients.config`
-	cmd="cd $dir; runscripts/throughputtest_client.sh $numthreads $((currid += numthreads)) $nummsgs $epochs $argsize $interval $multicast"
-	echo $cmd
+	cmd="cd $dir; runscripts/throughputtest_client.sh $seqnr $numthreads $currid $nummsgs $epochs $argsize $interval $multicast"
 	if [ $i -eq 0 ] ; then
-		tmux new-window -t testrun:1 "ssh $host \"$cmd\""
-		tmux set-window-option -t testrun:1 remain-on-exit on
+		tmux new-window -t testrun:1 "ssh ${host} \"$cmd\""
 	else 
-		tmux split-window -v "ssh $host \"$cmd\""
+		tmux -vvv split-window "ssh ${host} \"${cmd}\""
 	fi
+	((currid += numthreads))
 done
-
 
 tmux attach -t "testrun"
 
