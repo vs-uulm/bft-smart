@@ -1,0 +1,7 @@
+Tests of this version may be run with the runscripts in the runscripts dir
+
+runall.sh will start a new tmux session starting as many replicas as 
+specified in hosts.conf and as many clients as specified in clients.conf
+
+The results will be collected in the logdir with the executing hostname as 
+prefix and  an incremented SEQNR for each run as suffix.
