@@ -9,7 +9,6 @@ argsize=0		#Argument size of each request
 interval=0		#Interval of waiting between each request
 multicast=true 	#Multicast msgs to all replicas or not - for paxos at war always use multicast - ebawa can live without it
 
-
 # Change to the prober directory in order to not mess around somewhere else
 SCRIPT=`readlink -f $0`
 # Absolute path this script is in, thus /home/user/bin
