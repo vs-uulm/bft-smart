@@ -37,7 +37,7 @@ do
 		tmux set-window-option -g -t testrun:0 remain-on-exit on
 		tmux set-option -g -t testrun set-remain-on-exit on
 	else 
-		tmux split-window -v "ssh $host \"$cmd\""
+		tmux split-window "ssh $host \"$cmd\""
 	fi
 done
 tmux select-layout -t "testrun:0" even-vertical
@@ -50,7 +50,7 @@ do
 	if [ $i -eq 0 ] ; then
 		tmux new-window -t testrun:1 "ssh ${host} \"$cmd\""
 	else 
-		tmux -vvv split-window "ssh ${host} \"${cmd}\""
+		tmux split-window "ssh ${host} \"${cmd}\""
 	fi
 	((currid += numthreads))
 done
