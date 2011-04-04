@@ -1,7 +1,14 @@
-Tests of this version may be run with the runscripts in the runscripts dir
+This file describes how to run tests
 
-runall.sh will start a new tmux session starting as many replicas as 
+1. Build the project using `ant jar`
+
+2. Tests of this version may be run with the runscripts in the runscripts dir
+
+ - runall.sh will start a new tmux session starting as many replicas as 
 specified in hosts.conf and as many clients as specified in clients.conf
 
-The results will be collected in the logdir with the executing hostname as 
+ - The results will be collected in the logdir with the executing hostname as 
 prefix and  an incremented SEQNR for each run as suffix.
+
+The call parameters are echoed to the respective log file of each test. E.g. how big 
+the requests where, how many clients and so on.
