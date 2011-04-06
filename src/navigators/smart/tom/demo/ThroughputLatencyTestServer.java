@@ -130,7 +130,7 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
                 max = opsPerSec;
             
 //            averageOps.addValue(opsPerSec);
-//            System.out.println(opsPerSec+"; "+max+":");
+            System.out.println(opsPerSec+";");
 //            st.storeDuration( Math.round(opsPerSec));
 //            batchSt2.storeDuration(batchSt1.getAverage(true));
 //            totalLatencySt2.storeDuration(totalLatencySt1.getAverage(true));
