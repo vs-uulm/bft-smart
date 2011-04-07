@@ -179,7 +179,6 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     	id.writeInt(conf.getProcessId().intValue());
     	ChannelFuture f = ch.write(id);
     	f.awaitUninterruptibly();
-        System.out.println("Channel connected");
     }
 
     @Override
