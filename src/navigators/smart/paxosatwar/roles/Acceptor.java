@@ -179,8 +179,8 @@ public class Acceptor {
         // If message's round is 0, and the sender is the leader for the message's round,
         // execute the propose
         Integer leader = leaderModule.getLeader(eid, msg.getRound());
-        
-        if (msg.getRound().equals(ROUND_ZERO) && leader.equals(sender)) {
+        // TODO why is the leader here null sometimes when a state transfer occurred
+        if (msg.getRound().equals(ROUND_ZERO) && leader != null && leader.equals(sender)) {
             executePropose(round, value);
         } else {
             Proof proof =  msg.getProof();
