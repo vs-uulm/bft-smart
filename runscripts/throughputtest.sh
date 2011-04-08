@@ -18,5 +18,6 @@ logfile=${logdir}/${HOSTNAME}_${seqnr}.log
 echo "Test run $seqnr on $HOSTNAME" >> $logfile
 echo "Executing: $javacmd" >> $logfile
 $javacmd >> $logfile & #Run cmd, redirect output to logfile and go to background to be able to read the pid for later killing
-echo $! > ${HOSTNAME}_PID #Read pid and write to file
-tail -f $logfile #open log for reading
+pid=$!
+echo $pid > ${HOSTNAME}_PID #Read pid and write to file
+tail --pid=$pid -f $logfile #open log for reading

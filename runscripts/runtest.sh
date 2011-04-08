@@ -18,6 +18,7 @@ cd $SCRIPTPATH/..
 count=` awk '!/^#/ && NF {a++} END{print a}' config/hosts.config`
 clientcount=` awk '!/^#/ && NF {a++} END{print a}' config/clients.config`
 dir=`pwd`
+dir=${dir#${HOME}/}
 seqfile=SEQNR
 
 #Create testcounter file
@@ -63,6 +64,13 @@ for (( i = 0 ; i < count ; i++))
 do
 	host=`awk ' $1 == '$i' { print $2} ' config/hosts.config`
 	echo "Killing process on $host"
-	ssh $host "kill \`cat $dir/${host}_PID\`"
-	rm ${host}_PID
+	ssh $host "cd $dir; kill \`cat ${host}_PID\`; rm ${host}_PID"
+	
+done
+for (( i = 0 ; i < clientcount ; i++))
+do
+	host=`awk ' $1 == '$i' { print $2} ' config/clients.config`
+	echo "Killing process on $host"
+	ssh $host "cd $dir; kill \`cat ${host}_PID\`; rm ${host}_PID"	
+	
 done
