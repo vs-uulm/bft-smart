@@ -324,7 +324,8 @@ public class ServerConnection {
 //                        	log.severe("Datalength got huge: "+dataLength);
 //                        }
                         if(buf.capacity()<dataLength){
-                        	log.info("Adjusting buffer to new max datalength: "+dataLength);
+                                if(log.isLoggable(Level.FINE))
+                                    log.fine("Adjusting buffer to new max datalength: "+dataLength);
                         	buf = ByteBuffer.allocate(dataLength);
                         	data = buf.array();
                         } else {

@@ -398,27 +398,15 @@ public class TOMLayer implements RequestReceiver {
 
                     if(log.isLoggable(Level.FINE))
                         log.fine(" I have now more than " + conf.getF() + " messages for EID " + eid + " which are beyond EID " + stateManager.getLastEID() + " - initialising statetransfer");
-                    /************************* TESTE *************************
-                    System.out.println("Recebi mais de " + conf.getF() + " mensagens para eid " + eid + " que sao posteriores a " + stateManager.getLastEID());
-                    /************************* TESTE *************************/
+
                     stateManager.setLastEID(eid);
                     stateManager.setWaiting(eid - 1);
-                    //stateManager.emptyReplicas(eid);// isto causa uma excepcao
 
                     SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
                     communication.send(otherAcceptors, smsg);
 
-                    if(log.isLoggable(Level.FINER))
-                        log.finer(" I just sent a request to the other replicas for the state up to EID " + (eid - 1));
-                    /************************* TESTE *************************
-
-                    System.out.println("Enviei um pedido!");
-                    System.out.println("Quem envia: " + smsg.getSender());
-                    System.out.println("Que tipo: " + smsg.getType());
-                    System.out.println("Que EID: " + smsg.getEid());
-                    System.out.println("Ultimo EID: " + stateManager.getLastEID());
-                    System.out.println("A espera do EID: " + stateManager.getWaiting());
-                    /************************* TESTE *************************/
+                    if(log.isLoggable(Level.WARNING))
+                        log.warning("Requesting state for: " + (eid - 1));
                 }
             } else {
             	log.fine("I'm already waiting for a state - not starting state transfer");
@@ -433,9 +421,6 @@ public class TOMLayer implements RequestReceiver {
                 "- Last consensus executed: " + consensusService.getLastExecuted()+"/n"+
                 "##################################################################################");
         }
-        /************************* TESTE *************************
-        log.finer("[/TOMLayer.requestState]");
-        /************************* TESTE *************************/
     }
 
     public void SMRequestDeliver(SMMessage msg) {

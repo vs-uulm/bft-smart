@@ -239,36 +239,8 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     	} 
 
         for (int i = targets.length - 1; i >= 0; i--) {
-			/*
-			 * *********************************************************
-			 * *******************MALICIOUS CODE************************
-			 * ********************************************************* 
-			 * //don't send the message to server 0 if my id is 5 
-			 * if (conf.getProcessId() == 5 && (i == 0)) { continue; }
-			 * 
-			 * *********************************************************
-			 * *********************************************************
-			 * *********************************************************
-			 */
             writeToChannel(sm,targets[i]);
         }
-/*
-        //statistics about signature execution time
-        count++;
-        if (count % BENCHMARK_PERIOD == 0) {
-            int myId = conf.getProcessId();
-            System.out.println("--Signature benchmark:--");
-            System.out.println("(" + myId + ")Average time for " + BENCHMARK_PERIOD + " signatures (-10%) = " + this.st.getAverage(true) / 1000 + " us ");
-            System.out.println("(" + myId + ")Standard desviation for " + BENCHMARK_PERIOD + " signatures (-10%) = " + this.st.getDP(true) / 1000 + " us ");
-            System.out.println("(" + myId + ")Average time for " + BENCHMARK_PERIOD + " signatures (all samples) = " + this.st.getAverage(false) / 1000 + " us ");
-            System.out.println("(" + myId + ")Standard desviation for " + BENCHMARK_PERIOD + " signatures (all samples) = " + this.st.getDP(false) / 1000 + " us ");
-            System.out.println("(" + myId + ")Maximum time for " + BENCHMARK_PERIOD + " signatures (-10%) = " + this.st.getMax(true) / 1000 + " us ");
-            System.out.println("(" + myId + ")Maximum time for " + BENCHMARK_PERIOD + " signatures (all samples) = " + this.st.getMax(false) / 1000 + " us ");
-            System.out.println("(" + myId + ")----------------------------------------------------------------------");
-            count = 0;
-            st.reset();
-        }
- 	*/
     }
     public void send(boolean sign, int target, TOMMessage sm) {
     	if(sign){
@@ -291,35 +263,11 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 		
 	}
 
-//	private void checkSerialized(TOMMessage sm) {
-//    	//check serialized message
-//        if (sm.serializedMessage == null) {
-//            sm.serializedMessage = sm.getBytes();
-//        }
-//	}
-
-	public void sign(TOMMessage sm) {
+    public void sign(TOMMessage sm) {
         //produce signature        
         byte[] data2 = signMessage(TOMConfiguration.getRSAPrivateKey(), sm.getBytes());
         sm.signed = true;
         sm.serializedMessageSignature = data2;
-/*
-        //statistics about signature execution time
-        count++;
-        if (count % BENCHMARK_PERIOD == 0) {
-            int myId = conf.getProcessId();
-            System.out.println("--Signature benchmark:--");
-            System.out.println("(" + myId + ")Average time for " + BENCHMARK_PERIOD + " signatures (-10%) = " + this.st.getAverage(true) / 1000 + " us ");
-            System.out.println("(" + myId + ")Standard desviation for " + BENCHMARK_PERIOD + " signatures (-10%) = " + this.st.getDP(true) / 1000 + " us ");
-            System.out.println("(" + myId + ")Average time for " + BENCHMARK_PERIOD + " signatures (all samples) = " + this.st.getAverage(false) / 1000 + " us ");
-            System.out.println("(" + myId + ")Standard desviation for " + BENCHMARK_PERIOD + " signatures (all samples) = " + this.st.getDP(false) / 1000 + " us ");
-            System.out.println("(" + myId + ")Maximum time for " + BENCHMARK_PERIOD + " signatures (-10%) = " + this.st.getMax(true) / 1000 + " us ");
-            System.out.println("(" + myId + ")Maximum time for " + BENCHMARK_PERIOD + " signatures (all samples) = " + this.st.getMax(false) / 1000 + " us ");
-            System.out.println("(" + myId + ")----------------------------------------------------------------------");
-            count = 0;
-            st.reset();
-        }
-*/
     }
 
     public byte[] signMessage(PrivateKey key, byte[] message) {
