@@ -49,6 +49,8 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder;
 @ChannelPipelineCoverage("one")
 public class NettyTOMMessageDecoder extends FrameDecoder {
 
+    private static final Logger log = Logger.getLogger(NettyTOMMessageDecoder.class.getCanonicalName());
+
     private boolean isClient;
     private Hashtable<Integer, NettyClientServerSession> sessionTable;
     private SecretKey authKey;
@@ -71,7 +73,8 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
         this.signatureSize = signatureLength;
         this.useMAC = useMAC;
         connected = isClient; //servers wait for connections, clients establish them and are connected by default
-        navigators.smart.tom.util.Logger.println("new NettyTOMMessageDecoder!!, isClient=" + isClient);
+        if(log.isLoggable(Level.FINEST))
+            log.finest("new NettyTOMMessageDecoder!!, isClient=" + isClient);
     }
 
     @Override
@@ -179,7 +182,8 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
             NettyClientServerSession cs = new NettyClientServerSession(channel, macSend, macReceive, sender, TOMConfiguration.getRSAPublicKey(sender), new ReentrantLock());
             rl.writeLock().lock();
             sessionTable.put(sender, cs);
-            System.out.println("#active clients " + sessionTable.size());
+            if(log.isLoggable(Level.FINER))
+                    log.fine("#active clients " + sessionTable.size());
             rl.writeLock().unlock();
         } catch (InvalidKeyException ex) {
             Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.SEVERE, null, ex);
