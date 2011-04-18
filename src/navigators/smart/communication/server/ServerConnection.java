@@ -15,7 +15,6 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.communication.server;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import navigators.smart.communication.MessageHandler;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.util.TOMConfiguration;
 
-
 /**
  * This class represents a connection with other server.
  *
@@ -49,13 +47,9 @@ import navigators.smart.tom.util.TOMConfiguration;
 public class ServerConnection {
 
     private static final Logger log = Logger.getLogger(ServerConnection.class.getName());
-
     private static final long POOL_TIME = 10000;
-    //private static final int SEND_QUEUE_SIZE = 50;
     private TOMConfiguration conf;
     private SocketChannel socketchannel;
-//    private DataOutputStream socketOutStream = null;
-//    private DataInputStream socketInStream = null;
     private int remoteId;
     private boolean useSenderThread;
     protected BlockingQueue<byte[]> outQueue;// = new LinkedBlockingQueue<byte[]>(SEND_QUEUE_SIZE);
@@ -64,21 +58,18 @@ public class ServerConnection {
     /** Only used when there is no sender Thread */
     private Lock sendLock;
     private boolean doWork = true;
-
     private PTPMessageVerifier ptpverifier;
-    
-	@SuppressWarnings("rawtypes")
-	private GlobalMessageVerifier globalverifier;
+    @SuppressWarnings("rawtypes")
+    private GlobalMessageVerifier globalverifier;
+    @SuppressWarnings("rawtypes")
+    private final Map<SystemMessage.Type, MessageHandler> msgHandlers;
 
-	@SuppressWarnings("rawtypes")
-	private final Map<SystemMessage.Type,MessageHandler> msgHandlers;
-
-	@SuppressWarnings("rawtypes")
-	public ServerConnection(TOMConfiguration conf, SocketChannel socket, int remoteId,
-			BlockingQueue<SystemMessage> inQueue,
-			Map<SystemMessage.Type, MessageHandler> msgHandlers,
-			PTPMessageVerifier ptpverifier,
-			GlobalMessageVerifier verifier) {
+    @SuppressWarnings("rawtypes")
+    public ServerConnection(TOMConfiguration conf, SocketChannel socket, int remoteId,
+            BlockingQueue<SystemMessage> inQueue,
+            Map<SystemMessage.Type, MessageHandler> msgHandlers,
+            PTPMessageVerifier ptpverifier,
+            GlobalMessageVerifier verifier) {
         this.msgHandlers = msgHandlers;
         this.conf = conf;
         this.socketchannel = socket;
@@ -98,7 +89,7 @@ public class ServerConnection {
                 log.log(Level.SEVERE, "cannot open listening port", ex);
             }
         }
-        if(conf.getUseMACs() == 1){
+        if (conf.getUseMACs() == 1) {
             ptpverifier.authenticateAndEstablishAuthKey();
         }
         //else I have to wait a connection from the remote server
@@ -129,23 +120,23 @@ public class ServerConnection {
      * @throws InterruptedException
      */
     public final void send(byte[] data) throws InterruptedException {
-        if(socketchannel != null){
-	    	if (useSenderThread) {
-	            //only enqueue messages if there queue is not full
-	            if (!outQueue.offer(data)) {
-	                if(log.isLoggable(Level.FINE)){
-	                    log.fine("out queue for "+remoteId+" full (message discarded).");
-	                }
-	            }
-	        } else {
-	            sendLock.lock();
-	            sendBytes(data);
-	            sendLock.unlock();
-	        }
+        if (socketchannel != null) {
+            if (useSenderThread) {
+                //only enqueue messages if there queue is not full
+                if (!outQueue.offer(data)) {
+                    if (log.isLoggable(Level.FINE)) {
+                        log.fine("out queue for " + remoteId + " full (message discarded).");
+                    }
+                }
+            } else {
+                sendLock.lock();
+                sendBytes(data);
+                sendLock.unlock();
+            }
         } else {
-        	if(log.isLoggable(Level.FINER)){
-        		log.finer("Connection to "+remoteId+" currently not established - not sending msg to it");
-        	}
+            if (log.isLoggable(Level.FINER)) {
+                log.finer("Connection to " + remoteId + " currently not established - not sending msg to it");
+            }
         }
     }
 
@@ -154,19 +145,19 @@ public class ServerConnection {
      * if some problem is detected, a reconnection is done
      */
     private final void sendBytes(byte[] messageData) {
-        int i=0;
-        do {            
+        int i = 0;
+        do {
             if (socketchannel != null /*&& socketOutStream != null*/) {
                 try {
-                	ByteBuffer buf = ByteBuffer.allocate(4);
-                	buf.putInt(messageData.length);
-                	buf.flip();
+                    ByteBuffer buf = ByteBuffer.allocate(4);
+                    buf.putInt(messageData.length);
+                    buf.flip();
                     socketchannel.write(buf);
                     buf = ByteBuffer.wrap(messageData);
-                    while(buf.hasRemaining()){
-                    	socketchannel.write(buf);
+                    while (buf.hasRemaining()) {
+                        socketchannel.write(buf);
                     }
-                    if (conf.getUseMACs()==1) {
+                    if (conf.getUseMACs() == 1) {
                         socketchannel.write(ByteBuffer.wrap(ptpverifier.generateHash(messageData)));
                     }
                     return;
@@ -207,10 +198,11 @@ public class ServerConnection {
             }
 
             if (socketchannel != null) {
-                if(log.isLoggable(Level.INFO))
-                  log.fine("Reconnected to "+remoteId);
+                if (log.isLoggable(Level.INFO)) {
+                    log.fine("Reconnected to " + remoteId);
+                }
             }
-            if(conf.getUseMACs()==1){
+            if (conf.getUseMACs() == 1) {
                 ptpverifier.authenticateAndEstablishAuthKey();
             }
         }
@@ -218,19 +210,17 @@ public class ServerConnection {
         connectLock.unlock();
     }
 
-   
-
     private void initSocketChannel() throws IOException {
-    	this.socketchannel = SocketChannel.open(new InetSocketAddress(conf.getHost(remoteId), conf.getPort(remoteId)));
-    	socketchannel.configureBlocking(true);
+        this.socketchannel = SocketChannel.open(new InetSocketAddress(conf.getHost(remoteId), conf.getPort(remoteId)));
+        socketchannel.configureBlocking(true);
         ServersCommunicationLayer.setSocketOptions(this.socketchannel.socket());
         ByteBuffer out = ByteBuffer.allocate(4);
         out.putInt(conf.getProcessId());
         out.flip();
         socketchannel.write(out);
-	}
+    }
 
-	private void closeSocket() {
+    private void closeSocket() {
         if (socketchannel != null) {
             try {
                 socketchannel.close();
@@ -261,7 +251,7 @@ public class ServerConnection {
     private class SenderThread extends Thread {
 
         public SenderThread() {
-            super("Sender for "+remoteId);
+            super("Sender for " + remoteId);
         }
 
         @Override
@@ -289,109 +279,111 @@ public class ServerConnection {
      */
     protected class ReceiverThread extends Thread {
 
-        private byte[] receivedHash;    //array to store the received hashes
+        private ByteBuffer receivedHash;    //array to store the received hashes
 
         public ReceiverThread() {
-            super("Receiver for "+remoteId);
-            if(ptpverifier != null){
-                receivedHash = new byte[ptpverifier.getHashSize()];
+            super("Receiver for " + remoteId);
+            if (ptpverifier != null) {
+                receivedHash = ByteBuffer.allocate(ptpverifier.getHashSize());
             }
         }
 
         @SuppressWarnings("unchecked")
-		@Override
+        @Override
         public void run() {
-        	byte[] data = new byte[256];
-        	ByteBuffer buf = ByteBuffer.wrap(data);
-        	
+            ByteBuffer buf = ByteBuffer.allocate(256);
+
             while (doWork) {
                 if (socketchannel != null /*&& socketInStream != null*/) {
                     try {
-                    	buf.clear();
-                    	buf.limit(4);
+                        buf.clear();
+                        buf.limit(4);
                         //read data length
-                    	if( socketchannel.read(buf) == -1){
-                    		throw new IOException("Reached eof while waiting for data");
-                    	}
-                    	
-                    	buf.flip();
+                        if (socketchannel.read(buf) == -1) {
+                            throw new IOException("Reached eof while waiting for data");
+                        }
+
+                        buf.flip();
                         int dataLength = buf.getInt();
-                        
-                        if(log.isLoggable(Level.FINEST))
-                        	log.finest("Receiving msg of size"+ dataLength +" from " + remoteId);
-                        
+
+                        if (log.isLoggable(Level.FINEST)) {
+                            log.finest("Receiving msg of size" + dataLength + " from " + remoteId);
+                        }
+
 //                        if(dataLength>1024){
 //                        	log.severe("Datalength got huge: "+dataLength);
 //                        }
-                        if(buf.capacity()<dataLength){
-                                if(log.isLoggable(Level.FINE))
-                                    log.fine("Adjusting buffer to new max datalength: "+dataLength);
-                        	buf = ByteBuffer.allocate(dataLength);
-                        	data = buf.array();
+                        if (buf.capacity() < dataLength) {
+                            if (log.isLoggable(Level.FINE)) {
+                                log.fine("Adjusting buffer to new max datalength: " + dataLength);
+                            }
+                            buf = ByteBuffer.allocate(dataLength);
                         } else {
-                        	buf.limit(dataLength);
+                            buf.limit(dataLength);
                         }
 
 //                        byte[] data = new byte[dataLength];
 //                        buf = ByteBuffer.wrap(data);
                         buf.rewind();
                         //read data
-                        while(buf.hasRemaining()){
-                        	if(socketchannel.read(buf) == -1){
-                        		throw new IOException("Reached eof while waiting for data");
-                        	}
+                        while (buf.hasRemaining()) {
+                            if (socketchannel.read(buf) == -1) {
+                                throw new IOException("Reached eof while waiting for data");
+                            }
                         }
                         buf.rewind();
 
                         //read mac
                         Object verificationresult = null;
-                        if (conf.getUseMACs()==1){
-                            socketchannel.read(ByteBuffer.wrap(receivedHash));
-                            verificationresult = ptpverifier.verifyHash(data,receivedHash);
+                        if (conf.getUseMACs() == 1) {
+                            socketchannel.read(receivedHash);
+                            verificationresult = ptpverifier.verifyHash(buf, receivedHash);
                         }
-                        if(conf.isUseGlobalAuth()){
-                        	verificationresult = globalverifier.verifyHash(buf);
+                        if (conf.isUseGlobalAuth()) {
+                            verificationresult = globalverifier.verifyHash(buf);
                         }
                         if (verificationresult != null || conf.getUseMACs() == 0 && !conf.isUseGlobalAuth()) {
-                        	SystemMessage.Type type = SystemMessage.Type.getByByte(data[0]);
-                        	assert(msgHandlers.containsKey(type)):"Messagehandlers does not contain "+type+". It contains: "+msgHandlers;
+                            SystemMessage.Type type = SystemMessage.Type.getByByte(buf.get(0));
+                            assert (msgHandlers.containsKey(type)) : "Messagehandlers does not contain " + type + ". It contains: " + msgHandlers;
 //                        	System.out.println(msgHandlers);
 //                        	System.out.println(msgHandlers.get(type));
-                        	SystemMessage sm = msgHandlers.get(type).deserialise(type,buf, verificationresult);
-                        	
-                        	if(log.isLoggable(Level.FINEST))
-                        		log.finest("Received "+sm);
-                        	
-                        	if (sm.getSender() == remoteId) {
-                        		if(!inQueue.offer(sm)) 
-                        			navigators.smart.tom.util.Logger.println("(ReceiverThread.run) in queue full (message from "+remoteId+" discarded).");
-                        	}
+                            SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
+
+                            if (log.isLoggable(Level.FINEST)) {
+                                log.finest("Received " + sm);
+                            }
+
+                            if (sm.getSender() == remoteId) {
+                                if (!inQueue.offer(sm)) {
+                                    navigators.smart.tom.util.Logger.println("(ReceiverThread.run) in queue full (message from " + remoteId + " discarded).");
+                                }
+                            }
                         } else {
-                        	//TODO: violation of authentication... we should do something
+                            //TODO: violation of authentication... we should do something
 //                        	log.log(Level.SEVERE, "WARNING: Violation of authentication in "+ Arrays.toString(data) +" received from "+remoteId);
 //                        	SystemMessage.Type type = SystemMessage.Type.getByByte(data[0]);
 //                        	EbawaType type2 = EbawaType.getByByte(data[1]);
-                        	log.severe("Received bad "+Arrays.toString(Arrays.copyOfRange(buf.array(), 0, buf.limit()>100 ? 100 : buf.limit())) + " from "+remoteId);
-                        	log.severe("Limit is: "+ buf.limit());
+                            log.severe("Received bad " + Arrays.toString(Arrays.copyOfRange(buf.array(), 0, buf.limit() > 100 ? 100 : buf.limit())) + " from " + remoteId);
+                            log.severe("Limit is: " + buf.limit());
 //                        	SystemMessage sm = msgHandlers.get(type).deserialise(type,buf, verificationresult);
                         }
 
                         /*
                         } else {
-                            //TODO: invalid MAC... we should do something
-                            log.log(Level.SEVERE, "WARNING: Invalid MAC");
+                        //TODO: invalid MAC... we should do something
+                        log.log(Level.SEVERE, "WARNING: Invalid MAC");
                         }
-                        */
+                         */
                     } catch (ClassNotFoundException ex) {
                         log.log(Level.SEVERE, "Should never happen,", ex);
-                    } catch (SocketException e){
-                    	 log.log(Level.FINE, "Socket reset. Reconnecting...");
+                    } catch (SocketException e) {
+                        log.log(Level.FINE, "Socket reset. Reconnecting...");
 
-                         closeSocket();
+                        closeSocket();
 
-                         waitAndConnect();
+                        waitAndConnect();
                     } catch (IOException ex) {
-                        log.log(Level.SEVERE,  "IO Error. Reconnecting...", ex);
+                        log.log(Level.SEVERE, "IO Error. Reconnecting...", ex);
 
                         closeSocket();
 

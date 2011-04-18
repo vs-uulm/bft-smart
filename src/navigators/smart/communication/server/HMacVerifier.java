@@ -5,6 +5,7 @@
 
 package navigators.smart.communication.server;
 
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -89,17 +90,18 @@ public class HMacVerifier implements PTPMessageVerifier {
     }
 
     /**
-     * Verifies the given data with the given hash
+     * Verifies the given data with the given hash. The Bytebuffers position
+     * will be reset to where it was upon return.
      * @param data The data to check
      * @param receivedHash The provided hash to compare to
      * @return true if the hash fits the data, false otherwhise
      */
     @Override
-    public byte[] verifyHash(byte[] data, byte[] receivedHash) {
-        if( Arrays.equals(macReceive.doFinal(data), receivedHash)){
-            return receivedHash;
-        } else {
-            return null;
-        }
+    public boolean verifyHash(ByteBuffer data, ByteBuffer receivedHash) {
+        data.mark();
+        macReceive.update(data);
+        data.reset();
+        assert(receivedHash.capacity() == macSize): "Receivedhash buffer is not of the correct size";
+        return  Arrays.equals(macReceive.doFinal(), receivedHash.array());
     }
 }

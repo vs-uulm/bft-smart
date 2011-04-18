@@ -5,6 +5,8 @@
 
 package navigators.smart.communication.server;
 
+import java.nio.ByteBuffer;
+
 
 /**
  *
@@ -17,7 +19,7 @@ package navigators.smart.communication.server;
  *
  * @author Christian Spann <christian.spann at uni-ulm.de>
  */
-public interface MessageVerifier<A> {
+public interface MessageVerifier {
 
     /**
      * Initialises this verifier.
@@ -36,9 +38,9 @@ public interface MessageVerifier<A> {
      * where monotonically rising numbers are generated.
      * @param data The data to check
      * @param receivedHash The hash
-     * @return The deserialised verification data if the data was valid
+     * @return True is the hash of the data equals the given hash, false if not
      */
-    public A verifyHash(byte[] data, byte[] receivedHash);
+    public boolean verifyHash(ByteBuffer data, ByteBuffer receivedHash);
     
     
 

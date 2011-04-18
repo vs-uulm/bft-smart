@@ -9,7 +9,7 @@ package navigators.smart.communication.server;
  *
  * @author Christian Spann <christian.spann at uni-ulm.de>
  */
-public interface PTPMessageVerifier extends MessageVerifier<byte[]>{
+public interface PTPMessageVerifier extends MessageVerifier{
 
     /**
      * Generates a hash for the given messagedata
