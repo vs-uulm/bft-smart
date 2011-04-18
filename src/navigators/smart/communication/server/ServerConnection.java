@@ -322,8 +322,6 @@ public class ServerConnection {
                             buf.limit(dataLength);
                         }
 
-//                        byte[] data = new byte[dataLength];
-//                        buf = ByteBuffer.wrap(data);
                         buf.rewind();
                         //read data
                         while (buf.hasRemaining()) {
@@ -338,6 +336,7 @@ public class ServerConnection {
                         if (conf.getUseMACs() == 1) {
                             socketchannel.read(receivedHash);
                             verificationresult = ptpverifier.verifyHash(buf, receivedHash);
+                            receivedHash.rewind(); // reset hash buffer
                         }
                         if (conf.isUseGlobalAuth()) {
                             verificationresult = globalverifier.verifyHash(buf);
