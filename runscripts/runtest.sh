@@ -32,7 +32,7 @@ seqnr=`cat ${seqfile}`
 for (( i=0 ; i < count; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/hosts.config`
-	cmd="cd $dir; runscripts/throughputtest.sh $i $seqnr $dir"
+	cmd="cd $dir; runscripts/throughputtest_bench.sh $i $seqnr $dir"
 	if [ $i -eq 0 ] ; then
 		tmux new-session -d -s testrun "ssh $host \"$cmd\""
 		tmux set-window-option -g -t testrun:0 remain-on-exit on
@@ -47,7 +47,7 @@ echo "Found $clientcount clients to start!"
 for (( i=0 ; i < clientcount; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/clients.config`
-	cmd="cd $dir; runscripts/throughputtest_client.sh $seqnr $numthreads $currid $nummsgs $epochs $argsize $interval $multicast"
+	cmd="cd $dir; runscripts/throughputtest_bench_client.sh $seqnr $numthreads $currid $nummsgs $epochs $argsize $interval $multicast"
 	if [ $i -eq 0 ] ; then
 		tmux new-window -t testrun:1 "ssh ${host} \"$cmd\""
 	else 
