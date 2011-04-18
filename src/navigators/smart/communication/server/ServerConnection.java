@@ -47,9 +47,9 @@ import navigators.smart.tom.util.TOMConfiguration;
 public class ServerConnection {
 
     private static final Logger log = Logger.getLogger(ServerConnection.class.getName());
-    private static final long POOL_TIME = 10000;
+    private static final long POOL_TIME = 1000;
     private TOMConfiguration conf;
-    private SocketChannel socketchannel;
+    private volatile SocketChannel socketchannel;
     private int remoteId;
     private boolean useSenderThread;
     protected BlockingQueue<byte[]> outQueue;// = new LinkedBlockingQueue<byte[]>(SEND_QUEUE_SIZE);
@@ -200,12 +200,14 @@ public class ServerConnection {
 
     private void initSocketChannel() throws IOException {
         this.socketchannel = SocketChannel.open(new InetSocketAddress(conf.getHost(remoteId), conf.getPort(remoteId)));
+        if(socketchannel != null){
         socketchannel.configureBlocking(true);
         ServersCommunicationLayer.setSocketOptions(this.socketchannel.socket());
         ByteBuffer out = ByteBuffer.allocate(4);
         out.putInt(conf.getProcessId());
         out.flip();
         socketchannel.write(out);
+    }
     }
 
     private void closeSocket() {
@@ -225,6 +227,8 @@ public class ServerConnection {
     private void waitAndConnect() {
         if (doWork) {
             try {
+                if(log.isLoggable(Level.FINE))
+                    log.fine("Waiting to connect to "+remoteId);
                 Thread.sleep(POOL_TIME);
             } catch (InterruptedException ie) {
             }
