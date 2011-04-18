@@ -69,7 +69,6 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
      /**
      * number of measures used to calculate statistics
      */
-    //private final int BENCHMARK_PERIOD = 100000;
     
     private static final String PASSWORD = "newcs";    
     private RequestReceiver requestReceiver;
@@ -77,9 +76,6 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
     private Hashtable<Integer,NettyClientServerSession> sessionTable;
     private ReentrantReadWriteLock rl;
     private SecretKey authKey;
-//    private long numReceivedMsgs = 0;
-//    private long lastMeasurementStart = 0;
-//    private long max=0;
     private List<TOMMessage> requestsReceived = Collections.synchronizedList(new ArrayList<TOMMessage>());
     private ReentrantLock lock = new ReentrantLock();
     private TOMUtil tomutil;
@@ -103,12 +99,6 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
                         Executors.newCachedThreadPool(),
                         Executors.newCachedThreadPool()));
             
-            /* Fixed thread pool 
-            ServerBootstrap bootstrap = new ServerBootstrap(
-                new NioServerSocketChannelFactory(
-                        Executors.newFixedThreadPool(conf.getNumberOfNIOThreads()),
-                        Executors.newFixedThreadPool(conf.getNumberOfNIOThreads())));
-            */
 
             Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
             
@@ -137,17 +127,20 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InvalidKeyException ex) {
-        	Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (SignatureException ex) {
-			Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
-		}
+            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SignatureException ex) {
+            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
     public void exceptionCaught(
             ChannelHandlerContext ctx, ExceptionEvent e) {
-        //if (!(e.getCause() instanceof ClosedChannelException))
-               e.getCause().printStackTrace();
+        if (e.getCause().toString().equals("Connection reset by peer")) {
+            Logger.getLogger(NettyClientServerCommunicationSystemServerSide.class.getCanonicalName()).info(e.getCause().toString());
+        } else {
+            Logger.getLogger(NettyClientServerCommunicationSystemServerSide.class.getCanonicalName()).warning(e.getCause().toString());
+        }
     }
 
     @Override
