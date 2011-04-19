@@ -116,6 +116,7 @@ public class TransferableState implements Serializable {
                     tState.lastCheckpointEid == this.lastCheckpointEid &&
                     tState.lastCheckpointRound == this.lastCheckpointRound &&
                     tState.lastCheckpointLeader == this.lastCheckpointLeader &&
+                    Arrays.equals(tState.messageBatches,this.messageBatches) &&
                     tState.lastEid == this.lastEid && tState.hasState == this.hasState);
         }
         return false;
