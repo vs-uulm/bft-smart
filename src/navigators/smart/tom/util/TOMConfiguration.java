@@ -215,7 +215,7 @@ public class TOMConfiguration extends Configuration {
                 commBuffering = Integer.parseInt(s);
             }
 
-            s = configs.remove("system.communication.verificationType");
+            s = configs.remove("system.communication.verifiertype");
             if (s == null) {
                 verifiertype = VerifierType.None;
             } else {
