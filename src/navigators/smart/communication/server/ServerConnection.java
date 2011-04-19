@@ -49,7 +49,7 @@ public class ServerConnection {
     private static final Logger log = Logger.getLogger(ServerConnection.class.getName());
     private static final long POOL_TIME = 1000;
     private TOMConfiguration conf;
-    private volatile SocketChannel socketchannel;
+    private SocketChannel socketchannel;
     private int remoteId;
     private boolean useSenderThread;
     protected BlockingQueue<byte[]> outQueue;// = new LinkedBlockingQueue<byte[]>(SEND_QUEUE_SIZE);
