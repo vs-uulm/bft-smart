@@ -159,7 +159,7 @@ public class ServersCommunicationLayer extends Thread {
 						latch.countDown();
 					} else {
 						// reconnection
-						connections[remoteId].connect(newSocketChannel);
+						connections[remoteId].reconnect(newSocketChannel);
 					}
 				} else {
 					newSocketChannel.close();
