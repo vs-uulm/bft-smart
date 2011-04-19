@@ -333,19 +333,21 @@ public class ServerConnection {
 
                         //read mac
                         Object verificationresult = null;
+                        boolean verified = false;
                         if (conf.getUseMACs() == 1) {
                             socketchannel.read(receivedHash);
-                            verificationresult = ptpverifier.verifyHash(buf, receivedHash);
+                            verified = ptpverifier.verifyHash(buf, receivedHash);
                             receivedHash.rewind(); // reset hash buffer
-                        }
-                        if (conf.isUseGlobalAuth()) {
+                        } else if (conf.isUseGlobalAuth()) {
                             verificationresult = globalverifier.verifyHash(buf);
+                            if(verificationresult != null)
+                                verified = true;
+                        } else {
+                            verified = true; // no verification enabled
                         }
-                        if (verificationresult != null || conf.getUseMACs() == 0 && !conf.isUseGlobalAuth()) {
+                        if (verified) {
                             SystemMessage.Type type = SystemMessage.Type.getByByte(buf.get(0));
                             assert (msgHandlers.containsKey(type)) : "Messagehandlers does not contain " + type + ". It contains: " + msgHandlers;
-//                        	System.out.println(msgHandlers);
-//                        	System.out.println(msgHandlers.get(type));
                             SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
 
                             if (log.isLoggable(Level.FINEST)) {
@@ -359,20 +361,10 @@ public class ServerConnection {
                             }
                         } else {
                             //TODO: violation of authentication... we should do something
-//                        	log.log(Level.SEVERE, "WARNING: Violation of authentication in "+ Arrays.toString(data) +" received from "+remoteId);
-//                        	SystemMessage.Type type = SystemMessage.Type.getByByte(data[0]);
-//                        	EbawaType type2 = EbawaType.getByByte(data[1]);
                             log.severe("Received bad " + Arrays.toString(Arrays.copyOfRange(buf.array(), 0, buf.limit() > 100 ? 100 : buf.limit())) + " from " + remoteId);
                             log.severe("Limit is: " + buf.limit());
-//                        	SystemMessage sm = msgHandlers.get(type).deserialise(type,buf, verificationresult);
                         }
 
-                        /*
-                        } else {
-                        //TODO: invalid MAC... we should do something
-                        log.log(Level.SEVERE, "WARNING: Invalid MAC");
-                        }
-                         */
                     } catch (ClassNotFoundException ex) {
                         log.log(Level.SEVERE, "Should never happen,", ex);
                     } catch (SocketException e) {

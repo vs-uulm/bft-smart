@@ -34,10 +34,11 @@ import navigators.smart.tom.util.TOMUtil;
 
 
 /**
+ * This class handles TOMMessages
  * @author edualchieri
  * @author Christian Spann <christian.spann at uni-ulm.de>
  */
-public class TOMMessageHandler implements MessageHandler<SystemMessage,byte[]> {
+public class TOMMessageHandler<A> implements MessageHandler<SystemMessage,A> {
 
     private final static Logger log = Logger.getLogger(TOMMessageHandler.class.getCanonicalName());
 
@@ -82,7 +83,7 @@ public class TOMMessageHandler implements MessageHandler<SystemMessage,byte[]> {
         return bOut.toByteArray();
     }
 
-    public SystemMessage deserialise(SystemMessage.Type type, ByteBuffer buf, byte[] verificationresult) throws IOException, ClassNotFoundException {
+    public SystemMessage deserialise(SystemMessage.Type type, ByteBuffer buf, A verificationresult) throws IOException, ClassNotFoundException {
     	
         switch(type){
             case FORWARDED:
