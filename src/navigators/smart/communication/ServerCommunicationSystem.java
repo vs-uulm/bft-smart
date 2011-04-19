@@ -86,15 +86,18 @@ import navigators.smart.tom.util.TOMConfiguration;
         serversConf.increasePortNumber();
 
         MessageVerifierFactory<PTPMessageVerifier> ptpFactory = null;
-        if(conf.getUseMACs() == 1){
-            ptpFactory = createVerifierFactory(conf.getPTPVerifierFactoryClassname());
-            assert ptpFactory != null:"Failed to load HMAC Factory";
-        }
-
-        if(conf.isUseGlobalAuth()){
-            verifier =  (GlobalMessageVerifier) createVerifierFactory(conf.getGlobalMessageVerifierFactoryClassName()).generateMessageVerifier();
-            verifier.authenticateAndEstablishAuthKey();
-            assert verifier != null : "Failed to load USIG Service";
+        switch (conf.getVerifierType()) {
+            case PTPVerifier:
+                ptpFactory = createVerifierFactory(conf.getPTPVerifierFactoryClassname());
+                assert ptpFactory != null : "Failed to load HMAC Factory";
+                break;
+            case GlobalVerifier:
+                verifier = (GlobalMessageVerifier) createVerifierFactory(conf.getGlobalMessageVerifierFactoryClassName()).generateMessageVerifier();
+                verifier.authenticateAndEstablishAuthKey();
+                assert verifier != null : "Failed to load USIG Service";
+                break;
+            default:
+                log.info("No verification is used");
         }
         
         serversConn = new ServersCommunicationLayer(serversConf,inQueue,msgHandlers,ptpFactory,verifier);

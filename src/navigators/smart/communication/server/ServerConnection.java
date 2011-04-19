@@ -79,21 +79,7 @@ public class ServerConnection {
         this.ptpverifier = ptpverifier;
         this.globalverifier = verifier;
 
-        if (conf.getProcessId() > remoteId) {
-            //higher process ids connect to lower ones
-            try {
-                initSocketChannel();
-            } catch (UnknownHostException ex) {
-                log.log(Level.SEVERE, "cannot open listening port", ex);
-            } catch (IOException ex) {
-                log.log(Level.SEVERE, "cannot open listening port", ex);
-            }
-        }
-        if (conf.getUseMACs() == 1) {
-            ptpverifier.authenticateAndEstablishAuthKey();
-        }
-        //else I have to wait a connection from the remote server
-
+        
         this.useSenderThread = conf.isUseSenderThread();
 
         if (useSenderThread) {
@@ -157,7 +143,7 @@ public class ServerConnection {
                     while (buf.hasRemaining()) {
                         socketchannel.write(buf);
                     }
-                    if (conf.getUseMACs() == 1) {
+                    if (ptpverifier != null) {
                         socketchannel.write(ByteBuffer.wrap(ptpverifier.generateHash(messageData)));
                     }
                     return;
@@ -202,7 +188,7 @@ public class ServerConnection {
                     log.fine("Reconnected to " + remoteId);
                 }
             }
-            if (conf.getUseMACs() == 1) {
+            if (ptpverifier != null) {
                 ptpverifier.authenticateAndEstablishAuthKey();
             }
         }
@@ -280,6 +266,8 @@ public class ServerConnection {
     protected class ReceiverThread extends Thread {
 
         private ByteBuffer receivedHash;    //array to store the received hashes
+        //will hold the verificationresult when globalverification is used
+        private Object verificationresult = null;
 
         public ReceiverThread() {
             super("Receiver for " + remoteId);
@@ -331,20 +319,9 @@ public class ServerConnection {
                         }
                         buf.rewind();
 
-                        //read mac
-                        Object verificationresult = null;
-                        boolean verified = false;
-                        if (conf.getUseMACs() == 1) {
-                            socketchannel.read(receivedHash);
-                            verified = ptpverifier.verifyHash(buf, receivedHash);
-                            receivedHash.rewind(); // reset hash buffer
-                        } else if (conf.isUseGlobalAuth()) {
-                            verificationresult = globalverifier.verifyHash(buf);
-                            if(verificationresult != null)
-                                verified = true;
-                        } else {
-                            verified = true; // no verification enabled
-                        }
+                        //check verifcation
+                        boolean verified = checkverfication(buf);
+
                         if (verified) {
                             SystemMessage.Type type = SystemMessage.Type.getByByte(buf.get(0));
                             assert (msgHandlers.containsKey(type)) : "Messagehandlers does not contain " + type + ". It contains: " + msgHandlers;
@@ -386,6 +363,43 @@ public class ServerConnection {
             }
 
             log.log(Level.INFO, "Receiver for " + remoteId + " stopped!");
+        }
+
+        /**
+         * Verifies the received message to be authentic and unmodified.
+         * Depending on the selected type of verification the message is
+         * verified directly or it is handed to a global external verifier
+         * which hands back the verificationresult (sequence numbers e.g.)
+         * @param buf The buffer containing the message
+         * @return true if the verification succeeded false otherwise
+         * @throws IOException When sth fails during reading from the socketchannel
+         */
+        private boolean checkverfication(ByteBuffer buf) throws IOException{
+            boolean verified = false;
+            switch (conf.getVerifierType()) {
+                case PTPVerifier:
+                    socketchannel.read(receivedHash);
+                    verified = ptpverifier.verifyHash(buf, receivedHash);
+                    receivedHash.rewind(); // reset hash buffer
+                    break;
+                case GlobalVerifier:
+                    //sets the verificationresult to the new result or to null
+                    //depending wheter the msg is valid or not
+                    verificationresult = globalverifier.verifyHash(buf);
+                    if (verificationresult != null) {
+                        verified = true;
+                    }
+                    break;
+                case None:
+                    verified = true;
+                    break;
+                default:
+                    // if the verificationtype is something unknown deny verification
+                    verified = false;
+                    log.warning("Unknown verificationtype selected! Did you forget to" +
+                            "update ServerConnection.java?");
+            }
+            return verified;
         }
     }
 }

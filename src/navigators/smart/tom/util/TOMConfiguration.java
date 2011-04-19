@@ -20,6 +20,7 @@ package navigators.smart.tom.util;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
 
 public class TOMConfiguration extends Configuration {
 
@@ -45,7 +46,7 @@ public class TOMConfiguration extends Configuration {
     private int debug;
     private int numNIOThreads;   
     private int commBuffering;
-    private int useMACs;
+    private VerifierType verifiertype;
     private int useSignatures;
     private boolean  stateTransferEnabled;
     private int checkpoint_period;
@@ -71,7 +72,7 @@ public class TOMConfiguration extends Configuration {
         this.clientServerCommSystem = conf.clientServerCommSystem;
         this.numNIOThreads = conf.numNIOThreads;
         this.commBuffering = conf.commBuffering;
-        this.useMACs = conf.useMACs;
+        this.verifiertype = conf.verifiertype;
         this.useSignatures = conf.useSignatures;
         this.stateTransferEnabled = conf.stateTransferEnabled;
         this.checkpoint_period = conf.checkpoint_period;
@@ -214,11 +215,11 @@ public class TOMConfiguration extends Configuration {
                 commBuffering = Integer.parseInt(s);
             }
 
-            s = configs.remove("system.communication.useMACs");
+            s = configs.remove("system.communication.verificationType");
             if (s == null) {
-                useMACs = 0;
+                verifiertype = VerifierType.None;
             } else {
-                useMACs = Integer.parseInt(s);
+                verifiertype = VerifierType.valueOf(s);
             }
 
             s = configs.remove("system.communication.useSignatures");
@@ -384,8 +385,8 @@ public class TOMConfiguration extends Configuration {
     /**
      * Indicates if MACs should be used (1) or not (0) to authenticate client-server and server-server messages
      */
-    public int getUseMACs() {
-        return useMACs;
+    public VerifierType getVerifierType() {
+        return verifiertype;
     }
 
     /**

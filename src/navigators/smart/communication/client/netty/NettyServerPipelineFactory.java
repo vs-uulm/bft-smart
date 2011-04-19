@@ -25,6 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.crypto.SecretKey;
+import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
 
 import navigators.smart.tom.util.TOMConfiguration;
 
@@ -64,8 +65,9 @@ public class NettyServerPipelineFactory implements ChannelPipelineFactory {
 
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline p = pipeline();
-        p.addLast("decoder", new NettyTOMMessageDecoder(isClient, sessionTable, authKey, macLength,conf,rl,signatureLength,conf.getUseMACs()==1?true:false));
-        p.addLast("encoder", new NettyTOMMessageEncoder( sessionTable,rl,signatureLength, conf.getUseMACs()==1?true:false));
+        boolean ptpverification = conf.getVerifierType().equals(VerifierType.PTPVerifier);
+        p.addLast("decoder", new NettyTOMMessageDecoder(isClient, sessionTable, authKey, macLength,conf,rl,signatureLength,ptpverification));
+        p.addLast("encoder", new NettyTOMMessageEncoder( sessionTable,rl,signatureLength, ptpverification));
         p.addLast("handler", ncs);
         
         return p;

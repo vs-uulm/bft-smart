@@ -52,7 +52,6 @@ public class Configuration {
 
     private String ptpverifierclass = "navigators.smart.communication.HMacVerifierFactory";
 
-    private boolean useGlobalAuth = false;
     private String globalverifierclass = "navigators.smart.communication.USIGFactory";
 
 
@@ -66,7 +65,6 @@ public class Configuration {
         this.configs = conf.configs;
         this.hosts = conf.hosts;
         this.factoryclass = conf.factoryclass;
-        this.useGlobalAuth = conf.useGlobalAuth;
         this.ptpverifierclass = conf.ptpverifierclass;
     }
 
@@ -101,9 +99,6 @@ public class Configuration {
             if(s != null){
                 factoryclass = s;
             } 
-
-            s = configs.remove("system.globalverifier.enabled");
-            useGlobalAuth = Boolean.parseBoolean(s);
 
             s = configs.remove("system.globalverifier.factoryclass");
             if(s != null){
@@ -276,15 +271,5 @@ public class Configuration {
      */
     public String getGlobalMessageVerifierFactoryClassName() {
         return globalverifierclass;
-    }
-
-    /**
-     * Indicates wheter global authentication such as ppk or USIG shall be used.
-     * If the config variable is set to "true" a valid verifierfactory class must
-     * be present.
-     * @return true if it is to be used, false otherwhise.
-     */
-    public boolean isUseGlobalAuth() {
-        return useGlobalAuth;
     }
 }

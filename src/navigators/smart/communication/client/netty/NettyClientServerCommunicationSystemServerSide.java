@@ -43,6 +43,7 @@ import javax.crypto.spec.PBEKeySpec;
 
 import navigators.smart.communication.client.CommunicationSystemServerSide;
 import navigators.smart.communication.client.RequestReceiver;
+import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
 import navigators.smart.communication.server.ServerConnection;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.TOMConfiguration;
@@ -120,7 +121,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             System.out.println("#f " + conf.getF());            
             System.out.println("#requestTimeout= " + conf.getRequestTimeout());
             System.out.println("#maxBatch= " + conf.getMaxBatchSize());
-            System.out.println("#Using MACs = " + conf.getUseMACs());
+            System.out.println("#Using MACs = " + conf.getVerifierType().equals(VerifierType.PTPVerifier));
             System.out.println("#Using Signatures = " + conf.getUseSignatures());
         } catch (InvalidKeySpecException ex) {
             Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);

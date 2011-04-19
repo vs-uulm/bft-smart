@@ -11,5 +11,11 @@ package navigators.smart.communication.server;
  */
 public interface MessageVerifierFactory<F> {
 
+    public enum VerifierType {
+        None, //no verification is to be used
+        PTPVerifier,
+        GlobalVerifier;
+    }
+
     public F generateMessageVerifier();
 }
