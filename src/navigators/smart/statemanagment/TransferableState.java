@@ -104,12 +104,6 @@ public class TransferableState implements Serializable {
         if (obj instanceof TransferableState) {
             TransferableState tState = (TransferableState) obj;
 
-            if ((this.messageBatches != null && tState.messageBatches == null) ||
-                    (this.messageBatches == null && tState.messageBatches != null)) return false;
-
-            if (this.messageBatches != null && tState.messageBatches != null) {
-
-                if (this.messageBatches.length != tState.messageBatches.length) return false;
             return (Arrays.equals(this.stateHash, tState.stateHash) &&
                     tState.lastCheckpointEid.equals(this.lastCheckpointEid) &&
                     tState.lastCheckpointRound.equals(this.lastCheckpointRound) &&
