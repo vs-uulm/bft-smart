@@ -79,7 +79,9 @@ public class ServerConnection {
         this.ptpverifier = ptpverifier;
         this.globalverifier = verifier;
 
-        if(ptpverifier != null && socketchannel != null){
+        if(ptpverifier != null){
+            //must be done before the RecieverThread is started because it uses
+            //the mac length durin init
             ptpverifier.authenticateAndEstablishAuthKey();
         }
         
@@ -190,9 +192,6 @@ public class ServerConnection {
                 if (log.isLoggable(Level.INFO)) {
                     log.fine("Reconnected to " + remoteId);
                 }
-            }
-            if (ptpverifier != null) {
-                ptpverifier.authenticateAndEstablishAuthKey();
             }
         }
 
