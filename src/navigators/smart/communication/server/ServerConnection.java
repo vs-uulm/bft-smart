@@ -79,6 +79,9 @@ public class ServerConnection {
         this.ptpverifier = ptpverifier;
         this.globalverifier = verifier;
 
+        if(ptpverifier != null && socketchannel != null){
+            ptpverifier.authenticateAndEstablishAuthKey();
+        }
         
         this.useSenderThread = conf.isUseSenderThread();
 
