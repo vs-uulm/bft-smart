@@ -580,47 +580,14 @@ public class TOMLayer implements RequestReceiver {
 
                         stateManager.getLog().update(msg.getState());
 
-                        /************************* TESTE *************************
-                        System.out.println("[log] Estado pedido: " + msg.getEid());
-                        System.out.println("[log] EID do ultimo checkpoint: " + stateManager.getLog().getLastCheckpointEid());
-                        System.out.println("[log] EID do ultimo batch recebido: " + stateManager.getLog().getLastEid());
-                        System.out.println("[log] Numero de batches: " + stateManager.getLog().getNumBatches());
-                        if (stateManager.getLog().getState() != null) {
-                        System.out.println("[log] Tamanho do estado em bytes: " + stateManager.getLog().getState().length);
-
-                        int value = 0;
-                        for (int i = 0; i < 4; i++) {
-                        int shift = (4 - 1 - i) * 8;
-                        value += (stateManager.getLog().getState()[i] & 0x000000FF) << shift;
-                        }
-                        System.out.println("[log] Valor do estado: " + value);
-                        }
-                        //System.exit(0);
-                        /************************* TESTE *************************/
-                        lockState.unlock();
-
-                        //System.out.println("Desbloqueei o lock para o log do estado");
-//                        dt.deliverLock();
-
-                        //System.out.println("Bloqueei o lock entre esta thread e a delivery thread");
-
-//                        ot.OutOfContextLock();
-
-                        //System.out.println("Bloqueei o lock entre esta thread e a out of context thread");
-
-
-                        //System.out.println("Ja nao estou a espera de nenhum estado, e vou actualizar-me");
-
-                        dt.update(state);
-
-//                      dt.canDeliver();
-
-//                      ot.OutOfContextUnlock();
-//                      dt.deliverUnlock();
 
                         stateManager.setWaiting(-1);
                         stateManager.emptyStates();
                         stateManager.setReplicaState(null);
+
+                        lockState.unlock();
+
+                        dt.update(state);
 
                     } else if (state == null && (conf.getN() / 2) < stateManager.getReplies()) {
 
@@ -652,7 +619,11 @@ public class TOMLayer implements RequestReceiver {
     }
 
     public boolean isRetrievingState() {
-        return stateManager != null && stateManager.getWaiting() != -1;
+        boolean ret = false;
+        lockState.lock();
+        ret = stateManager != null && stateManager.getWaiting() != -1;
+        lockState.unlock();
+        return ret;
     }
 
     public void setConsensusService(ConsensusService manager) {
