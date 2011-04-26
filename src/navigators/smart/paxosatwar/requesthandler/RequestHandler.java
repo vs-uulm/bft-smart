@@ -612,8 +612,6 @@ public class RequestHandler extends Thread {
 
             long nextExecution = getLastExec() + 1;
             if (execManager.thereArePendentMessages(nextExecution)) {
-                System.out.println("Estou a processar mensagens de out of context!");
-
                 Logger.println("(TOMLayer.processOutOfContext) starting processing out of context messages for consensus " + nextExecution);
                 execution = execManager.getExecution(nextExecution);
                 Logger.println("(TOMLayer.processOutOfContext) finished processing out fo context messages for consensus " + nextExecution);
