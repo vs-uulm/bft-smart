@@ -429,14 +429,6 @@ public class TOMLayer implements RequestReceiver {
 
             lockState.lock();
 
-                
-            /************************* TESTE *************************
-            System.out.println("[TOMLayer.SMRequestDeliver]");
-            System.out.println("Recebi um pedido de estado!");
-            System.out.println("Estado pedido: " + msg.getEid());
-            System.out.println("Checkpoint q eu tenho: " + stateManager.getLog().getLastCheckpointEid());
-            System.out.println("Ultimo eid q recebi no log: " + stateManager.getLog().getLastEid());
-            /************************* TESTE *************************/
             boolean sendState = msg.getReplica() == conf.getProcessId();
             if (log.isLoggable(Level.FINE)) { 
 				if (sendState)
@@ -452,57 +444,21 @@ public class TOMLayer implements RequestReceiver {
             if (state == null) {
                 if(log.isLoggable(Level.FINE))
                     log.fine(" I don't have the state requested :-(");
-                /************************* TESTE *************************
-                System.out.println("Nao tenho o estado pedido!");
-                /************************* TESTE *************************/
                 state = new TransferableState();
             }
 
-            /** CODIGO MALICIOSO, PARA FORCAR A REPLICA ATRASADA A PEDIR O ESTADO A OUTRA DAS REPLICAS *
-            byte[] badState = {127};
-            if (sendState && conf.getProcessId() == 0) state.setState(badState);
-            /*******************************************************************************************/
             int[] targets = {msg.getSender()};
             SMMessage smsg = new SMMessage(consensusService.getId(), msg.getEid(), TOMUtil.SM_REPLY, -1, state);
             communication.send(targets, smsg);
 
             if(log.isLoggable(Level.FINE))
                 log.fine(" I sent the state for checkpoint " + state.lastCheckpointEid + " with batches until EID " + state.lastEid);
-            /************************* TESTE *************************
-            System.out.println("Quem envia: " + smsg.getSender());
-            System.out.println("Que tipo: " + smsg.getType());
-            System.out.println("Que EID: " + smsg.getEid());
-            //System.exit(0);
-            /************************* TESTE *************************/
-            /************************* TESTE *************************
-            System.out.println("[/TOMLayer.SMRequestDeliver]");
-            /************************* TESTE *************************/
+
         }
     }
 
     public void SMReplyDeliver(SMMessage msg) {
 
-        /************************* TESTE *************************
-        System.out.println("[TOMLayer.SMReplyDeliver]");
-        System.out.println("Recebi uma resposta de uma replica!");
-        System.out.println("[reply] Esta resposta tem o estado? " + msg.getState().hasState());
-        System.out.println("[reply] EID do ultimo checkpoint: " + msg.getState().getLastCheckpointEid());
-        System.out.println("[reply] EID do ultimo batch recebido: " + msg.getState().getLastEid());
-        if (msg.getState().getMessageBatches() != null)
-        System.out.println("[reply] Numero de batches: " + msg.getState().getMessageBatches().length);
-        else System.out.println("[reply] Nao ha batches");
-        if (msg.getState().getState() != null) {
-        System.out.println("[reply] Tamanho do estado em bytes: " + msg.getState().getState().length);
-
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-        int shift = (4 - 1 - i) * 8;
-        value += (msg.getState().getState()[i] & 0x000000FF) << shift;
-        }
-        System.out.println("[reply] Valor do estado: " + value);
-        }
-        else System.out.println("[reply] Nao ha estado");
-        /************************* TESTE *************************/
         if (conf.isStateTransferEnabled()) {
 
             if(log.isLoggable(Level.FINER)){
@@ -512,15 +468,13 @@ public class TOMLayer implements RequestReceiver {
 
             if (stateManager.getWaiting() != -1 && msg.getEid() == stateManager.getWaiting()) {
 
-                /************************* TESTE *************************
-                System.out.println("A resposta e referente ao eid que estou a espera! (" + msg.getEid() + ")");
-                /************************* TESTE *************************/
                 if(log.isLoggable(Level.FINER))
                     log.finer(" The reply is for the EID that I want!");
 
-                if (msg.getSender() == stateManager.getReplica() && msg.getState().state != null) {
+                if (msg.getSender() == stateManager.getReplica()) {
                     if(log.isLoggable(Level.FINER))
                         log.finer(" I received the state, from the replica that I was expecting");
+                    //store the state that i got - may too new but we can keep it
                     stateManager.setReplicaState(msg.getState().state);
                 }
 
@@ -530,9 +484,7 @@ public class TOMLayer implements RequestReceiver {
 
                     if(log.isLoggable(Level.FINE))
                         log.fine(" I have more than " + conf.getF() + " equal replies!");
-                    /************************* TESTE *************************
-                    System.out.println("Ja tenho mais que " + conf.getF() + " respostas iguais!");
-                    /************************* TESTE *************************/
+                    
                     TransferableState state = stateManager.getValidState();
 
                     int haveState = 0;
@@ -550,29 +502,6 @@ public class TOMLayer implements RequestReceiver {
 
                     if (state != null && haveState == 1) {
 
-                        /************************* TESTE *************************
-                        System.out.println("As respostas desse estado são validas!");
-
-                        System.out.println("[state] Esta resposta tem o estado? " + state.hasState());
-                        System.out.println("[state] EID do ultimo checkpoint: " + state.getLastCheckpointEid());
-                        System.out.println("[state] EID do ultimo batch recebido: " + state.getLastEid());
-                        if (state.getMessageBatches() != null)
-                        System.out.println("[state] Numero de batches: " + state.getMessageBatches().length);
-                        else System.out.println("[state] Nao ha batches");
-                        if (state.getState() != null) {
-                        System.out.println("[state] Tamanho do estado em bytes: " + state.getState().length);
-
-                        int value = 0;
-                        for (int i = 0; i < 4; i++) {
-                        int shift = (4 - 1 - i) * 8;
-                        value += (state.getState()[i] & 0x000000FF) << shift;
-                        }
-                        System.out.println("[state] Valor do estado: " + value);
-                        }
-                        else System.out.println("[state] Nao ha estado");
-
-                        //System.exit(0);
-                        /************************* TESTE *************************/
                         if(log.isLoggable(Level.FINE))
                             log.fine(" The state of those replies is good!");
 
@@ -593,22 +522,23 @@ public class TOMLayer implements RequestReceiver {
 
                         if(log.isLoggable(Level.FINE))
                             log.fine(" I have more than " + (conf.getN() / 2) + " messages that are no good!");
-                        /************************* TESTE *************************
-                        System.out.println("Tenho mais de 2F respostas que nao servem para nada!");
-                        //System.exit(0);
-                        /************************* TESTE *************************/
+                        lockState.lock();
                         stateManager.setWaiting(-1);
                         stateManager.emptyStates();
                         stateManager.setReplicaState(null);
+
+                        lockState.unlock();
                     } else if (haveState == -1) {
 
                         if(log.isLoggable(Level.FINE))
-                            log.fine(" The replica from which I expected the state, sent one which doesn't match the hash of the others, or it never sent it at all");
-
+                            log.fine(" The replica from which I expected the state, sent one which doesn't match the hash of the others");
+                        lockState.lock();
                         stateManager.setWaiting(-1);
                         stateManager.changeReplica();
                         stateManager.emptyStates();
                         stateManager.setReplicaState(null);
+                        //FIXME The statemanager will not wake up if no new client requests are sent here.
+                        lockState.unlock();
                     }
                 }
             }

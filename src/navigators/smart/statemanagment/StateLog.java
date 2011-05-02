@@ -218,30 +218,31 @@ public class StateLog {
      */
     public TransferableState getTransferableState(long eid, boolean setState) {
 
-        if (lastCheckpointEid > -1 && eid >= lastCheckpointEid) {
+        if (lastCheckpointEid > -1 ) {
 
             BatchInfo[] batches = null;
 
-             if  (eid <= lastEid) {
-                int size = (int) (eid - lastCheckpointEid) ;
-            
+            if (eid <= lastEid && eid >= lastCheckpointEid) {
+                int size = (int) (eid - lastCheckpointEid);
+
                 if (size > 0) {
                     batches = new BatchInfo[size];
 
-                    for (int i = 0; i < size; i++)
+                    for (int i = 0; i < size; i++) {
                         batches[i] = messageBatches[i];
+                    }
                 }
-             } else if (lastEid > -1) {
+            } else if (lastEid > -1) {
 
-                    batches = messageBatches;
-             }
-            return new TransferableState(lastCheckpointEid, lastCheckpointRound, lastCheckpointLeader, eid, (setState ? state : null), stateHash,lmstate,batches);
+                batches = messageBatches;
+            }
+            return new TransferableState(lastCheckpointEid, lastCheckpointRound, lastCheckpointLeader, eid, (setState ? state : null), stateHash, lmstate, batches);
 
-        }
-        else {
-        	if(log.isLoggable(Level.FINE))
-        		log.fine("No State for "+eid+"found. Current State of Statelog: "+ toString());
-        	return null;
+        } else {
+            if (log.isLoggable(Level.FINE)) {
+                log.fine("No State for " + eid + "found. Current State of Statelog: " + toString());
+            }
+            return null;
         }
     }
 
