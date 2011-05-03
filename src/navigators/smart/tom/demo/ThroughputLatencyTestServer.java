@@ -28,7 +28,6 @@ import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
-import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 
 public class ThroughputLatencyTestServer extends TOMReceiver {
