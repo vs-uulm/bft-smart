@@ -450,10 +450,9 @@ public class TOMLayer implements RequestReceiver {
     }
 
     public boolean isRetrievingState() {
-        boolean ret = false;
-        lockState.lock();
-        ret = stateManager != null && stateManager.isWaitingForState();
-        lockState.unlock();
+		lockState.lock();
+		boolean ret = stateManager != null && stateManager.isWaitingForState();
+		lockState.unlock();
         return ret;
     }
 
