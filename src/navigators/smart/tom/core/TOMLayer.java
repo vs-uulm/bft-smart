@@ -509,14 +509,13 @@ public class TOMLayer implements RequestReceiver {
 
                         stateManager.getLog().update(msg.getState());
 
-                        dt.update(state);
-
                         stateManager.setWaiting(-1);
                         stateManager.emptyStates();
                         stateManager.setReplicaState(null);
 
                         lockState.unlock();
 
+                        dt.update(state);
 
                     } else if (state == null && (conf.getN() / 2) < stateManager.getReplies()) {
 
