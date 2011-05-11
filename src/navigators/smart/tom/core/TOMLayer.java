@@ -87,14 +87,11 @@ public class TOMLayer implements RequestReceiver {
 
         this.clientsManager = new ClientsManager(conf); // Create clients manager
 
+        stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(), conf.getN(), conf.getProcessId().intValue());
+        
         this.dt = new DeliveryThread(this, receiver, conf); // Create delivery thread
         this.dt.start();
-
-
-
-        /** ISTO E CODIGO DO JOAO, PARA TRATAR DOS CHECKPOINTS E TRANSFERENCIA DE ESTADO*/
-        stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(), conf.getN(), conf.getProcessId().intValue());
-        /*******************************************************/
+        //DONT DO ANYTHING BEYOND THIS POINT! This leaked into dt from now on
     }
 
     /**
