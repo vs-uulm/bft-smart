@@ -15,10 +15,13 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.statemanagment;
 
 import java.util.HashSet;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * TODO: Não sei se esta classe sera usada. Para já, deixo ficar
@@ -27,9 +30,9 @@ import java.util.HashSet;
  */
 public class StateManager {
 
+    private static final Logger log = Logger.getLogger(StateManager.class.getCanonicalName());
 	public static final Long NOT_WAITING  = Long.valueOf(-1l);
-
-    private StateLog log;
+    private StateLog statelog;
     private HashSet<SenderEid> senderEids = null;
     private HashSet<SenderState> senderStates = null;
     private int f;
@@ -39,11 +42,13 @@ public class StateManager {
     private Long waitingEid;
     private Integer replica;
     private byte[] state;
+    private ReentrantLock lockState = new ReentrantLock();
+    private Condition statecondition = lockState.newCondition();
 
     @SuppressWarnings("boxing")
     public StateManager(int k, int f, int n, int me) {
 
-        this.log = new StateLog(k);
+        this.statelog = new StateLog(k);
         senderEids = new HashSet<SenderEid>();
         senderStates = new HashSet<SenderState>();
         this.f = f;
@@ -61,9 +66,12 @@ public class StateManager {
 
     @SuppressWarnings("boxing")
     public void changeReplica() {
+        lockState.lock();
         do {
             replica = (replica + 1) % n;
         } while (replica == me);
+        resetWaiting();
+        lockState.unlock();
     }
 
     public void setReplicaState(byte[] state) {
@@ -74,8 +82,32 @@ public class StateManager {
         return state;
     }
     
-    public void addEID(Integer sender, Long eid) {
+    /**
+     * Adds the given EID from the given sender to the statemanager and returns
+     * true if a statetransfer is needed.
+     *
+     * @param sender The sender of a message with the given eid
+     * @param eid The ahead of time eid we got
+     * @return true if statetransfer iss needed, false otherwhise
+     */
+    public boolean addEIDAndCheckStateTransfer(Integer sender, Long eid) {
         senderEids.add(new SenderEid(sender, eid));
+        if (lastEid < eid && moreThenF_EIDs(eid)) {
+
+            if (log.isLoggable(Level.FINE)) {
+                log.fine(" I have now more than " + f + " messages for EID " + eid + " which are beyond EID " + lastEid + " - initialising statetransfer");
+            }
+
+            lastEid = eid;
+            waitingEid = eid - 1;
+
+            if (log.isLoggable(Level.WARNING)) {
+                log.warning("Requesting Statetransfer up to" + (eid - 1));
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void emptyEIDs() {
@@ -84,31 +116,34 @@ public class StateManager {
 
     @SuppressWarnings("boxing")
 	public void emptyEIDs(Integer eid) {
-        for (SenderEid m : senderEids)
-            if (m.eid <= eid) senderEids.remove(m);
+        for (SenderEid m : senderEids) {
+            if (m.eid <= eid) {
+                senderEids.remove(m);
+            }
+        }
     }
 
+    /**
+     * Adds the given state from the given sender to the manager. If the state
+     * contains a full state from the correct replica it is also set
+     * @param sender
+     * @param newstate
+     */
     public void addState(Integer sender, TransferableState newstate) {
         senderStates.add(new SenderState(sender, newstate));
+        if (sender.equals(replica) && newstate.state != null) {
+            if (log.isLoggable(Level.FINER)) {
+                log.finer(" I received the state, from the replica that I was expecting");
+            }
+            state = newstate.state;
+        }
     }
 
     public Long getAwaitedState() {
         return waitingEid;
     }
 
-
-    public void setAwaitedState(Long wait) {
-        this.waitingEid = wait;
-    }
-    public void setLastEID(Long eid) {
-        lastEid = eid;
-    }
-
-    public Long getLastEID() {
-        return lastEid;
-    }
-
-    public boolean moreThenF_EIDs(Long eid) {
+    private boolean moreThenF_EIDs(Long eid) {
 
         long count = 0;
         HashSet<Integer> replicasCounted = new HashSet<Integer>();
@@ -122,6 +157,7 @@ public class StateManager {
         
         return count > f;
     }
+
     public boolean moreThenF_Replies() {
 
         int count = 0;
@@ -147,8 +183,12 @@ public class StateManager {
 
             for (int j = i; j < st.length; j++) {
 
-                if (st[i].state.equals(st[j].state) && st[j].state.hasState) count++;
-                if (count > f) return st[j].state;
+                if (st[i].state.equals(st[j].state) && st[j].state.hasState) {
+                    count++;
+                }
+                if (count > f) {
+                    return st[j].state;
+                }
             }
         }
 
@@ -159,8 +199,68 @@ public class StateManager {
         return senderStates.size();
     }
 
-    public StateLog getLog() {
-        return log;
+//    public StateLog getLog() {
+//        return statelog;
+//    }
+    public void saveState(Long lastEid, Integer decisionRound, Integer leader, byte[] lmstate, byte[] recvstate, byte[] recvstatehash) {
+
+        lockState.lock();
+
+        if (log.isLoggable(Level.FINER)) {
+            log.finer(" Saving state of EID " + lastEid + ", round " + decisionRound + " and leader " + leader);
+        }
+
+        statelog.newCheckpoint(lastEid, decisionRound, leader, -1l, recvstate, recvstatehash, lmstate);
+
+        lockState.unlock();
+
+        if (log.isLoggable(Level.FINER)) {
+            log.finer(" Finished saving state of EID " + lastEid + ", round " + decisionRound + " and leader " + leader);
+        }
+    }
+
+    public void saveBatch(byte[] batch, Long lastEid, Integer decisionRound, int leader) {
+        lockState.lock();
+
+        if (log.isLoggable(Level.FINER)) {
+            log.finer(" Saving batch of EID " + lastEid + ", round " + decisionRound + " and leader " + leader);
+        }
+        statelog.addMessageBatch(batch, decisionRound, leader);
+        statelog.setLastEid(lastEid);
+
+        lockState.unlock();
+        if (log.isLoggable(Level.FINER)) {
+            log.finer(" Finished saving batch of EID " + lastEid + ", round " + decisionRound + " and leader " + leader);
+        }
+    }
+
+    public TransferableState getTransferableState(Long eid, boolean sendState) {
+        lockState.lock();
+        TransferableState state = statelog.getTransferableState(eid, sendState);
+        lockState.unlock();
+        return state;
+    }
+
+    /**
+     * Updates the StateLog with the given valid full state
+     * @param state A valid full state
+     */
+    public void updateState(TransferableState state) {
+        assert (state.state != null) : "State is null which is not correct";
+        lockState.lock();
+
+        statelog.update(state);
+
+        resetWaiting();
+        lockState.unlock();
+    }
+
+    public void checkAndWaitForSTF() {
+        lockState.lock();
+        if (isWaitingForState()) {
+            statecondition.awaitUninterruptibly();
+        }
+        lockState.unlock();
     }
 
     private class SenderEid {
@@ -189,6 +289,24 @@ public class StateManager {
             hash = hash * 31 + this.eid.intValue();
             return hash;
         }
+    }
+
+    public boolean isWaitingForState() {
+        lockState.lock();
+        boolean ret = !waitingEid.equals(NOT_WAITING);
+        lockState.unlock();
+        return ret;
+    }
+
+    public void resetWaiting() {
+        lockState.lock();
+
+        waitingEid = NOT_WAITING;
+        senderStates.clear();
+        state = null;
+
+        statecondition.signalAll();
+        lockState.unlock();
     }
 
     /**
@@ -221,15 +339,4 @@ public class StateManager {
             return hash;
         }
     }
-
-	public boolean isWaitingForState() {
-		return !waitingEid.equals(NOT_WAITING);
-}
-
-	public void resetWaiting() {
-		waitingEid = NOT_WAITING;
-		senderStates.clear();
-        state = null;
-		
-	}
 }

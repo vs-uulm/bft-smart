@@ -82,17 +82,17 @@ public class DeliveryThread extends Thread {
     private ReentrantLock deliverLock = new ReentrantLock();
     private Condition canDeliver = deliverLock.newCondition();
 
-    public void deliverLock() {
-        deliverLock.lock();
-    }
-
-    public void deliverUnlock() {
-        deliverLock.unlock();
-    }
-
-    public void canDeliver() {
-        canDeliver.signalAll();
-    }
+//    private void deliverLock() {
+//        deliverLock.lock();
+//    }
+//
+//    private void deliverUnlock() {
+//        deliverLock.unlock();
+//    }
+//
+//    private void canDeliver() {
+//        canDeliver.signalAll();
+//    }
 
     public void updateState(TransferableState transferredState) {
 
@@ -150,19 +150,11 @@ public class DeliveryThread extends Thread {
 
         long startTime;
         while (true) {
-
-            /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO */
-            deliverLock();
-
-                while (tomLayer.isRetrievingState()) {
-                    canDeliver.awaitUninterruptibly();
-                }
-
+            tomLayer.checkAndWaitForState();
             try {
-                
+                deliverLock.lock();
                 Consensus<TOMMessage[]> cons = decided.poll(1500, TimeUnit.MILLISECONDS); // take a decided consensus
                 if (cons == null) {
-                    deliverUnlock();
                     continue;
                 }
 
@@ -186,7 +178,6 @@ public class DeliveryThread extends Thread {
                 } else {
                     if(log.isLoggable(Level.FINER))
                         log.finer("using cached requests from the propose.");
-
                 }
 
                 deliver(requests);
@@ -218,8 +209,9 @@ public class DeliveryThread extends Thread {
                         log.finer("(DeliveryThread.run) All finished for " + cons.getId() + ", took " + (System.currentTimeMillis() - startTime));
             } catch (Exception e) {
                 e.printStackTrace(System.out);
+            } finally {
+                deliverLock.unlock();
             }
-            deliverUnlock();
         }
     }
 
