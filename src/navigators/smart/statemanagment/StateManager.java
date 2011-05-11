@@ -338,15 +338,15 @@ public class StateManager {
 
     private class SenderStates{
 
-        Map<byte[],Set<SenderState>> senderStates = new HashMap<byte[], Set<SenderState>>();
+        Map<String,Set<SenderState>> senderStates = new HashMap<String, Set<SenderState>>();
 
         private int size = 0;
 
         private int add(SenderState senderState) {
-            Set<SenderState> states = senderStates.get(senderState.state.stateHash);
+            Set<SenderState> states = senderStates.get(Arrays.toString(senderState.state.stateHash));
             if(states == null){
                 states = new HashSet<SenderState>(f+1);
-                senderStates.put(senderState.state.stateHash, states);
+                senderStates.put(Arrays.toString(senderState.state.stateHash), states);
 }
             if(states.add(senderState)){
                 size++;
