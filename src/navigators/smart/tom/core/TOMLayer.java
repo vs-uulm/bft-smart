@@ -87,7 +87,7 @@ public class TOMLayer implements RequestReceiver {
 
         this.clientsManager = new ClientsManager(conf); // Create clients manager
 
-        stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(), conf.getN(), conf.getProcessId().intValue());
+        stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(), conf.getN(), conf.getProcessId().intValue(),md);
         
         this.dt = new DeliveryThread(this, receiver, conf); // Create delivery thread
         this.dt.start();
@@ -345,62 +345,9 @@ public class TOMLayer implements RequestReceiver {
                 log.finer(" I received a state reply for EID " + msg.getEid() + " from replica " + msg.getSender());
             }
 
-            if (msg.getEid().equals(stateManager.getAwaitedState())) {
-
-                if (log.isLoggable(Level.FINER)) {
-                    log.finer(" The reply is for the EID that I want!");
-                }
-
-                stateManager.addState(msg.getSender(), msg.getState());
-
-                if (stateManager.moreThenF_Replies()) {
-
-                    if (log.isLoggable(Level.FINE)) {
-                        log.fine(" I have more than " + conf.getF() + " equal replies!");
-                    }
-                    TransferableState state = stateManager.getValidState();
-
-                    int haveState = 0;
-                    if (stateManager.getReplicaState() != null) {
-                        byte[] hash = null;
-                        hash = computeHash(stateManager.getReplicaState());
+	    TransferableState state = stateManager.registerSMMessage(msg);
                         if (state != null) {
-                            if (Arrays.equals(hash, state.stateHash)) {
-                                haveState = 1;
-                            } else {
-                                haveState = -1;
-                            }
-                        }
-                    }
-
-                    if (state != null && haveState == 1) {
-
-                        if (log.isLoggable(Level.FINE)) {
-                            log.fine(" The state of those replies is good!");
-                        }
-
-                        stateManager.updateState(state);
                         dt.updateState(state);
-
-
-
-
-                    } else if (state == null && (conf.getN() / 2) < stateManager.getReplies()) {
-
-                        if (log.isLoggable(Level.FINE)) {
-                            log.fine(" I have more than " + (conf.getN() / 2) + " messages that are no good!");
-                        }
-			stateManager.resetWaiting();
-                        
-                    } else if (haveState == -1) {
-
-                        if (log.isLoggable(Level.FINE)) {
-                            log.fine(" The replica from which I expected the state, sent one which doesn't match the hash of the others, or it never sent it at all");
-                        }
-                        stateManager.changeReplica();
-                        //FIXME The statemanager will not wake up if no new client requests are sent here.
-                    }
-                }
             }
         }
     }

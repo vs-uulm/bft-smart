@@ -17,7 +17,16 @@
  */
 package navigators.smart.statemanagment;
 
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -33,24 +42,25 @@ public class StateManager {
     private static final Logger log = Logger.getLogger(StateManager.class.getCanonicalName());
 	public static final Long NOT_WAITING  = Long.valueOf(-1l);
     private StateLog statelog;
-    private HashSet<SenderEid> senderEids = null;
-    private HashSet<SenderState> senderStates = null;
+    private SenderEids senderEids = null;
+    private SenderStates senderStates = null;
     private int f;
     private int n;
     private int me;
     private Long lastEid;
     private Long waitingEid;
     private Integer replica;
-    private byte[] state;
+    private TransferableState state;
     private ReentrantLock lockState = new ReentrantLock();
     private Condition statecondition = lockState.newCondition();
+    private MessageDigest md;
 
     @SuppressWarnings("boxing")
-    public StateManager(int k, int f, int n, int me) {
+    public StateManager(int k, int f, int n, int me, MessageDigest md) {
 
         this.statelog = new StateLog(k);
-        senderEids = new HashSet<SenderEid>();
-        senderStates = new HashSet<SenderState>();
+        senderEids = new SenderEids();
+        senderStates = new SenderStates();
         this.f = f;
         this.n = n;
         this.me = me;
@@ -58,6 +68,7 @@ public class StateManager {
         this.state = null;
         this.lastEid = -1l;
         this.waitingEid = -1l;
+        this.md = md;
     }
 
     public Integer getReplica() {
@@ -74,12 +85,8 @@ public class StateManager {
         lockState.unlock();
     }
 
-    public void setReplicaState(byte[] state) {
-        this.state = state;
-    }
-
     public byte[] getReplicaState() {
-        return state;
+        return state.state;
     }
     
     /**
@@ -91,8 +98,8 @@ public class StateManager {
      * @return true if statetransfer iss needed, false otherwhise
      */
     public boolean addEIDAndCheckStateTransfer(Integer sender, Long eid) {
-        senderEids.add(new SenderEid(sender, eid));
-        if (lastEid < eid && moreThenF_EIDs(eid)) {
+        int size = senderEids.add(sender,eid);
+        if (lastEid < eid && size > f) {
 
             if (log.isLoggable(Level.FINE)) {
                 log.fine(" I have now more than " + f + " messages for EID " + eid + " which are beyond EID " + lastEid + " - initialising statetransfer");
@@ -100,6 +107,8 @@ public class StateManager {
 
             lastEid = eid;
             waitingEid = eid - 1;
+
+            emptyEIDs(eid);
 
             if (log.isLoggable(Level.WARNING)) {
                 log.warning("Requesting Statetransfer up to" + (eid - 1));
@@ -110,17 +119,9 @@ public class StateManager {
         }
     }
 
-    public void emptyEIDs() {
-        senderEids.clear();
-    }
-
     @SuppressWarnings("boxing")
-	public void emptyEIDs(Integer eid) {
-        for (SenderEid m : senderEids) {
-            if (m.eid <= eid) {
-                senderEids.remove(m);
-            }
-        }
+    public void emptyEIDs(Long eid) {
+        senderEids.removeSmallerThan(eid);
     }
 
     /**
@@ -129,69 +130,30 @@ public class StateManager {
      * @param sender
      * @param newstate
      */
-    public void addState(Integer sender, TransferableState newstate) {
+    public int addState(Integer sender, TransferableState newstate) {
         senderStates.add(new SenderState(sender, newstate));
         if (sender.equals(replica) && newstate.state != null) {
             if (log.isLoggable(Level.FINER)) {
                 log.finer(" I received the state, from the replica that I was expecting");
             }
-            state = newstate.state;
+            state = newstate;
         }
+	return senderStates.add(new SenderState(sender, newstate));
     }
 
     public Long getAwaitedState() {
         return waitingEid;
     }
 
-    private boolean moreThenF_EIDs(Long eid) {
-
-        long count = 0;
-        HashSet<Integer> replicasCounted = new HashSet<Integer>();
-
-        for (SenderEid m : senderEids) {
-            if (m.eid.equals(eid) && !replicasCounted.contains(m.sender)) {
-                replicasCounted.add(m.sender);
-                count++;
-            }
-        }
-        
-        return count > f;
-    }
-
-    public boolean moreThenF_Replies() {
-
-        int count = 0;
-        HashSet<Integer> replicasCounted = new HashSet<Integer>();
-
-        for (SenderState m : senderStates) {
-            if (!replicasCounted.contains(m.sender)) {
-                replicasCounted.add(m.sender);
-                count++;
-            }
-        }
-
-        return count > f;
-    }
-
     public TransferableState getValidState() {
-        
-        SenderState[] st = new SenderState[senderStates.size()];
-        senderStates.toArray(st);
-        int count = 0;
-
-        for (int i = 0; i < st.length; i++) {
-
-            for (int j = i; j < st.length; j++) {
-
-                if (st[i].state.equals(st[j].state) && st[j].state.hasState) {
-                    count++;
-                }
-                if (count > f) {
-                    return st[j].state;
-                }
+        for (Set<SenderState> stateset : senderStates.values() ){
+            if(stateset.size() > f){
+		TransferableState validstate = stateset.iterator().next().state;
+		    if(validstate.hasState){
+		        return validstate;
             }
         }
-
+    }
         return null;
     }
 
@@ -263,33 +225,67 @@ public class StateManager {
         lockState.unlock();
     }
 
-    private class SenderEid {
+    public TransferableState registerSMMessage(SMMessage msg) {
+        TransferableState ret = null;
+        if (msg.getEid().equals(waitingEid)) {
 
-        private Integer sender;
-        private Long eid;
-
-        SenderEid(Integer sender, Long eid) {
-            this.sender = sender;
-            this.eid = eid;
+                if (log.isLoggable(Level.FINER)) {
+                    log.finer(" The reply is for the EID that I want!");
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof SenderEid) {
-                SenderEid m = (SenderEid) obj;
-                return (m.eid.equals(this.eid) && m.sender.equals(this.sender));
-            }
-            return false;
+                int replies = addState(msg.getSender(), msg.getState());
+
+                if (replies > f) {
+
+                    if (log.isLoggable(Level.FINE)) {
+                        log.fine(" I have more than " + f + " equal replies!");
         }
 
-        @Override
-        public int hashCode() {
-            int hash = 1;
-            hash = hash * 31 + this.sender.intValue();
-            hash = hash * 31 + this.eid.intValue();
-            return hash;
+                    //check if the full state equals this f+1 replies
+                    int haveState = 0;
+                    if (state != null && state.hasState) {
+                        //this is also checked by addState
+                        assert(state.state != null) : "If we got a state from the proper replica it shouldn't be null";
+                        byte[] hash = null;
+
+                        //Synchronized by nothgin... is not accessed synchronously
+                        hash = md.digest(state.state);
+                        if (state != null) {
+                            if (Arrays.equals(hash, state.stateHash)) {
+                                haveState = 1;
+                            } else {
+                                haveState = -1;
         }
     }
+                    }
+
+                    if (state != null && haveState == 1) {
+                        if (log.isLoggable(Level.FINE)) 
+                            log.fine(" The state of those replies is good!");
+                        updateState(state);
+                        // success -> return the state to be passed to the app
+                        ret = state;
+                    } else if (state == null && (n / 2) < getReplies()) {
+
+                        if (log.isLoggable(Level.FINE)) 
+                            log.fine(" I have more than " + (n / 2) + " messages that are no good!");
+                        
+                        resetWaiting();
+
+                    } else if (haveState == -1) {
+
+                        if (log.isLoggable(Level.FINE)) 
+                            log.fine(" The replica from which I expected the state, sent one which doesn't match the hash of the others, or it never sent it at all");
+                        
+                        changeReplica();
+                        //FIXME The statemanager will not wake up if no new client requests are sent here.
+                    }
+                }
+            }
+        return ret;
+    }
+
+    
 
     public boolean isWaitingForState() {
         lockState.lock();
@@ -338,5 +334,72 @@ public class StateManager {
             hash = hash * 31 + this.state.hashCode();
             return hash;
         }
+    }
+
+    private class SenderStates{
+
+        Map<byte[],Set<SenderState>> senderStates = new HashMap<byte[], Set<SenderState>>();
+
+        private int size = 0;
+
+        private int add(SenderState senderState) {
+            Set<SenderState> states = senderStates.get(senderState.state.stateHash);
+            if(states == null){
+                states = new HashSet<SenderState>(f+1);
+                senderStates.put(senderState.state.stateHash, states);
+}
+            if(states.add(senderState)){
+                size++;
+            }
+            return states.size();
+        }
+
+        private int size() {
+            return size;
+        }
+
+        private void clear(){
+            size = 0;
+            senderStates.clear();
+        }
+
+        private Collection<Set<SenderState>> values() {
+            return senderStates.values();
+        }
+
+    }
+
+    private class SenderEids {
+
+        private TreeMap<Long,HashSet<Integer>> senderEids = new TreeMap<Long, HashSet<Integer>>();
+
+        /**
+         * Adds the sender of the msg with the given eid to the accounted list
+         * and returns the size of the list
+         * @param sender
+         * @param eid
+         * @return
+         */
+        private int add(Integer sender, Long eid) {
+            HashSet<Integer> senders = senderEids.get(eid);
+            if(senders == null){
+                senders = new HashSet<Integer>(f+1);
+                senderEids.put(eid, senders);
+            }
+            senders.add(sender);
+            return senders.size();
+        }
+
+        private void removeSmallerThan(Long eid) {
+            for(Iterator<Long> it = senderEids.keySet().iterator();it.hasNext();){
+                if(it.next().longValue()<= eid.longValue()){
+                    it.remove();
+                } else {
+                    break; //stop search
+                }
+            }
+        }
+
+
     }
 }
