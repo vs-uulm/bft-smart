@@ -18,7 +18,6 @@
 
 package navigators.smart.consensus;
 
-import navigators.smart.communication.MessageHandler;
 import navigators.smart.statemanagment.TransferableState;
 import navigators.smart.tom.core.messages.TOMMessage;
 
@@ -49,13 +48,6 @@ public interface ConsensusService {
      * @param msg
      */
     public void notifyRequestDecided(TOMMessage msg);
-
-    /**
-     * Gets the MessageHandler of the consensus service to register it with
-     * the communication layer.
-     * @return The MessageHandler object provided by the service
-     */
-    public MessageHandler<?,?> getMessageHandler();
 
     /**
      * Returns the id of this replicas consensus service

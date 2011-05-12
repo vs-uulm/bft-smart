@@ -523,5 +523,6 @@ public final class ExecutionManager{
         //define that end of this execution
         //stateManager.setWaiting(-1);
         requesthandler.setIdle();
+        requesthandler.processOutOfContext();
     }
 }

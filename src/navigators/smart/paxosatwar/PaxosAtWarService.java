@@ -73,13 +73,6 @@ public class PaxosAtWarService implements ConsensusService{
         }
     }
 
-    public void decide(Long execId, int batchsize, byte[] value) {
-        MeasuringConsensus<?> cons = execmng.getExecution(execId).getConsensus();
-
-        cons.batchSize = batchsize;
-        execmng.getProposer().startExecution(execId, value);
-    }
-
     @Override
     public long getLastExecuted() {
         return execmng.getRequestHandler().getLastExec().longValue();
@@ -95,10 +88,7 @@ public class PaxosAtWarService implements ConsensusService{
         requestsTimer.unwatch(msg);
     }
 
-    public MessageHandler<?,?> getMessageHandler() {
-        return msghandler;
-    }
-
+    @Override
     public Integer getId() {
         return execmng.getProcessId();
     }
@@ -106,6 +96,21 @@ public class PaxosAtWarService implements ConsensusService{
     @Override
     public String toString(){
         return "Consensus in execution: " + execmng.getRequestHandler().getInExec() + " last executed consensus: "+execmng.getRequestHandler().getLastExec();
+    }
+
+    
+    /**
+     * @param cons The consensus of whom we wish to know the final proposer
+     * @return The id of the final proposer
+     */
+    @Override
+    public int getProposer(Consensus<?> cons) {
+        return lm.getLeader(cons.getId(), cons.getDecisionRound()).intValue();
+    }
+
+    @Override
+    public void startDeliverState() {
+        //nothing to do here
     }
 
     @SuppressWarnings("boxing")
@@ -129,31 +134,23 @@ public class PaxosAtWarService implements ConsensusService{
         }
         //deliver the state to executionmanager
         execmng.deliverState(state);
-        
     }
 
-    /**
-     * @param cons The consensus of whom we wish to know the final proposer
-     * @return The id of the final proposer
-     */
-    public int getProposer(Consensus<?> cons) {
-        return lm.getLeader(cons.getId(), cons.getDecisionRound()).intValue();
+    @Override
+    public byte[] getState(Consensus<?> cons) {
+            return lm.getState();
     }
 
-    public void startDeliverState() {
 
-    }
-
+    @Override
     public void deliveryFinished(Consensus<?> cons) {
         execmng.decided(cons);
     }
 
 	@Override
 	public void start() {
+        //nothing to do for paw
 	}
 
-	@Override
-	public byte[] getState(Consensus<?> cons) {
-		return lm.getState();
+   
 	}
-}

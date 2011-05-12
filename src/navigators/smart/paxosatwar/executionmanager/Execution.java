@@ -171,7 +171,7 @@ public class Execution {
      * @param value The decided value
      * @param round The round at which a decision was made
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "unchecked"})
 	public void decided(Round round/*, byte[] value*/) {
         if (!decided) {
             decided = true;
