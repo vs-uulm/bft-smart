@@ -99,7 +99,6 @@ public class DeliveryThread extends Thread {
         deliverLock.lock();
 
         consensusservice.startDeliverState();
-        consensusservice.deliverState(transferredState);
 
         Long lastCheckpointEid = transferredState.lastCheckpointEid;
         Long lastEid = transferredState.lastEid;
@@ -133,10 +132,11 @@ public class DeliveryThread extends Thread {
 
         decided.clear();
 
+        consensusservice.deliverState(transferredState);
+
         if(log.isLoggable(Level.FINE))
             log.fine("All finished from " + lastCheckpointEid + " to " + lastEid);
 
-//        canDeliver.signalAll();
         deliverLock.unlock();
     }
     
