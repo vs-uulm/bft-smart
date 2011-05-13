@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,7 +58,10 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
     private int target;
     /** Shall the client multi or unicast the message*/
     private boolean multicast;
-          
+    /** LATCH */
+    private static CountDownLatch startlatch;
+    private static int epochs;
+
     public ThroughputLatencyTestClient(int id, int exec, int argSize, int interval, TOMConfiguration conf, boolean multicast) {
     	this.multicast = multicast;
         this.exec = exec;
@@ -65,7 +69,6 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
         this.target = id%conf.getN();
         this.currentId = id;
         this.myId = id;
-
         this.f = conf.getF();
         this.n = conf.getN();
         this.interval = interval;
@@ -89,11 +92,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
     public void run(){
         try{
-
-        	int sleeptime = 1000;
-            System.out.println("(" + myId + ") Sleeping " + sleeptime/1000 +" seconds waiting for other threads!");
-            Thread.sleep(sleeptime);
-            while(true){
+            startlatch.countDown();
+            startlatch.await();
+            while (measurementEpoch < epochs) {
 //                myId += exec;
 
                 System.out.println("(" + myId + "-"+measurementEpoch+ ") Getting #ops from replicas before signing");
@@ -114,7 +115,7 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                 //create msg for # of ops request after signing (id has to be taken before
                 TOMMessage msg = createTOMMsg(command1.array());
 
-                measurementEpoch++;
+//                measurementEpoch++;
 
                //generate exec signed messages
                System.out.println(myId+": Generating and signing "+exec+" messages");
@@ -141,7 +142,6 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                     }
                     this.sm.wait();
                 }
-                measurementEpoch++;
 
                 currentId = myId;
                 
@@ -182,7 +182,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
             System.out.println("(" + myId + "-"+measurementEpoch+")Maximum time for " + exec / 2 + " executions (-10%) = " + this.st.getMax(true) / 1000 + " us ");
             System.out.println("(" + myId + "-"+measurementEpoch+")Maximum time for " + exec / 2 + " executions (all samples) = " + this.st.getMax(false) / 1000 + " us ");
             System.out.println("(" + myId + "-"+measurementEpoch+")----------------------------------------------------------------------");
-          }
+
+                measurementEpoch++;
+           }
         } catch (InterruptedException ex) {
             Logger.getLogger(ThroughputLatencyTestClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception e){
@@ -270,7 +272,7 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
     public static void main(String[] args){
         if (args.length < 6){
-            System.out.println("Usage: java ThroughputLatencyTestClient <num threads> <start id> <number of messages> <argument size (bytes)> <interval between requests (ms)> <multicast to all replicas: (true/false)>");
+            System.out.println("Usage: java ThroughputLatencyTestClient <num threads> <start id> <number of messages> <epochs> <argument size (bytes)> <interval between requests (ms)> <multicast to all replicas: (true/false)>");
             System.exit(-1);
         }
 
@@ -281,13 +283,16 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
         }
         int startId = new Integer(args[1]);
         int numMsgs = new Integer(args[2]);
-        int argSize = new Integer(args[3]);
-        int interval = new Integer(args[4]);
-        boolean multicast = Boolean.parseBoolean(args[5]);
+        epochs = Integer.parseInt(args[3]);
+        int argSize = new Integer(args[4]);
+        int interval = new Integer(args[5]);
+        boolean multicast = Boolean.parseBoolean(args[6]);
 
         Thread[] t = new Thread[numThreads];
         
-        for (int i=0; i<numThreads; i++){
+        startlatch = new CountDownLatch(numThreads);
+
+         for (int i=0; i<numThreads; i++){
             TOMConfiguration conf1 = new TOMConfiguration(startId,"./config");
 
             t[i] = new Thread(new ThroughputLatencyTestClient(startId, numMsgs,
