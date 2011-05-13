@@ -164,7 +164,11 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
                 measurementEpoch++;
            }
-        } catch (Exception e){
+           //requests current number of ops processed by the servers
+           ByteBuffer noop_newline = ByteBuffer.allocate(4);
+           noop_newline.putInt(-2); //noop that prints a newline after the output of the test results
+           sendMsg(createTOMMsg(noop_newline.array()));
+		} catch (Exception e){
         	e.printStackTrace();
         }
     }

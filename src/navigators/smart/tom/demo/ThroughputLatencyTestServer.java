@@ -74,7 +74,8 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         switch (remoteId) {
             case -2:
            //does nothing, it's a request from the throughput client
-                break;
+                System.out.println(); //prints just a new line
+				break;
 
             case -1:
             //send back totalOps
