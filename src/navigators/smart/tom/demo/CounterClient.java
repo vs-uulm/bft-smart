@@ -18,18 +18,15 @@
 
 package navigators.smart.tom.demo;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import navigators.smart.tom.ServiceProxy;
 
 
 /**
  * Example client that updates a BFT replicated service (a counter).
- *
+ * @author Christian Spann <christian.spann@uni-ulm.de>
  */
 public class CounterClient {
 
@@ -44,18 +41,18 @@ public class CounterClient {
 
         int i=0;
         int inc = Integer.parseInt(args[1]);
+        ByteBuffer buf = ByteBuffer.allocate(4);
+        ByteBuffer replybuf;
+
+
         //sends 1000 requests to replicas and then terminates
         while(i<1000){
-            
-            ByteArrayOutputStream out = new ByteArrayOutputStream(4);
-            new DataOutputStream(out).writeInt(inc);
-
-	        byte[] reply = counterProxy.invoke(out.toByteArray(),(inc == 0));	
-	        int newValue = new DataInputStream(new ByteArrayInputStream(reply)).readInt();	
-	        System.out.println("Counter value: "+newValue);
-	        i++;
+            buf.putInt(inc);
+            buf.rewind();
+	    replybuf = ByteBuffer.wrap(counterProxy.invoke(buf.array(),(inc == 0)));
+	    System.out.println("Counter value: "+replybuf.getInt());
+	    i++;
         }
-        //System.exit(0);
     }
 
 }

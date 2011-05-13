@@ -18,11 +18,8 @@
 
 package navigators.smart.tom.demo;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +29,7 @@ import navigators.smart.tom.util.DebugInfo;
 
 /**
  * Example replica that implements a BFT replicated service (a counter).
- *
+ * @author Christian Spann <christian.spann@uni-ulm.de>
  */
 public class CounterServer extends ServiceReplica {
     
@@ -47,18 +44,15 @@ public class CounterServer extends ServiceReplica {
     @Override
     public byte[] executeCommand(int clientId, long timestamp, byte[] nonces, byte[] command, DebugInfo info) {
         iterations++;
-        try {
-            int increment = new DataInputStream(new ByteArrayInputStream(command)).readInt();
-            counter += increment;
-            if (info == null) System.out.println("[server] (" + iterations + ") Counter incremented: " + counter);
-            else System.out.println("[server] (" + iterations + " / " + info.eid + ") Counter incremented: " + counter);
-            ByteArrayOutputStream out = new ByteArrayOutputStream(4);
-            new DataOutputStream(out).writeInt(counter);
-            return out.toByteArray();
-        } catch (IOException ex) {
-            Logger.getLogger(CounterServer.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
+        ByteBuffer buf = ByteBuffer.wrap(command); // allocate ByteBuffer for ints changed by cspann
+        assert(buf.remaining()==4);
+        int increment = buf.getInt();
+        counter += increment;
+        if (info == null) System.out.println("[server] (" + iterations + ") Counter incremented: " + counter);
+        else System.out.println("[server] (" + iterations + " / " + info.eid + ") Counter incremented: " + counter);
+        buf = ByteBuffer.allocate(4);
+        buf.putInt(counter);
+        return buf.array();
     }
 
     public static void main(String[] args){
@@ -83,8 +77,6 @@ public class CounterServer extends ServiceReplica {
             b[i] = (byte) ((counter >>> offset) & 0xFF);
         }
         return b;
-
-        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
