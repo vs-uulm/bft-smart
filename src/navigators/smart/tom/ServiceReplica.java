@@ -41,7 +41,6 @@ import navigators.smart.tom.util.TOMConfiguration;
 public abstract class ServiceReplica extends TOMReceiver implements Runnable {
 
     private Integer id; // replica ID
-    private ServerCommunicationSystem cs = null; // Server side comunication system
     private BlockingQueue<TOMMessage> requestQueue; // Queue of messages received from the TOM layer
     private Thread replicaThread; // Thread that runs the replica code
 
@@ -59,14 +58,6 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
      * This method initializes the object
      */
     protected void init() {
-
-        try {
-            cs = new ServerCommunicationSystem(conf);
-        } catch (Exception ex) {
-            Logger.getLogger(TOMReceiver.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException("Unable to build a communication system.");
-        }
-
         // Initialize messages queue received from the TOM layer
         this.requestQueue = new LinkedBlockingQueue<TOMMessage>();
 
