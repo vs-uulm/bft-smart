@@ -80,7 +80,7 @@ public class DeliveryThread extends Thread {
     /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO */
     
     private ReentrantLock deliverLock = new ReentrantLock();
-    private Condition canDeliver = deliverLock.newCondition();
+//    private Condition canDeliver = deliverLock.newCondition();
 
 //    private void deliverLock() {
 //        deliverLock.lock();
@@ -136,7 +136,7 @@ public class DeliveryThread extends Thread {
         if(log.isLoggable(Level.FINE))
             log.fine("All finished from " + lastCheckpointEid + " to " + lastEid);
 
-        canDeliver.signalAll();
+//        canDeliver.signalAll();
         deliverLock.unlock();
     }
     

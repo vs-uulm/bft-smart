@@ -210,10 +210,7 @@ public class StateManager {
     public void updateState(TransferableState state) {
         assert (state.state != null) : "State is null which is not correct";
         lockState.lock();
-
         statelog.update(state);
-
-        resetWaiting();
         lockState.unlock();
     }
 
@@ -260,22 +257,25 @@ public class StateManager {
                     }
 
                     if (state != null && haveState == 1) {
-                        if (log.isLoggable(Level.FINE)) 
+                    if (log.isLoggable(Level.FINE)) {
                             log.fine(" The state of those replies is good!");
+                    }
                         updateState(state);
                         // success -> return the state to be passed to the app
                         ret = state;
                     } else if (state == null && (n / 2) < getReplies()) {
 
-                        if (log.isLoggable(Level.FINE)) 
+                    if (log.isLoggable(Level.FINE)) {
                             log.fine(" I have more than " + (n / 2) + " messages that are no good!");
+                    }
                         
                         resetWaiting();
 
                     } else if (haveState == -1) {
 
-                        if (log.isLoggable(Level.FINE)) 
+                    if (log.isLoggable(Level.FINE)) {
                             log.fine(" The replica from which I expected the state, sent one which doesn't match the hash of the others, or it never sent it at all");
+                    }
                         
                         changeReplica();
                         //FIXME The statemanager will not wake up if no new client requests are sent here.

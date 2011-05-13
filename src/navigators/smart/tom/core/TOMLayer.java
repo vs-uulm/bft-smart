@@ -348,6 +348,7 @@ public class TOMLayer implements RequestReceiver {
 	    TransferableState state = stateManager.registerSMMessage(msg);
                         if (state != null) {
                         dt.updateState(state);
+			                stateManager.resetWaiting();
             }
         }
     }
