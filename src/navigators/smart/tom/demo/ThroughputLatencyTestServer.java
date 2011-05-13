@@ -15,7 +15,6 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.tom.demo;
 
 import java.io.IOException;
@@ -29,39 +28,30 @@ import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
 
-
 public class ThroughputLatencyTestServer extends TOMReceiver {
-    
+
     private Integer id;
     private int interval;
-    private long numDecides=0;
+    private long numDecides = 0;
     private long lastDecideTimeInstant;
-    private double max=0;
+    private double max = 0;
     private long totalOps;
-//    private long startTimeInstant;
-    private int averageIterations;
-//    Storage st;
-    //Storage consensusLatencySt;
-//    Storage totalLatencySt1;
-//    Storage batchSt1;
-//    Storage totalLatencySt2;
-//    Storage batchSt2;
-//    private SynchronizedDescriptiveStatistics averageOps;
-    
-    public ThroughputLatencyTestServer(Integer id, int interval, int averageIterations) throws IOException {
+    private ByteBuffer state;
+
+    public ThroughputLatencyTestServer(Integer id, int interval, int statesize) throws IOException {
         super(new TOMConfiguration(id, "./config"));
         this.id = id;
         this.interval = interval;
         this.totalOps = 0;
-        this.averageIterations = averageIterations;
-//        st = new Storage(averageIterations);
-//        averageOps = new SynchronizedDescriptiveStatistics(averageIterations);
-        System.out.print("\nThroughputLatencyTestServer throughput interval = "+interval+ " msgs");
-        System.out.print(" - measurement interval for average calculations = "+averageIterations+ " throughput intervals ");
-        System.out.print("Average throughput times: ");    }
-    
-    public void receiveOrderedMessage(TOMMessage msg){
-        long receiveInstant =  System.currentTimeMillis();          
+        state = ByteBuffer.allocate(statesize < 8 ? 8 : statesize);
+        System.out.print("\nThroughputLatencyTestServer throughput interval = " + interval + " msgs");
+        System.out.print(" - transferred state size is " + statesize + " (at least 8 bytes for the current number of total ops)");
+        System.out.print("Average throughput times: ");
+    }
+
+    @Override
+    public void receiveOrderedMessage(TOMMessage msg) {
+        long receiveInstant = System.currentTimeMillis();
 
         totalOps++;
 
@@ -72,101 +62,73 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
 
         switch (remoteId) {
             case -2:
-           //does nothing, it's a request from the throughput client
+                //does nothing, it's a request from the throughput client
                 System.out.println(); //prints just a new line
-				break;
+                break;
 
             case -1:
-            //send back totalOps
-//        	System.out.println("Client "+msg.getSender()+" requests ops");
-            byte[] command = new byte[12];
-            ByteBuffer buf = ByteBuffer.wrap(command);
-            buf.putInt(-1);
-            buf.putLong(totalOps);
+                //send back totalOps
+                byte[] command = new byte[12];
+                ByteBuffer buf = ByteBuffer.wrap(command);
+                buf.putInt(-1);
+                buf.putLong(totalOps);
                 reply = new TOMMessage(id, msg.getSequence(),
-                    command);
-            cs.send(new Integer[]{msg.getSender()},reply);
+                        command);
+                cs.send(new Integer[]{msg.getSender()}, reply);
                 break;
 
             default:
-            //echo msg to client
-            //System.out.println("Echoing msg to client");
+                //echo msg to client
                 reply = new TOMMessage(id, msg.getSequence(),
-                    msg.getContent());
-            cs.send(new Integer[]{msg.getSender()},reply);
+                        msg.getContent());
+                cs.send(new Integer[]{msg.getSender()}, reply);
         }
 
-        // ## Do throughput calculations
         numDecides++;
-
-//        totalLatencySt1.storeDuration(msg.requestTotalLatency);
-//        batchSt1.storeDuration(msg.consensusBatchSize);
 
         if (numDecides == 1) {
             lastDecideTimeInstant = receiveInstant;
-        } else if (numDecides==interval) {
+        } else if (numDecides == interval) {
             long elapsedTime = receiveInstant - lastDecideTimeInstant;
             //double opsPerSec_ = ((double)interval)/(elapsedTime/1000.0);
-            double opsPerSec = interval/(((double)elapsedTime/1000));
-            if (opsPerSec>max)
+            double opsPerSec = interval / (((double) elapsedTime / 1000));
+            if (opsPerSec > max) {
                 max = opsPerSec;
-            
-            System.out.print(opsPerSec+";");
-//            averageOps.addValue(opsPerSec);
-//            st.storeDuration( Math.round(opsPerSec));
-//            batchSt2.storeDuration(batchSt1.getAverage(true));
-//            totalLatencySt2.storeDuration(totalLatencySt1.getAverage(true));
-//            batchSt1.reset();
-//            totalLatencySt1.reset();
+            }
 
-            /*
-            DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-            Date date = new Date();
-            String dataActual = dateFormat.format(date);
-            System.out.println("("+dataActual+") Last "+interval+" decisions were done at a rate of " + opsPerSec + " ops per second");
-            System.out.println("("+dataActual+") Maximum throughput until now: " + max + " ops per second");
-            */
-            //TODO: colocar impressão do consensus batch size
-            //System.out.println("Msg: "+msg.getId() +" Duration of exec: "+(System.currentTimeMillis()-lastDecideTimeInstant)/1000 + "s Ops/sec: " + opsPerSec);
-            
-//            if (averageOps.getN()==averageIterations){
-////                System.out.println("#Average/Std dev. throughput: "+st.getAverage(true)+"/"+st.getDP(true));
-//                System.out.println("#Avg/Std dev. throughput for "+averageIterations+" times " + interval+ " msgs: "+averageOps.getMean()+"/"+averageOps.getStandardDeviation());
-//                System.out.println("#Peak throughput: " + max +" Total Ops until now: "+totalOps);
-//                //System.out.println("#Average/Std dev. consensus latency: " + consensusLatencySt.getAverage(true) + "/" + consensusLatencySt.getDP(true));
-////                System.out.println("#Average/Std dev. total latency: " + totalLatencySt2.getAverage(true) + "/" + totalLatencySt2.getDP(true));
-////                System.out.println("#Average/Std dev. batch size: " + batchSt2.getAverage(true) + "/" + batchSt2.getDP(true));
-////                st.reset();
-//                averageOps.clear();
-//                //consensusLatencySt.reset();
-////                totalLatencySt2.reset();
-////                batchSt2.reset();
-//            }
-            numDecides = 0;           
+            System.out.print(opsPerSec + ";");
+
+            numDecides = 0;
         }
 
     }
-    
-    public static void main(String[] args){
+
+    public static void main(String[] args) {
         try {
-        if(args.length < 3) {
-            System.out.println("Use: java ThroughputLatencyTestServer <processId> <throughput/latency measurement interval (in messages)> <average throughput interval (number of measurement intervals)>");
-            System.exit(-1);
-        }
+            if (args.length < 3) {
+                System.out.println("Use: java ThroughputLatencyTestServer <processId> <throughput/latency measurement interval (in messages)> <size of transferred state)>");
+                System.exit(-1);
+            }
             new ThroughputLatencyTestServer(new Integer(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
         } catch (IOException ex) {
             Logger.getLogger(ThroughputLatencyTestServer.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
+    @Override
     public byte[] getState() {
-        return new byte[0];
+        state.rewind();
+        state.putLong(totalOps);
+        return state.array();
     }
 
+    @Override
     public void setState(byte[] state) {
-    	//unused
+        ByteBuffer inbuf = ByteBuffer.wrap(state);
+        totalOps = inbuf.getLong();
     }
 
+    @Override
     public void receiveUnorderedMessage(TOMMessage msg) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
