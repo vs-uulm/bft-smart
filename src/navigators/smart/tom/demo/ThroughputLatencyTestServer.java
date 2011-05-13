@@ -57,32 +57,9 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         this.averageIterations = averageIterations;
 //        st = new Storage(averageIterations);
 //        averageOps = new SynchronizedDescriptiveStatistics(averageIterations);
-        System.out.println("#ThroughputLatencyTestServer throughput interval= "+interval+ " msgs");
-        System.out.println("#ThroughputLatencyTestServer measurement interval for average calculations = "+averageIterations+ " throughput intervals ");
-        System.out.println("Average throughput time;");
-    }
-    
-//    public void run(){
-//        //create the configuration object
-//        TOMConfiguration conf = new TOMConfiguration(id,"./config");
-//        try {
-//            //create the communication system
-//            cs = new ServerCommunicationSystem(conf);
-//            System.out.println("#ThroughputLatencyTestServer throughput interval= "+interval+ " msgs");
-//            System.out.println("#ThroughputLatencyTestServer average throughput interval= "+averageIterations+ " throughput intervals ");
-////            startTimeInstant = System.currentTimeMillis();
-//        } catch (Exception ex) {
-//            Logger.getLogger(ThroughputLatencyTestServer.class.getName()).log(Level.SEVERE, null, ex);
-//            throw new RuntimeException("Unable to build a communication system.");
-//        }
-//        //build the TOM server stack
-//        this.init(cs,conf);
-//
-//        /**IST OE CODIGO DO JOAO, PARA TENTAR RESOLVER UM BUG */
-//        cs.start();
-//        service.start();
-//        /******************************************************/
-//    }
+        System.out.print("\nThroughputLatencyTestServer throughput interval = "+interval+ " msgs");
+        System.out.print(" - measurement interval for average calculations = "+averageIterations+ " throughput intervals ");
+        System.out.print("Average throughput times: ");    }
     
     public void receiveOrderedMessage(TOMMessage msg){
         long receiveInstant =  System.currentTimeMillis();          
@@ -92,29 +69,34 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         byte[] request = msg.getContent();
         int remoteId = ByteBuffer.wrap(request).getInt();
 
-        if (remoteId ==-2){
+        TOMMessage reply; //will hold the replz if there is one to be sent
+
+        switch (remoteId) {
+            case -2:
            //does nothing, it's a request from the throughput client
-        }
-        else if (remoteId==-1){
+                break;
+
+            case -1:
             //send back totalOps
 //        	System.out.println("Client "+msg.getSender()+" requests ops");
             byte[] command = new byte[12];
             ByteBuffer buf = ByteBuffer.wrap(command);
             buf.putInt(-1);
             buf.putLong(totalOps);
-            TOMMessage reply = new TOMMessage(id,msg.getSequence(),
+                reply = new TOMMessage(id, msg.getSequence(),
                     command);
             cs.send(new Integer[]{msg.getSender()},reply);
-        }
-        else {
+                break;
+
+            default:
             //echo msg to client
             //System.out.println("Echoing msg to client");
-            TOMMessage reply = new TOMMessage(id,msg.getSequence(),
+                reply = new TOMMessage(id, msg.getSequence(),
                     msg.getContent());
             cs.send(new Integer[]{msg.getSender()},reply);
         }
 
-        //do throughput calculations
+        // ## Do throughput calculations
         numDecides++;
 
 //        totalLatencySt1.storeDuration(msg.requestTotalLatency);
@@ -129,8 +111,8 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
             if (opsPerSec>max)
                 max = opsPerSec;
             
+            System.out.print(opsPerSec+";");
 //            averageOps.addValue(opsPerSec);
-            System.out.println(opsPerSec+";");
 //            st.storeDuration( Math.round(opsPerSec));
 //            batchSt2.storeDuration(batchSt1.getAverage(true));
 //            totalLatencySt2.storeDuration(totalLatencySt1.getAverage(true));
@@ -162,6 +144,7 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
 //            }
             numDecides = 0;           
         }
+
     }
     
     public static void main(String[] args){

@@ -100,6 +100,15 @@ public abstract class TOMSender implements ReplyReceiver {
     }
 
     /**
+     * Multicast a TOMMessage to the group of replicas
+     *
+     * @param m Data to be multicast
+     */
+    public void doTOMulticast(TOMMessage sm) {
+        cs.send(useSignatures, group, sm);
+    }
+
+    /**
      * Multicast data to the group of replicas
      *
      * @param m Data to be multicast
@@ -163,14 +172,6 @@ public abstract class TOMSender implements ReplyReceiver {
     	cs.send(useSignatures, receiver, m);
     }
 
-    /**
-     * Multicast a TOMMessage to the group of replicas
-     *
-     * @param m Data to be multicast
-     */
-    public void TOMulticast(TOMMessage sm) {
-        cs.send(useSignatures, group, sm);
-    }
 
     /**
      * Create TOMMessage and sign it

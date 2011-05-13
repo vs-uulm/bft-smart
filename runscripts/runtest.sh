@@ -57,7 +57,7 @@ done
 
 tmux attach -t "testrun"
 
-echo $(( ++seqnr )) > ${seqfile}
+# echo $(( ++seqnr )) > ${seqfile} # Seqno is not autoincreased any more as the log output shall go to one file now
 
 for (( i = 0 ; i < count ; i++))
 do

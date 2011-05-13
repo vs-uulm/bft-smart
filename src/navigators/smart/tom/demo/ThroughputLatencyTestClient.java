@@ -103,16 +103,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                 command1.putInt(-1);
                 currentId = -1;
                 
-                synchronized (sm) {
-                    if (multicast) {
-                	this.doTOMulticast(command1.array());
-                    } else {
-                	doTOUnicast(target,createTOMMsg(command1.array()));
-                    }
-                    this.sm.wait();	//wait for reply
-                }
+                sendMsg(createTOMMsg(command1.array()));
                 
-                //create msg for # of ops request after signing (id has to be taken before
+                //create msg for # of ops request after signing (generated id has to be taken before creating all msgs are created)
                 TOMMessage msg = createTOMMsg(command1.array());
 
 //                measurementEpoch++;
@@ -134,14 +127,7 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                	//requests current number of ops processed by the servers
                 currentId = -1;
                 
-                synchronized (sm) {
-                    if (multicast) {
-                	this.TOMulticast(msg);
-                    } else {
-                	doTOUnicast(target,msg);
-                    }
-                    this.sm.wait();
-                }
+                sendMsg(msg);
 
                 currentId = myId;
                 
@@ -155,14 +141,7 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                     }
                     last_send_instant = System.nanoTime();
                     
-                        synchronized (sm) {
-                            if (multicast) {
-                    	this.TOMulticast(generatedMsgs.get(i));
-                            } else {
-                    	this.doTOUnicast(target,generatedMsgs.get(i));
-                            }
-                            this.sm.wait();
-                        }
+                    sendMsg(generatedMsgs.get(i));
 
                     if (interval > 0) {
                         //sleeps interval ms before sending next request
@@ -185,8 +164,6 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
 
                 measurementEpoch++;
            }
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ThroughputLatencyTestClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception e){
         	e.printStackTrace();
         }
@@ -309,5 +286,24 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
                 Logger.getLogger(ThroughputLatencyTestClient.class.getName()).log(Level.SEVERE, null, ex);
             }
          }
+    }
+
+    /**
+     * Sends the array to the group depending on the multicast settings
+     * @param array
+     */
+    private void sendMsg(TOMMessage msg) {
+        try {
+            synchronized (sm) {
+                if (multicast) {
+                    doTOMulticast(msg);
+                } else {
+                    doTOUnicast(target, msg);
+}
+                this.sm.wait();	//wait for reply
+            }
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ThroughputLatencyTestClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
