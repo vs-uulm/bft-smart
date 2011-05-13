@@ -2,11 +2,11 @@
 
 # test properties
 numthreads=4	#Number of threads
-currid=0		#current startid so that every client can use another startid and wont get blocked
+currid=0	#current startid so that every client can use another startid and wont get blocked
 nummsgs=10000	#number of messages sent by each client in each epoch
-epochs=1		#Number of epochs to run
-argsize=750		#Argument size of each request
-interval=0		#Interval of waiting between each request
+epochs=10	#Number of epochs to run
+argsize=0	#Argument size of each request
+interval=0	#Interval of waiting between each request
 multicast=true 	#Multicast msgs to all replicas or not - for paxos at war always use multicast - ebawa can live without it
 
 # Change to the prober directory in order to not mess around somewhere else
