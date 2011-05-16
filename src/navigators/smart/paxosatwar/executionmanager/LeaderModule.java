@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedMap;
@@ -40,7 +41,7 @@ public class LeaderModule {
     // Each value of this map is a list of all the rounds of a consensus
     // Each element of that list is a tuple which stands for a round, and the id
     // of the process that was the leader for that round
-    private SortedMap<Long,List<ConsInfo>> leaderInfos = new TreeMap<Long,List<ConsInfo>>();
+    private SortedMap<Long,List<ConsInfo>> leaderInfos = Collections.synchronizedSortedMap(new TreeMap<Long,List<ConsInfo>>());
 
     
 
@@ -149,38 +150,41 @@ public class LeaderModule {
      *
      * @param c Execution ID of the consensus
      */
-    private ReentrantLock leaderInfosLock = new ReentrantLock();
-
     public void removeStableConsenusInfo(Long c) {
 
-        leaderInfosLock.lock();
+        synchronized(leaderInfos){
 
         Long next = Long.valueOf(c.longValue() + 1);
         	
         List<ConsInfo> list = leaderInfos.get(next);
 
-        if (list == null) {//nunca vai acontecer isso!!!
-            System.err.println("- Executing a code that wasn't supposed to be executed :-)");
-            System.err.println("- And we have some reports there is a bug here!");
-            list = new LinkedList<ConsInfo>();
-            leaderInfos.put(next, list);
-            List<ConsInfo> rm = leaderInfos.remove(c);
-            if (rm != null && rm.size()>0) {
-                ConsInfo ci = rm.get(rm.size() - 1);
-                list.add(new ConsInfo(ci.leaderId));
+        try{
+            if (list == null) {//nunca vai acontecer isso!!!
+                System.err.println("- Executing a code that wasn't supposed to be executed :-)");
+                System.err.println("- And we have some reports there is a bug here!");
+                list = new LinkedList<ConsInfo>();
+                leaderInfos.put(next, list);
+                List<ConsInfo> rm = leaderInfos.remove(c);
+                if (rm != null && rm.size()>0) {
+                    ConsInfo ci = rm.get(rm.size() - 1);
+                    list.add(new ConsInfo(ci.leaderId));
+                }
+            } else {
+                leaderInfos.remove(c);
             }
-        } else {
-            leaderInfos.remove(c);
+        } catch (NullPointerException npe){
+            System.out.println("Nullpointer when removing "+c);
+            System.out.println(npe);
         }
 
-        leaderInfosLock.unlock();
+        }
     }
     
     /**Removes all stable consensusinfos older than c **/
     public void removeAllStableConsenusInfo(Long c) {
     	Long next = Long.valueOf(c.longValue() + 1);
 
-        leaderInfosLock.lock();
+        synchronized(leaderInfos){
         List<ConsInfo> list = leaderInfos.get(next);
 
         if (list == null) {//nunca vai acontecer isso!!!
@@ -197,12 +201,12 @@ public class LeaderModule {
             leaderInfos.headMap(next).clear(); //remove all older infos
         }
 
-        leaderInfosLock.unlock();
+        }
     }
 
     public void removeMultipleStableConsenusInfos(Long cStart, Long cEnd) {
     	Long next = Long.valueOf(cEnd.longValue() + 1);
-        leaderInfosLock.lock();
+        synchronized(leaderInfos){
 
         List<ConsInfo> list = leaderInfos.get(next);
 
@@ -222,7 +226,7 @@ public class LeaderModule {
                 leaderInfos.remove(Long.valueOf(c));
         }
 
-        leaderInfosLock.unlock();
+        }
     }
     /********************************************************/
 
