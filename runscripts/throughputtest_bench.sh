@@ -13,7 +13,7 @@ if [ ! -e $logdir ]; then
 	mkdir $logdir
 fi
 
-logfile=${logdir}/${HOSTNAME}_${seqnr}.log
+logfile=${logdir}/${HOSTNAME}.log
 
 echo "Test run $seqnr on $HOSTNAME" >> $logfile
 echo "Executing: $javacmd" >> $logfile
