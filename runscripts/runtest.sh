@@ -47,9 +47,9 @@ echo "Found $clientcount clients to start!"
 for (( i=0 ; i < clientcount; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/clients.config`
-	cmd="cd $dir; runscripts/throughputtest_bench_client.sh $seqnr $numthreads $currid $nummsgs $epochs $argsize $interval $multicast"
+	cmd="cd $dir;runscripts/throughputtest_bench_client.sh $seqnr $numthreads $currid $nummsgs $epochs $argsize $interval $multicast"
 	if [ $i -eq 0 ] ; then
-		tmux new-window -t testrun:1 "ssh ${host} \"$cmd\""
+		tmux new-window -t "testrun:1" "ssh ${host} \"$cmd\""
 	else 
 		tmux split-window "ssh ${host} \"${cmd}\""
 	fi
