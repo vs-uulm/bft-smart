@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -54,6 +55,8 @@ public class StateManager {
     private ReentrantLock lockState = new ReentrantLock();
     private Condition statecondition = lockState.newCondition();
     private MessageDigest md;
+    private AtomicInteger statetransfers;
+
 
     @SuppressWarnings("boxing")
     public StateManager(int k, int f, int n, int me, MessageDigest md) {
@@ -198,9 +201,9 @@ public class StateManager {
 
     public TransferableState getTransferableState(Long eid, boolean sendState) {
         lockState.lock();
-        TransferableState state = statelog.getTransferableState(eid, sendState);
+        TransferableState tfstate = statelog.getTransferableState(eid, sendState);
         lockState.unlock();
-        return state;
+        return tfstate;
     }
 
     /**
@@ -208,6 +211,7 @@ public class StateManager {
      * @param state A valid full state
      */
     public void updateState(TransferableState state) {
+        statetransfers.incrementAndGet();   //increment count log variable
         assert (state.state != null) : "State is null which is not correct";
         lockState.lock();
         statelog.update(state);
@@ -306,6 +310,15 @@ public class StateManager {
     }
 
     /**
+     * Retrieves and resets the number of state transfers since this StateManager
+     * was started or this method was last called.
+     * @return The number of state transfers
+     */
+    public int getAndResetStateTransferCount(){
+        return statetransfers.getAndSet(0);
+    }
+
+    /**
      * This class iss a Holder for a transferred State object
      */
     private class SenderState {
@@ -399,7 +412,5 @@ public class StateManager {
                 }
             }
         }
-
-
     }
 }

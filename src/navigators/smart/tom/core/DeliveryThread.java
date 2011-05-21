@@ -20,6 +20,7 @@ package navigators.smart.tom.core;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -40,7 +41,7 @@ import navigators.smart.tom.util.TOMConfiguration;
  */
 public class DeliveryThread extends Thread {
 	
-	private static final Logger log = Logger.getLogger(DeliveryThread.class.getCanonicalName());
+    private static final Logger log = Logger.getLogger(DeliveryThread.class.getCanonicalName());
 
     private LinkedBlockingQueue<Consensus<TOMMessage[]>> decided = new LinkedBlockingQueue<Consensus<TOMMessage[]>>(); // decided consensus
     private TOMLayer tomLayer; // TOM layer
@@ -80,20 +81,14 @@ public class DeliveryThread extends Thread {
     /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO */
     
     private ReentrantLock deliverLock = new ReentrantLock();
-//    private Condition canDeliver = deliverLock.newCondition();
 
-//    private void deliverLock() {
-//        deliverLock.lock();
-//    }
-//
-//    private void deliverUnlock() {
-//        deliverLock.unlock();
-//    }
-//
-//    private void canDeliver() {
-//        canDeliver.signalAll();
-//    }
-
+    /**
+     * Updates the State of this replica.
+     *
+     * TODO This part should be moved to the StateManager class
+     *
+     * @param transferredState The state we got from the other replicas
+     */
     public void updateState(TransferableState transferredState) {
 
         deliverLock.lock();
@@ -142,7 +137,9 @@ public class DeliveryThread extends Thread {
     
 
     /**
-     * This is the code for the thread. It delivers decided consensus to the TOM request receiver object (which is the application)
+     * This is the code for the thread. It delivers decided consensus to the 
+     * TOMRequestReceiver object (which is the application)
+     *
      */
     @SuppressWarnings("boxing")
     @Override

@@ -18,10 +18,7 @@
 package navigators.smart.tom.core;
 
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +29,6 @@ import navigators.smart.communication.client.RequestReceiver;
 import navigators.smart.consensus.Consensus;
 import navigators.smart.consensus.ConsensusService;
 import navigators.smart.statemanagment.SMMessage;
-import navigators.smart.statemanagment.StateLog;
 import navigators.smart.statemanagment.StateManager;
 import navigators.smart.statemanagment.TransferableState;
 import navigators.smart.tom.TOMReceiver;
@@ -377,4 +373,8 @@ public class TOMLayer implements RequestReceiver {
     public void checkAndWaitForState() {
         stateManager.checkAndWaitForSTF();
 }
+
+    public StateManager getStateManager() {
+        return stateManager;
+    }
 }

@@ -45,6 +45,8 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
     protected ServerCommunicationSystem cs = null; // Server side comunication system
 
+    protected TOMLayer tomlayer;
+
     public TOMReceiver( TOMConfiguration conf) throws IOException {
         this.conf = conf;
         init(conf);
@@ -67,20 +69,20 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
         cs = getCommunicationSystem();
 
-        TOMLayer tomLayer = new TOMLayer( this, cs, conf);
+        tomlayer = new TOMLayer( this, cs, conf);
 
-        TOMMessageHandler msghndlr = new TOMMessageHandler(tomLayer);
+        TOMMessageHandler msghndlr = new TOMMessageHandler(tomlayer);
         cs.addMessageHandler(SystemMessage.Type.FORWARDED,msghndlr);
         cs.addMessageHandler(SystemMessage.Type.SM_MSG,msghndlr);
-        cs.setRequestReceiver(tomLayer);
+        cs.setRequestReceiver(tomlayer);
         cs.start();
 
         ConsensusServiceFactory factory = createFactory(cs, conf);
 
-        ConsensusService service = factory.newInstance(tomLayer);
-        tomLayer.setConsensusService(service); //set backlink
+        ConsensusService service = factory.newInstance(tomlayer);
+        tomlayer.setConsensusService(service); //set backlink
         service.start();
-        Runtime.getRuntime().addShutdownHook(new ShutdownThread(cs,service,tomLayer));
+        Runtime.getRuntime().addShutdownHook(new ShutdownThread(cs,service,tomlayer));
 
         tomStackCreated = true;
     }

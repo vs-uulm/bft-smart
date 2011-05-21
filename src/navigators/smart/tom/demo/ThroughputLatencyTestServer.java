@@ -22,10 +22,8 @@ import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
 
 public class ThroughputLatencyTestServer extends TOMReceiver {
@@ -44,9 +42,9 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         this.interval = interval;
         this.totalOps = 0;
         state = ByteBuffer.allocate(statesize < 8 ? 8 : statesize);
-        System.out.print("\nThroughputLatencyTestServer throughput interval = " + interval + " msgs");
-        System.out.print(" - transferred state size is " + statesize + " (at least 8 bytes for the current number of total ops)");
-        System.out.print("Average throughput times: ");
+        System.out.print("TLTS throughput int: " + interval + " msgs");
+        System.out.print(" - state size: " + statesize + " (min 8 bytes)");
+        System.out.println("Avg throughput times, state tfs: ");
     }
 
     @Override
@@ -63,7 +61,6 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         switch (remoteId) {
             case -2:
                 //does nothing, it's a request from the throughput client
-                System.out.println(); //prints just a new line
                 break;
 
             case -1:
@@ -96,7 +93,7 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
                 max = opsPerSec;
             }
 
-            System.out.print(opsPerSec + ";");
+            System.out.println(opsPerSec +";"+tomlayer.getStateManager().getAndResetStateTransferCount() + ";");
 
             numDecides = 0;
         }
