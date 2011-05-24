@@ -1,14 +1,4 @@
 #!/bin/bash
-
-# test properties
-numthreads=4	#Number of threads
-currid=0	#current startid so that every client can use another startid and wont get blocked
-nummsgs=10000	#number of messages sent by each client in each epoch
-epochs=10	#Number of epochs to run
-argsize=0	#Argument size of each request
-interval=0	#Interval of waiting between each request
-multicast=true 	#Multicast msgs to all replicas or not - for paxos at war always use multicast - ebawa can live without it
-
 # Change to the prober directory in order to not mess around somewhere else
 SCRIPT=`readlink -f $0`
 # Absolute path this script is in, thus /home/user/bin
@@ -32,7 +22,7 @@ seqnr=`cat ${seqfile}`
 for (( i=0 ; i < count; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/hosts.config`
-	cmd="cd $dir; runscripts/throughputtest_bench.sh $i $seqnr $dir"
+	cmd="cd $dir; runscripts/$1 $i $seqnr"
 	if [ $i -eq 0 ] ; then
 		tmux new-session -d -s testrun "ssh $host \"$cmd\""
 		tmux set-window-option -g -t testrun:0 remain-on-exit on
@@ -47,7 +37,7 @@ echo "Found $clientcount clients to start!"
 for (( i=0 ; i < clientcount; i++ )) 
 do
 	host=`awk '$1 == '$i' {print $2}' config/clients.config`
-	cmd="cd $dir;runscripts/throughputtest_bench_client.sh $seqnr $numthreads $currid $nummsgs $epochs $argsize $interval $multicast"
+	cmd="cd $dir; runscripts/$2 $seqnr"
 	if [ $i -eq 0 ] ; then
 		tmux new-window -t "testrun:1" "ssh ${host} \"$cmd\""
 	else 
