@@ -187,4 +187,8 @@ public abstract class TOMSender implements ReplyReceiver {
         }
         return tm;
     }
+
+    public Integer getId() {
+        return me;
+    }
 }
