@@ -51,6 +51,7 @@ public class TOMConfiguration extends Configuration {
     private boolean  stateTransferEnabled;
     private int checkpoint_period;
     private int useControlFlow;
+    private int strongDelay;
     private int signatureSize;
 
     public TOMConfiguration(TOMConfiguration conf, int processId) {
@@ -79,6 +80,7 @@ public class TOMConfiguration extends Configuration {
         this.useControlFlow = conf.useControlFlow;
         this.inQueueSize = conf.inQueueSize;
         this.outQueueSize = conf.outQueueSize;
+        this.strongDelay = conf.strongDelay;
         this.signatureSize = conf.signatureSize;
     }
 
@@ -267,6 +269,16 @@ public class TOMConfiguration extends Configuration {
                     outQueueSize = 200;
                 }
             }
+            s = configs.remove("system.paxos.strongdelay");
+            if (s == null) {
+            	strongDelay = 5;
+            } else {
+            	strongDelay = Integer.parseInt(s);
+            	if (strongDelay < 0) {
+            		strongDelay = 5;
+            	}
+            }
+
             rsaLoader = new RSAKeyLoader(this, configHome);
             
             signatureSize = new TOMUtil().getSignatureSize();
@@ -438,6 +450,10 @@ public class TOMConfiguration extends Configuration {
             return null;
         }
     }
+
+	public long getStrongDelay() {
+		return strongDelay;
+	}
 
 	public int getSignatureSize() {
 		return signatureSize;

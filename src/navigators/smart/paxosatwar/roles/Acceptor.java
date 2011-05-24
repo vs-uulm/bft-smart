@@ -48,6 +48,7 @@ import navigators.smart.tom.util.TOMConfiguration;
 
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
+import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
 /**
  * This class represents the acceptor role in the paxos protocol.
@@ -71,6 +72,7 @@ public class Acceptor {
     private final TOMLayer tomlayer;
     private AcceptedPropose nextProp = null; // next value to be proposed
     private final TOMConfiguration conf; // TOM configuration
+    private final Timer strongtimer;	//timer for delaying strongs
 
     /**
      * Creates a new instance of Acceptor.
@@ -88,6 +90,11 @@ public class Acceptor {
         this.leaderModule = lm;
         this.conf = conf;
         this.tomlayer = layer;
+        if(conf.getStrongDelay() > 0 ){
+        	strongtimer = new Timer("Strong message delay timer");
+        } else {
+        	strongtimer = null;
+        }
     }
 
     /**
@@ -384,9 +391,19 @@ public class Acceptor {
                     log.finer("sending STRONG for " + eid);
 
                 round.setStrong(me, value);
-                communication.send(manager.getOtherAcceptors(),
-                        factory.createStrong(eid, round.getNumber(), value));
-
+		if(conf.getStrongDelay() > 0){
+			round.setStrongtask(new TimerTask() {
+				@Override
+				public void run() {
+					communication.send(manager.getOtherAcceptors(),
+					factory.createStrong(eid, round.getNumber(), value));
+				}
+			});
+			strongtimer.schedule(round.getStrongtask(), conf.getStrongDelay());
+		} else {
+			communication.send(manager.getOtherAcceptors(),
+			factory.createStrong(eid, round.getNumber(), value));
+		}
                 computeStrong(eid, round, value);
             }
 
@@ -597,6 +614,12 @@ public class Acceptor {
              communication.send(manager.getOtherAcceptors(),
                      factory.createDecide(eid, round.getNumber(), round.propValue));
          }
+		 //we are decided, cancel sending of strong
+		 if(round.getStrongtask() != null){
+			 round.getStrongtask().cancel();
+			 strongtimer.purge();
+		 }
+
 		leaderModule.decided(round.getExecution().getId(), leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
 		round.getTimeoutTask().cancel(false);
 		round.getExecution().decided(round/* , value */);
