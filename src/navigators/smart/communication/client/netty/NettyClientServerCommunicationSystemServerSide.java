@@ -126,13 +126,13 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             System.out.println("#Using MACs = " + conf.getVerifierType().equals(VerifierType.PTPVerifier));
             System.out.println("#Using Signatures = " + conf.getUseSignatures());
         } catch (InvalidKeySpecException ex) {
-            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         } catch (InvalidKeyException ex) {
-            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         } catch (SignatureException ex) {
-            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -140,9 +140,10 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
     public void exceptionCaught(
             ChannelHandlerContext ctx, ExceptionEvent e) {
         if (e.getCause().toString().equals("Connection reset by peer")) {
-            Logger.getLogger(NettyClientServerCommunicationSystemServerSide.class.getCanonicalName()).info(e.getCause().toString());
+            log.info(e.toString());
         } else {
-            Logger.getLogger(NettyClientServerCommunicationSystemServerSide.class.getCanonicalName()).warning(e.getCause().toString());
+            log.warning(e.toString());
+            e.getCause().printStackTrace();
         }
     }
 
