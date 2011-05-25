@@ -83,4 +83,8 @@ public class NettyClientServerSession {
         this.lastMsgReceived = lastMsgReceived_;
     }
 
+    @Override
+    public String toString() {
+        return "Session: "+replicaId+" lastMsg: "+lastMsgReceived;
+    }
 }
