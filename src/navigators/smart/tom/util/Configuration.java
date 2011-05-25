@@ -46,13 +46,14 @@ public class Configuration {
     private int hmacSize = 160;
 
     protected static String configHome = "";
-    protected final static String hostsFileName = "hosts.config";
+    protected static String hostsFileName = "hosts.config";
 
     private String factoryclass = "navigators.smart.paxosatwar.PaxosAtWarServiceFactory";
 
     private String ptpverifierclass = "navigators.smart.communication.HMacVerifierFactory";
 
     private String globalverifierclass = "navigators.smart.communication.USIGFactory";
+    private final String HOST_CONFIG_PROPERTY = "navigators.smart.hostconfig";
 
 
     public Configuration(Configuration conf, Integer processId){
@@ -66,6 +67,11 @@ public class Configuration {
         this.hosts = conf.hosts;
         this.factoryclass = conf.factoryclass;
         this.ptpverifierclass = conf.ptpverifierclass;
+        if(System.getProperty(HOST_CONFIG_PROPERTY)!=null){
+            hostsFileName=System.getProperty(HOST_CONFIG_PROPERTY);
+        } else {
+            hostsFileName="hosts.config";
+        }
     }
 
      public Configuration(Integer processId, String configHome){
