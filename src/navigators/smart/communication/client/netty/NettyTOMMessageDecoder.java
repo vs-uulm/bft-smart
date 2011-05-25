@@ -38,6 +38,7 @@ import navigators.smart.tom.util.TOMConfiguration;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
@@ -91,8 +92,8 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
         //establish connection
         if (!connected) {
             // we got id of the client, skip bytes, init connection and finish
-            initConnection(dataLength, channel);
-            connected = true;
+            //the dataLength field holds the id of the sender in this case
+            connected = initConnection(dataLength, channel);
             return null;
         }
 
@@ -169,8 +170,21 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
         return sm;
     }
 
-    public void initConnection(int sender, Channel channel) {
+    public boolean initConnection(int sender, Channel channel) {
         try {
+            rl.readLock().lock();
+            boolean connectedalready = sessionTable.containsKey(sender);
+            rl.readLock().unlock();
+            if(connectedalready){
+                log.severe("Somebody else with this id is already connected!");
+                ChannelFuture f = channel.close();
+                try {
+                    f.await();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return false;
+            }
             // creates MAC/publick key stuff if it's the first message received
             // from the client
             navigators.smart.tom.util.Logger.println("Creating MAC/public key stuff, first message from client" + sender);
@@ -182,14 +196,16 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
             NettyClientServerSession cs = new NettyClientServerSession(channel, macSend, macReceive, sender, TOMConfiguration.getRSAPublicKey(sender), new ReentrantLock());
             rl.writeLock().lock();
             sessionTable.put(sender, cs);
+            rl.writeLock().unlock();
             if(log.isLoggable(Level.FINER))
                     log.fine("#active clients " + sessionTable.size());
-            rl.writeLock().unlock();
+            return true;
         } catch (InvalidKeyException ex) {
             Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return false;
     }
 
     boolean verifyMAC(int id, byte[] data, byte[] digest) {
