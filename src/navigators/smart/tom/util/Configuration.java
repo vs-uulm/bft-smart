@@ -53,7 +53,7 @@ public class Configuration {
     private String ptpverifierclass = "navigators.smart.communication.HMacVerifierFactory";
 
     private String globalverifierclass = "navigators.smart.communication.USIGFactory";
-    private final String HOST_CONFIG_PROPERTY = "navigators.smart.hostconfig";
+    private final String HOST_CONFIG_PROPERTY = "navigators.smart.hostconfigfile";
 
 
     public Configuration(Configuration conf, Integer processId){
@@ -67,16 +67,17 @@ public class Configuration {
         this.hosts = conf.hosts;
         this.factoryclass = conf.factoryclass;
         this.ptpverifierclass = conf.ptpverifierclass;
-        if(System.getProperty(HOST_CONFIG_PROPERTY)!=null){
-            hostsFileName=System.getProperty(HOST_CONFIG_PROPERTY);
-        } else {
-            hostsFileName="hosts.config";
-        }
+        this.hostsFileName = conf.hostsFileName;
     }
 
      public Configuration(Integer processId, String configHome){
         this.processId = processId;
         Configuration.configHome = configHome;
+        if(System.getProperty(HOST_CONFIG_PROPERTY)!=null){
+            hostsFileName=System.getProperty(HOST_CONFIG_PROPERTY);
+        } else {
+            hostsFileName="hosts.config";
+        }
         init();
     }
 
