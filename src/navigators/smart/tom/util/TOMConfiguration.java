@@ -15,7 +15,6 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.tom.util;
 
 import java.security.PrivateKey;
@@ -44,15 +43,16 @@ public class TOMConfiguration extends Configuration {
     protected int clientServerCommSystem;
     private int maxMessageSize;
     private int debug;
-    private int numNIOThreads;   
+    private int numNIOThreads;
     private int commBuffering;
     private VerifierType verifiertype;
     private int useSignatures;
-    private boolean  stateTransferEnabled;
+    private boolean stateTransferEnabled;
     private int checkpoint_period;
     private int useControlFlow;
     private int strongDelay;
     private int signatureSize;
+    private long sendDelay;
 
     public TOMConfiguration(TOMConfiguration conf, int processId) {
         super(conf, processId);
@@ -82,15 +82,15 @@ public class TOMConfiguration extends Configuration {
         this.outQueueSize = conf.outQueueSize;
         this.strongDelay = conf.strongDelay;
         this.signatureSize = conf.signatureSize;
+        this.sendDelay = sendDelay;
     }
-
 
     /** Creates a new instance of TOMConfiguration
      * @param processId The id of this process
      * @param configHome The location of the necessary config files
      */
     @SuppressWarnings("boxing")
-	public TOMConfiguration(Integer processId, String configHome) {
+    public TOMConfiguration(Integer processId, String configHome) {
         super(processId, configHome);
     }
 
@@ -169,10 +169,11 @@ public class TOMConfiguration extends Configuration {
                 Logger.debug = false;
             } else {
                 debug = Integer.parseInt(s);
-                if (debug==0)
+                if (debug == 0) {
                     Logger.debug = false;
-                else
+                } else {
                     Logger.debug = true;
+                }
             }
 
             s = configs.remove("system.totalordermulticast.replayVerificationTime");
@@ -210,7 +211,7 @@ public class TOMConfiguration extends Configuration {
                 numNIOThreads = Integer.parseInt(s);
             }
 
-             s = configs.remove("system.communication.commBuffering");
+            s = configs.remove("system.communication.commBuffering");
             if (s == null) {
                 commBuffering = 0;
             } else {
@@ -271,16 +272,25 @@ public class TOMConfiguration extends Configuration {
             }
             s = configs.remove("system.paxos.strongdelay");
             if (s == null) {
-            	strongDelay = 5;
+                strongDelay = 5;
             } else {
-            	strongDelay = Integer.parseInt(s);
-            	if (strongDelay < 0) {
-            		strongDelay = 5;
-            	}
+                strongDelay = Integer.parseInt(s);
+                if (strongDelay < 0) {
+                    strongDelay = 5;
+                }
+            }
+            s = configs.remove("system.testing.sendDelay");
+            if (s == null) {
+                sendDelay = 0;
+            } else {
+                sendDelay = Integer.parseInt(s);
+                if (sendDelay < 0) {
+                    sendDelay = 0;
+                }
             }
 
             rsaLoader = new RSAKeyLoader(this, configHome);
-            
+
             signatureSize = new TOMUtil().getSignatureSize();
 
         } catch (Exception e) {
@@ -366,7 +376,7 @@ public class TOMConfiguration extends Configuration {
         return clientServerCommSystem;
     }
 
-     /**
+    /**
      *     
      */
     public int getNumberOfNIOThreads() {
@@ -408,7 +418,7 @@ public class TOMConfiguration extends Configuration {
         return checkpoint_period;
     }
 
-     /**
+    /**
      * Indicates if a simple control flow mechanism should be used to avoid an overflow of client requests
      */
     public int getUseControlFlow() {
@@ -451,11 +461,15 @@ public class TOMConfiguration extends Configuration {
         }
     }
 
-	public long getStrongDelay() {
-		return strongDelay;
-	}
+    public long getStrongDelay() {
+        return strongDelay;
+    }
 
-	public int getSignatureSize() {
-		return signatureSize;
-	}
+    public int getSignatureSize() {
+        return signatureSize;
+    }
+
+    public long getSendDelay() {
+        return sendDelay;
+    }
 }

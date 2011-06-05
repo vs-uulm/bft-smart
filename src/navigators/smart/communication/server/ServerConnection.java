@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +65,8 @@ public class ServerConnection {
     private GlobalMessageVerifier globalverifier;
     @SuppressWarnings("rawtypes")
     private final Map<SystemMessage.Type, MessageHandler> msgHandlers;
+
+    private Timer delayTimer;
 
     @SuppressWarnings("rawtypes")
     public ServerConnection(TOMConfiguration conf, SocketChannel socket, int remoteId,
@@ -241,9 +245,22 @@ public class ServerConnection {
      * Thread used to send packets to the remote server.
      */
     private class SenderThread extends Thread {
+        private boolean delaySending;
+        private long delay;
 
         public SenderThread() {
             super("Sender for " + remoteId);
+            delay = conf.getSendDelay();
+            delaySending = delay > 0;
+            if(delaySending){
+                delayTimer = new Timer("DelayTimer for "+remoteId);
+                delayTimer.schedule(new TimerTask(){
+                    @Override
+                    public void run() {
+                        Thread.currentThread().setPriority(MAX_PRIORITY);
+                    }
+                }, 5);
+            }
         }
 
         @Override
@@ -258,7 +275,12 @@ public class ServerConnection {
                 }
 
                 if (data != null) {
-                    sendBytes(data);
+                    if(delaySending){
+                        System.out.println("["+remoteId+"]Undelayed sendtime "+ System.currentTimeMillis());
+                        delayTimer.schedule(new DelayTask(data), delay);
+                    } else {
+                        sendBytes(data);
+                    }
                 }
             }
 
@@ -406,6 +428,23 @@ public class ServerConnection {
                             "update ServerConnection.java?");
             }
             return verified;
+        }
+    }
+
+    /**
+     * Delays the sending of a packet by a given amount of time to simulate
+     * wan conditions. Very basic but better than nothing.
+     */
+    private class DelayTask extends TimerTask{
+        private final byte [] data;
+        public DelayTask(byte[] data){
+            this.data = data;
+        }
+
+        @Override
+        public void run() {System.out.println(
+            "["+remoteId+"]Delayed sendtime "+ System.currentTimeMillis());
+            sendBytes(data);
         }
     }
 }
