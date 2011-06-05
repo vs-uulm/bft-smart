@@ -212,8 +212,9 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
         rl.readLock().lock();
         Mac macReceive = sessionTable.get(id).getMacReceive();
         rl.readLock().unlock();
-        boolean result = Arrays.equals(macReceive.doFinal(data), digest);
-        return result;
+        synchronized(macReceive){
+            return Arrays.equals(macReceive.doFinal(data), digest);
+        }
     }
 
     boolean verifySignature(int id, byte[] data, byte[] digest) {

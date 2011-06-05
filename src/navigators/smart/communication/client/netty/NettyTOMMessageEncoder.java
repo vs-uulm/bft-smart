@@ -97,9 +97,11 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
 
     byte[] produceMAC(Integer id, byte[] data){
         rl.readLock().lock();
-        Mac macSend = sessionTable.get(id).getMacSend();
+        Mac macsend = sessionTable.get(id).getMacSend();
         rl.readLock().unlock();
-        return macSend.doFinal(data);
+        synchronized(macsend){
+            return macsend.doFinal(data);
+        }
     }
 
 }
