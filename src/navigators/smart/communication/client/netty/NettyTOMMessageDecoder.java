@@ -35,6 +35,7 @@ import javax.crypto.SecretKey;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.Configuration;
 import navigators.smart.tom.util.TOMConfiguration;
+import navigators.smart.tom.util.TimeLog;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
@@ -62,6 +63,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
     private Signature signatureEngine;
     private boolean useMAC;
     private boolean connected;
+    private int sender;
 
     public NettyTOMMessageDecoder(boolean isClient, Hashtable<Integer, NettyClientServerSession> sessionTable, SecretKey authKey, int macLength, Configuration conf, ReentrantReadWriteLock rl, int signatureLength, boolean useMAC) {
         this.isClient = isClient;
@@ -120,8 +122,11 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
 
         byte[] data = new byte[totalLength - authLength];
         buffer.readBytes(data);
-
+        if (TimeLog.isfine)
+            TimeLog.log.fine("["+sender+"]Recv raw: "+System.currentTimeMillis());
         TOMMessage sm = new TOMMessage(ByteBuffer.wrap(data));
+        if (TimeLog.isfine)
+            TimeLog.log.fine("["+sender+"]Dec raw: "+System.currentTimeMillis()+" : "+sm);
 
         byte[] digest = null;
         if (useMAC) {
@@ -150,6 +155,8 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
                     Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.WARNING, "MAC error: message discarded");
                     return null;
                 }
+                if (TimeLog.isfine)
+                    TimeLog.log.fine("["+sender+"]Verified mac: "+System.currentTimeMillis()+" : "+sm);
             }
         } else { /* it's a server */
             //verifies MAC if it's not the first message received from the client
@@ -172,6 +179,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
 
     public boolean initConnection(int sender, Channel channel) {
         try {
+            this.sender = sender;
             rl.readLock().lock();
             boolean connectedalready = sessionTable.containsKey(sender);
             rl.readLock().unlock();

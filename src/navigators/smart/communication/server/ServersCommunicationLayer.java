@@ -26,6 +26,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -35,6 +36,7 @@ import java.util.logging.Logger;
 import navigators.smart.communication.MessageHandler;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.util.TOMConfiguration;
+import navigators.smart.tom.util.TimeLog;
 
 /**
  * 
@@ -78,6 +80,8 @@ public class ServersCommunicationLayer extends Thread {
 		serverSocket.socket().setSoTimeout(10000);
 		serverSocket.socket().setReuseAddress(true);
 		serverSocket.socket().bind(new InetSocketAddress(conf.getPort(conf.getProcessId())));
+
+                navigators.smart.tom.util.TimeLog.log.fine("bla");
 	}
 	
 	@Override
@@ -92,8 +96,9 @@ public class ServersCommunicationLayer extends Thread {
 
 	@SuppressWarnings("boxing")
 	public final void send(Integer[] targets, SystemMessage sm) {
-
-		byte[] data = sm.getBytes();
+            if(TimeLog.isfine)
+                TimeLog.log.fine("Sending "+sm+" to "+Arrays.toString(targets)+": "+System.currentTimeMillis());
+            byte[] data = sm.getBytes();
 
 		for (int i : targets) {
 			if(log.isLoggable(Level.FINEST))

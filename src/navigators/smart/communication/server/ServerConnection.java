@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 import navigators.smart.communication.MessageHandler;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.util.TOMConfiguration;
+import navigators.smart.tom.util.TimeLog;
 
 /**
  * This class represents a connection with other server.
@@ -155,6 +156,8 @@ public class ServerConnection {
                     if (ptpverifier != null) {
                         socketchannel.write(ByteBuffer.wrap(ptpverifier.generateHash(messageData)));
                     }
+                    if(TimeLog.isfine)
+                            TimeLog.log.fine("["+remoteId+"]Sent msg: "+System.currentTimeMillis());
                     return;
                 } catch (IOException ex) {
                     log.log(Level.SEVERE, null, ex);
@@ -337,7 +340,8 @@ public class ServerConnection {
                         } else {
                             buf.limit(dataLength);
                         }
-
+                        if(TimeLog.isfine)
+                            TimeLog.log.fine("["+remoteId+"]Recv raw: "+System.currentTimeMillis());
                         buf.rewind();
                         //read data
                         while (buf.hasRemaining()) {
@@ -354,6 +358,8 @@ public class ServerConnection {
                             SystemMessage.Type type = SystemMessage.Type.getByByte(buf.get(0));
                             assert (msgHandlers.containsKey(type)) : "Messagehandlers does not contain " + type + ". It contains: " + msgHandlers;
                             SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
+                        if(TimeLog.isfine)
+                            TimeLog.log.fine("["+remoteId+"]Decoded "+sm+": "+System.currentTimeMillis());
 
                             if (log.isLoggable(Level.FINEST)) {
                                 log.finest("Received " + sm);
