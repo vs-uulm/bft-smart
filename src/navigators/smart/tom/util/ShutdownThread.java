@@ -47,6 +47,7 @@ public class ShutdownThread extends Thread {
         System.err.println("---------- DEBUG INFO ----------");
         System.err.println("Current time: " + System.currentTimeMillis());
         System.err.println(conSrv);
+        Statistics.stats.printStats();
 //        Round r = manager.getExecution(tomLayer.getLastExec()).getLastRound();
 //        System.err.println("Last executed leader: " +
 //                lm.getLeader(r.getExecution().getId(),r.getNumber()));

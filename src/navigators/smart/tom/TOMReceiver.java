@@ -53,6 +53,18 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
     }
 
 
+    /**
+     * Can start a TOMReceiver without initialising the cs in order to do this later.
+     * @param conf
+     * @param initcs
+     * @throws IOException
+     */
+    public TOMReceiver( TOMConfiguration conf, boolean initcs) throws IOException {
+        this.conf = conf;
+        if(initcs){
+            init(conf);
+        }
+    }
     
     /**
      * This method initializes the object

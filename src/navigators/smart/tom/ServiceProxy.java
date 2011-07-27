@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import navigators.smart.communication.client.CommunicationSystemClientSideFactory;
 import navigators.smart.tom.core.messages.TOMMessage;
+import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 
 
@@ -63,6 +64,7 @@ public class ServiceProxy extends TOMSender {
         n = conf.getN();
         f = conf.getF();
         replies = new TOMMessage[n];
+        Statistics.init(conf);
     }
 
     /**
@@ -88,15 +90,15 @@ public class ServiceProxy extends TOMSender {
 
         // Ahead lies a critical section.
         // This ensures the thread-safety by means of a semaphore
-        synchronized(sync){
-        try{
-        // Discard previous replies
-        Arrays.fill(replies, null);
-        response = null;
-        // Send the request to the replicas, and get its ID
+        synchronized (sync) {
+            try {
+                // Discard previous replies
+                Arrays.fill(replies, null);
+                response = null;
+                // Send the request to the replicas, and get its ID
 //        doTOMulticast(request,readOnly);
-        doTOUnicast(request,0, readOnly);
-        reqId = getLastSequenceNumber();
+                doTOUnicast(request, 0, readOnly);
+                reqId = getLastSequenceNumber();
                 sync.wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);

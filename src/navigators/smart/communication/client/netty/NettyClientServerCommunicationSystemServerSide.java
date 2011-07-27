@@ -50,6 +50,7 @@ import navigators.smart.communication.server.ServerConnection;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.TOMConfiguration;
 import navigators.smart.tom.util.TOMUtil;
+import navigators.smart.tom.util.Statistics;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -216,7 +217,8 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             if (ncss!=null){
                 Channel session = sessionTable.get(targets[i]).getChannel();
                 rl.readLock().unlock();
-                sm.destination = targets[i];                
+                sm.destination = targets[i];
+                Statistics.stats.sentMsgToClient(i,sm);
                 //send message
                 session.write(sm);
             }

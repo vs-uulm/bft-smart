@@ -82,7 +82,7 @@ public class TOMConfiguration extends Configuration {
         this.outQueueSize = conf.outQueueSize;
         this.strongDelay = conf.strongDelay;
         this.signatureSize = conf.signatureSize;
-        this.sendDelay = sendDelay;
+        this.sendDelay = conf.sendDelay;
     }
 
     /** Creates a new instance of TOMConfiguration

@@ -36,6 +36,7 @@ import navigators.smart.tom.TOMRequestReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.BatchBuilder;
 import navigators.smart.tom.util.BatchReader;
+import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 import navigators.smart.tom.util.TOMUtil;
 
@@ -47,7 +48,7 @@ import navigators.smart.tom.util.TOMUtil;
  */
 public class TOMLayer implements RequestReceiver {
 	
-	private static Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());
+    private static Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());
     //other components used by the TOMLayer (they are never changed)
     private ServerCommunicationSystem communication; // Communication system between replicas
     private final DeliveryThread dt; // Thread which delivers total ordered messages to the appication
@@ -70,7 +71,7 @@ public class TOMLayer implements RequestReceiver {
     public TOMLayer(TOMReceiver receiver,
             ServerCommunicationSystem cs,
             TOMConfiguration conf) {
-
+        Statistics.init(conf);
         this.receiver = receiver;
         this.communication = cs;
         this.conf = conf;

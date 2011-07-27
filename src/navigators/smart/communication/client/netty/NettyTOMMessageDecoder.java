@@ -35,7 +35,7 @@ import javax.crypto.SecretKey;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.Configuration;
 import navigators.smart.tom.util.TOMConfiguration;
-import navigators.smart.tom.util.TimeLog;
+import navigators.smart.tom.util.Statistics;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
@@ -122,11 +122,9 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
 
         byte[] data = new byte[totalLength - authLength];
         buffer.readBytes(data);
-        if (TimeLog.isfine)
-            TimeLog.log.fine("["+sender+"]Recv raw: "+System.currentTimeMillis());
+        Statistics.stats.receivedMsgFromClient(sender);
         TOMMessage sm = new TOMMessage(ByteBuffer.wrap(data));
-        if (TimeLog.isfine)
-            TimeLog.log.fine("["+sender+"]Dec raw: "+System.currentTimeMillis()+" : "+sm);
+        Statistics.stats.decodedMsgFromClient(sender,sm);
 
         byte[] digest = null;
         if (useMAC) {
@@ -155,8 +153,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
                     Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.WARNING, "MAC error: message discarded");
                     return null;
                 }
-                if (TimeLog.isfine)
-                    TimeLog.log.fine("["+sender+"]Verified mac: "+System.currentTimeMillis()+" : "+sm);
+                Statistics.stats.verifiedMac(sender,sm);
             }
         } else { /* it's a server */
             //verifies MAC if it's not the first message received from the client
