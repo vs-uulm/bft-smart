@@ -50,6 +50,7 @@ import static navigators.smart.tom.util.Statistics.stats;
 public class ServerConnection {
 
     private static final Logger log = Logger.getLogger(ServerConnection.class.getName());
+    private static final Logger delaylog = Logger.getLogger(ServerConnection.class.getName()+".delaylogger");
     private static final long POOL_TIME = 1000;
     private TOMConfiguration conf;
     private SocketChannel socketchannel;
@@ -120,19 +121,18 @@ public class ServerConnection {
             if (useSenderThread) {
                 //only enqueue messages if there queue is not full
                 if (!outQueue.offer(data)) {
-                    if (log.isLoggable(Level.FINE)) {
-                        log.fine("out queue for " + remoteId + " full (message discarded).");
-                    }
+                    log.log(Level.FINE, "out queue for {0} full (message discarded).", remoteId);
                 }
             } else {
-                sendLock.lock();
-                sendBytes(data);
-                sendLock.unlock();
+                try {
+                    sendLock.lock();
+                    sendBytes(data);
+                } finally {
+                    sendLock.unlock();
+                }
             }
         } else {
-            if (log.isLoggable(Level.FINER)) {
-                log.finer("Connection to " + remoteId + " currently not established - not sending msg to it");
-            }
+            log.log(Level.FINER, "Connection to {0} currently not established - not sending msg to it", remoteId);
         }
     }
 
@@ -140,7 +140,7 @@ public class ServerConnection {
      * try to send a message through the socket
      * if some problem is detected, a reconnection is done
      */
-    private final void sendBytes(byte[] messageData) {
+    private void sendBytes(byte[] messageData) {
         int i = 0;
         do {
             if (socketchannel != null /*&& socketOutStream != null*/) {
@@ -195,9 +195,7 @@ public class ServerConnection {
             }
 
             if (socketchannel != null) {
-                if (log.isLoggable(Level.INFO)) {
-                    log.fine("Reconnected to " + remoteId);
-                }
+                log.log(Level.FINE, "Reconnected to {0}", remoteId);
             }
         }
 
@@ -233,8 +231,7 @@ public class ServerConnection {
     private void waitAndConnect() {
         if (doWork) {
             try {
-                if(log.isLoggable(Level.FINE))
-                    log.fine("Waiting to connect to "+remoteId);
+                log.log(Level.FINE, "Waiting to connect to {0}", remoteId);
                 Thread.sleep(POOL_TIME);
             } catch (InterruptedException ie) {
             }
@@ -278,7 +275,7 @@ public class ServerConnection {
 
                 if (data != null) {
                     if(delaySending){
-                        System.out.println("["+remoteId+"]Undelayed sendtime "+ System.currentTimeMillis());
+                        delaylog.log(Level.FINEST, "[{0}]Undelayed sendtime {1}", new Object[]{remoteId, System.currentTimeMillis()});
                         delayTimer.schedule(new DelayTask(data), delay);
                     } else {
                         sendBytes(data);
@@ -286,7 +283,7 @@ public class ServerConnection {
                 }
             }
 
-            log.log(Level.INFO, "Sender for " + remoteId + " stopped!");
+            log.log(Level.INFO, "Sender for {0} stopped!", remoteId);
         }
     }
 
@@ -324,17 +321,10 @@ public class ServerConnection {
                         buf.flip();
                         int dataLength = buf.getInt();
 
-                        if (log.isLoggable(Level.FINEST)) {
-                            log.finest("Receiving msg of size" + dataLength + " from " + remoteId);
-                        }
+                        log.log(Level.FINEST, "Receiving msg of size{0} from {1}", new Object[]{dataLength, remoteId});
 
-//                        if(dataLength>1024){
-//                        	log.severe("Datalength got huge: "+dataLength);
-//                        }
                         if (buf.capacity() < dataLength) {
-                            if (log.isLoggable(Level.FINE)) {
-                                log.fine("Adjusting buffer to new max datalength: " + dataLength);
-                            }
+                            log.log(Level.FINE, "Adjusting buffer to new max datalength: {0}", dataLength);
                             buf = ByteBuffer.allocate(dataLength);
                         } else {
                             buf.limit(dataLength);
@@ -359,7 +349,7 @@ public class ServerConnection {
                             stats.decodedMsg(remoteId,sm);
 
                             if (log.isLoggable(Level.FINEST)) {
-                                log.finest("Received " + sm);
+                                log.log(Level.FINEST, "Received {0}", sm);
                             }
 
                             if (sm.getSender() == remoteId) {
@@ -369,8 +359,8 @@ public class ServerConnection {
                             }
                         } else {
                             //TODO: violation of authentication... we should do something
-                            log.severe("Received bad " + Arrays.toString(Arrays.copyOfRange(buf.array(), 0, buf.limit() > 100 ? 100 : buf.limit())) + " from " + remoteId);
-                            log.severe("Limit is: " + buf.limit());
+                            log.log(Level.SEVERE, "Received bad {0} from {1}", new Object[]{Arrays.toString(Arrays.copyOfRange(buf.array(), 0, buf.limit() > 100 ? 100 : buf.limit())), remoteId});
+                            log.log(Level.SEVERE, "Limit is: {0}", buf.limit());
                         }
 
                     } catch (ClassNotFoundException ex) {
@@ -393,7 +383,7 @@ public class ServerConnection {
                 }
             }
 
-            log.log(Level.INFO, "Receiver for " + remoteId + " stopped!");
+            log.log(Level.INFO, "Receiver for {0} stopped!", remoteId);
         }
 
         /**
@@ -445,8 +435,8 @@ public class ServerConnection {
         }
 
         @Override
-        public void run() {System.out.println(
-            "["+remoteId+"]Delayed sendtime "+ System.currentTimeMillis());
+        public void run() {
+            delaylog.log(Level.FINEST, "[{0}]Delayed sendtime {1}", new Object[]{remoteId, System.currentTimeMillis()});
             sendBytes(data);
         }
     }
