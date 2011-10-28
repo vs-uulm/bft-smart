@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import navigators.smart.communication.MessageHandler;
+import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.util.TOMConfiguration;
 import static navigators.smart.tom.util.Statistics.stats;
@@ -265,7 +266,7 @@ public class ServerConnection {
         @Override
         public void run() {
             byte[] data = null;
-
+            ServerCommunicationSystem.setThreadPriority(this);
             while (doWork) {
                 //get a message to be sent
                 try {
@@ -307,7 +308,7 @@ public class ServerConnection {
         @Override
         public void run() {
             ByteBuffer buf = ByteBuffer.allocate(256);
-
+            ServerCommunicationSystem.setThreadPriority(this);
             while (doWork) {
                 if (socketchannel != null /*&& socketInStream != null*/) {
                     try {

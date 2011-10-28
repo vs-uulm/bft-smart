@@ -76,7 +76,6 @@ import navigators.smart.tom.util.TOMConfiguration;
     @SuppressWarnings({ "rawtypes", "unchecked" })
 	public ServerCommunicationSystem(TOMConfiguration conf) throws IOException  {
         super("Server CS");
-
         inQueue = new ArrayBlockingQueue<SystemMessage>(conf.getInQueueSize());
         
         //create a new conf, with updated port number for servers
@@ -109,6 +108,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     
     @Override
     public synchronized void start(){
+        setThreadPriority(this);
     	serversConn.start();
     	super.start();
     }
@@ -191,6 +191,25 @@ import navigators.smart.tom.util.TOMConfiguration;
     @Override
     public String toString() {
         return serversConn.toString();
+    }
+
+    /**
+     * Checks if the "navigators.smart.communication.threadpriority" is set and
+     * sets this threads priority accordingly.
+     * If not a default value of 8 is used.
+     */
+    public static void setThreadPriority(Thread t) {
+        if (System.getProperty("navigators.smart.communication.threadpriority") != null) {
+            try {
+                Integer.parseInt(System.getProperty("navigators.smart.communication.client.netty.threadpriority"));
+                t.setPriority(t.getPriority() + 1);
+                return;
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Failed to parse threadpriority: {0} ",e.getMessage());
+            }
+       }
+       //set increased priority if System property is not set or invalid
+       t.setPriority(Thread.NORM_PRIORITY + 1);
     }
 }
 

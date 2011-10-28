@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -96,12 +97,33 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
 
             tomutil = new TOMUtil();
             
+            //Create threadfactory in order to set thread priority
+            //remember to enable priorities with -XX:+UseThreadPriorities
+            ThreadFactory tfactory = new ThreadFactory() {
+
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "NettyWorker");
+                    if (System.getProperty("navigators.smart.communication.client.netty.threadpriority") != null) {
+                        try {
+                            Integer.parseInt(System.getProperty("navigators.smart.communication.client.netty.threadpriority"));
+                            t.setPriority(t.getPriority() + 1);
+                        } catch (Exception e) {
+                            log.log(Level.WARNING, "Failed to parse threadpriority: {0} ",e.getMessage());
+                            t.setPriority(Thread.NORM_PRIORITY + 1);
+                        }
+                    } else {
+                        t.setPriority(Thread.NORM_PRIORITY + 1);
+                    }
+                    return t;
+                }
+            };
+            
             //Configure the server.
             /* Cached thread pool */
             ServerBootstrap bootstrap = new ServerBootstrap(
                 new NioServerSocketChannelFactory(
-                        Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool()));
+                        Executors.newCachedThreadPool(tfactory),
+                        Executors.newCachedThreadPool(tfactory)));
             
 
             Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
