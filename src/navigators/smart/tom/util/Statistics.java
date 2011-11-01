@@ -76,7 +76,7 @@ public class Statistics {
                 + "; " + rtt.getMean()
                 + "; " + dec.getMean());
         System.out.println("Client stats");
-        System.out.println("Client;Decoding;StdDev;Var;Total Duration;StdDev;Var");
+        System.out.println("Client;Count;Decoding;StdDev;Var;Total Duration;StdDev;Var");
         for (Integer i : clientstatsmap.keySet()) {
             System.out.println(i+"; "+clientstatsmap.get(i).toString());
         }
