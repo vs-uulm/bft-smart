@@ -45,7 +45,7 @@ class ClientStats {
         //format output nicely
         NumberFormat df = NumberFormat.getNumberInstance();
         //print csv style
-        return decoding.getMean() + "; " 
+        return df.format(decoding.getMean())+ "; " 
                 + df.format(decoding.getStandardDeviation()) + "; " 
                 + df.format(decoding.getVariance()) + "; " 
                 + df.format(totalduration.getMean())+"; "

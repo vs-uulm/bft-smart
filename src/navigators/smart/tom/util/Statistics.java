@@ -76,9 +76,9 @@ public class Statistics {
                 + "; " + rtt.getMean()
                 + "; " + dec.getMean());
         System.out.println("Client stats");
-        System.out.println("Decoding;StdDev;Var;Total Duration;StdDev;Var");
-        for (ClientStats clientStats : clientstatsmap.values()) {
-            System.out.println(clientStats.toString());
+        System.out.println("Client;Decoding;StdDev;Var;Total Duration;StdDev;Var");
+        for (Integer i : clientstatsmap.keySet()) {
+            System.out.println(i+"; "+clientstatsmap.get(i).toString());
         }
     }
 
