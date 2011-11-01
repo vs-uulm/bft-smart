@@ -44,26 +44,28 @@ public class ShutdownThread extends Thread {
 
     @Override
     public void run() {
-        System.err.println("---------- DEBUG INFO ----------");
-        System.err.println("Current time: " + System.currentTimeMillis());
-        System.err.println(conSrv);
-        Statistics.stats.printStats();
-//        Round r = manager.getExecution(tomLayer.getLastExec()).getLastRound();
-//        System.err.println("Last executed leader: " +
-//                lm.getLeader(r.getExecution().getId(),r.getNumber()));
-//        System.err.println("State of the last executed round: "+r.toString());
-//        if(tomLayer.getInExec() != -1) {
-//            Round r2 = manager.getExecution(tomLayer.getInExec()).getLastRound();
-//            if(r2 != null) {
-//                System.err.println("State of the round in execution: "+r2.toString());
-//            }
-//        }
-//        System.err.println("Execution manager: "+ tomLayer.execManager);
-//        System.err.println("Server communication system queues: "+
-//                scs.toString());
-        //System.err.println("Pending requests: " +
-        //        tomLayer.clientsManager.getPendingRequests());
-//        System.err.println("Requests timers: " + tomLayer.requestsTimer);
-        System.err.println("---------- ---------- ----------");
+        synchronized(Statistics.stats){
+            System.err.println("---------- DEBUG INFO ----------");
+            System.err.println("Current time: " + System.currentTimeMillis());
+            System.err.println(conSrv);
+            Statistics.stats.printStats();
+    //        Round r = manager.getExecution(tomLayer.getLastExec()).getLastRound();
+    //        System.err.println("Last executed leader: " +
+    //                lm.getLeader(r.getExecution().getId(),r.getNumber()));
+    //        System.err.println("State of the last executed round: "+r.toString());
+    //        if(tomLayer.getInExec() != -1) {
+    //            Round r2 = manager.getExecution(tomLayer.getInExec()).getLastRound();
+    //            if(r2 != null) {
+    //                System.err.println("State of the round in execution: "+r2.toString());
+    //            }
+    //        }
+    //        System.err.println("Execution manager: "+ tomLayer.execManager);
+    //        System.err.println("Server communication system queues: "+
+    //                scs.toString());
+            //System.err.println("Pending requests: " +
+            //        tomLayer.clientsManager.getPendingRequests());
+    //        System.err.println("Requests timers: " + tomLayer.requestsTimer);
+            System.err.println("---------- ---------- ----------");
+        }
     }
 }
