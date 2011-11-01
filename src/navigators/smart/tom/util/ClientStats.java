@@ -45,11 +45,11 @@ class ClientStats {
         //format output nicely
         NumberFormat df = NumberFormat.getNumberInstance();
         //print csv style
-        return decoding.getMean() + ", " 
-                + df.format(decoding.getStandardDeviation()) + ", " 
-                + df.format(decoding.getVariance()) + ", " 
-                + df.format(totalduration.getMean())+", "
-                + df.format(totalduration.getStandardDeviation())+", "
+        return decoding.getMean() + "; " 
+                + df.format(decoding.getStandardDeviation()) + "; " 
+                + df.format(decoding.getVariance()) + "; " 
+                + df.format(totalduration.getMean())+"; "
+                + df.format(totalduration.getStandardDeviation())+"; "
                 + df.format(totalduration.getVariance());
     }
 }

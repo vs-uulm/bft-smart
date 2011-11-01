@@ -70,13 +70,13 @@ public class Statistics {
     }
 
     public void printStats() {
-        System.out.println("Client rtt, Rtt, Decoding");
+        System.out.println("Client rtt; Rtt; Decoding");
         NumberFormat nf = NumberFormat.getNumberInstance();
         System.out.println(crtt.getMean()
-                + ", " + rtt.getMean()
-                + ", " + dec.getMean());
+                + "; " + rtt.getMean()
+                + "; " + dec.getMean());
         System.out.println("Client stats");
-        System.out.println("Decoding,StdDev,Var,Total Duration,StdDev,Var");
+        System.out.println("Decoding;StdDev;Var;Total Duration;StdDev;Var");
         for (ClientStats clientStats : clientstatsmap.values()) {
             System.out.println(clientStats.toString());
         }
