@@ -110,6 +110,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
                         } catch (Exception e) {
                             log.log(Level.WARNING, "Failed to parse threadpriority: {0} ",e.getMessage());
                             t.setPriority(Thread.NORM_PRIORITY + 1);
+                            
                         }
                     } else {
                         t.setPriority(Thread.NORM_PRIORITY + 1);
@@ -240,9 +241,10 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
                 Channel session = sessionTable.get(targets[i]).getChannel();
                 rl.readLock().unlock();
                 sm.destination = targets[i];
-                Statistics.stats.sentMsgToClient(i,sm);
                 //send message
                 session.write(sm);
+                //log to statistics module
+                Statistics.stats.sentMsgToClient(i,sm);
             }
             else
                 rl.readLock().unlock();

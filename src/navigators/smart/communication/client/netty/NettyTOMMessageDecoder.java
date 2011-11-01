@@ -123,6 +123,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
         byte[] data = new byte[totalLength - authLength];
         buffer.readBytes(data);
         Statistics.stats.receivedMsgFromClient(sender);
+        //create TOMMessage - deserialisation happens here
         TOMMessage sm = new TOMMessage(ByteBuffer.wrap(data));
         Statistics.stats.decodedMsgFromClient(sender,sm);
 
