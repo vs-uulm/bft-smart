@@ -27,6 +27,7 @@ import javax.crypto.Mac;
 
 import navigators.smart.tom.core.messages.TOMMessage;
 
+import navigators.smart.tom.util.Statistics;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -88,11 +89,14 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
 	        /* signature */
 	        if (signatureData != null)
 	            buf.writeBytes(signatureData);
+                //log to statistics module
+                Statistics.stats.sentMsgToClient(sm.destination,sm);
+
     	} else {
     		buf = (ChannelBuffer)msg;
     	}
 
-        Channels.write(ctx, e.getFuture(), buf);        
+        Channels.write(ctx, e.getFuture(), buf);
     }
 
     byte[] produceMAC(Integer id, byte[] data){

@@ -82,10 +82,6 @@ public class Statistics {
         }
     }
 
-    public void sentMsgToClient(int i, TOMMessage sm) {
-        getClientStats(i).sentMsg(sm);
-    }
-
     public void decodedMsg(int remoteId, SystemMessage sm) {
         if (isfine) {
             log.fine("[" + remoteId + "]Decoded msg " + sm);
@@ -147,6 +143,10 @@ public class Statistics {
         if (isfine) {
             log.fine("[" + sender + "]Dec raw: " + System.nanoTime() + " : " + sm);
         }
+    }
+    
+    public void sentMsgToClient(int i, TOMMessage sm) {
+        getClientStats(i).sentMsg(sm);
     }
 
     public void sendingMsgToServer(Integer[] targets, SystemMessage sm) {
