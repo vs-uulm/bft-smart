@@ -244,7 +244,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
                 //send message
                 session.write(sm);
                 //log to statistics module
-                Statistics.stats.sentMsgToClient(i,sm);
+                Statistics.stats.sentMsgToClient(targets[i],sm);
             }
             else
                 rl.readLock().unlock();
