@@ -114,11 +114,11 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 
                     // Start the connection attempt.
                     ChannelFuture future = null;
+                    log.fine("Connecting to replica " + i + " at " + conf.getRemoteAddress(i));
                     do {
                         if(future != null){
                             log.warning("Failed to connect to replica " + i + " at " + conf.getRemoteAddress(i)+" - trying again.");
                         }
-                        log.info("Connecting to replica " + i + " at " + conf.getRemoteAddress(i));
                         future = bootstrap.connect(conf.getRemoteAddress(i));
                         future.awaitUninterruptibly();
 
