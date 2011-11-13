@@ -26,7 +26,7 @@ import org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatistics;
 public class Statistics {
 
     private static final Logger log = Logger.getLogger("navigators.smart.timestamplogger");
-    private boolean isfine;
+    private static boolean isfine;
     private Long[] sent;
     private Long[] recv;
     private boolean isLeader;
@@ -38,7 +38,7 @@ public class Statistics {
     private final SynchronizedSummaryStatistics dec;
     public static Statistics stats;
 
-    {
+    static {
         log.setUseParentHandlers(false);
         isfine = log.isLoggable(Level.FINE);
         FileHandler fh;
