@@ -133,10 +133,6 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
                     NettyClientServerSession cs = new NettyClientServerSession(future.getChannel(), macSend, macReceive, i, TOMConfiguration.getRSAPublicKey(i), new ReentrantLock());
                     sessionTable.put(i, cs);
 
-                    System.out.println("Connecting to replica " + i + " at " + conf.getRemoteAddress(i));
-                    future.awaitUninterruptibly();
-
-
                 } catch (InvalidKeyException ex) {
                     log.log(Level.SEVERE, null, ex);
                 }
