@@ -41,9 +41,10 @@ public class PaxosMessage extends SystemMessage {
      */
     public PaxosMessage( ByteBuffer in) {
         super(Type.PAXOS_MSG,in);
+        
         paxosType = in.getInt();
-		number = Long.valueOf(in.getLong());
-		round = Integer.valueOf(in.getInt());
+	number = Long.valueOf(in.getLong());
+	round = Integer.valueOf(in.getInt());
 		
     }
 
@@ -53,7 +54,7 @@ public class PaxosMessage extends SystemMessage {
      * @param round Round number
      * @param from This should be this process ID
      */
-	public PaxosMessage(int paxosType, Long id, Integer round, Integer from) {
+    public PaxosMessage(int paxosType, Long id, Integer round, Integer from) {
         super(SystemMessage.Type.PAXOS_MSG, from);
 
         this.paxosType = paxosType;
@@ -61,35 +62,6 @@ public class PaxosMessage extends SystemMessage {
         this.round = round;
 
     }
-
-//    /**
-//     * Creates a paxos message. Used by the message factory to create a WEAK, STRONG, or DECIDE message
-//     * TODO: Q tal meter isto sem quantificador, para ser so visivel no mesmo package?
-//     * @param paxosType This should be MessageFactory.WEAK, MessageFactory.STRONG or MessageFactory.DECIDE
-//     * @param id Consensus's execution ID
-//     * @param round Round number
-//     * @param from This should be this process ID
-//     * @param value The value decided, or strongly/weakly accepted
-//     */
-//    public PaxosMessage(int paxosType, long id,int round,int from, byte[] value) {
-//
-//        this(paxosType, id, round, from, value, null);
-//
-//    }
-
-//    /**
-//     * Creates a paxos message. Used by the message factory to create a FREEZE message
-//     * TODO: Q tal meter isto sem quantificador, para ser so visivel no mesmo package?
-//     * @param paxosType This should be MessageFactory.FREEZE
-//     * @param id Consensus's execution ID
-//     * @param round Round number
-//     * @param from This should be this process ID
-//     */
-//    public PaxosMessage(int paxosType, long id,int round, int from) {
-//
-//        this(paxosType, id, round, from, null, null);
-//
-//    }
 
     // Implemented method of the Externalizable interface
     @Override
@@ -110,38 +82,6 @@ public class PaxosMessage extends SystemMessage {
     }
     
 //
-//    // Implemented method of the Externalizable interface
-//    @Override
-//    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-//
-//        super.readExternal(in);
-//
-//        number = in.readInt();
-//        round = in.readInt();
-//        paxosType = in.readInt();
-//
-//        int toRead = in.readInt();
-//
-//        if(toRead != -1) {
-//
-//            value = new byte[toRead];
-//
-//            do{
-//
-//                toRead -= in.read(value, value.length-toRead, toRead);
-//
-//            } while(toRead > 0);
-//
-//        }
-//
-//        //WEAK, STRONG, DECIDE and FREEZE does not have associated proofs
-//        if(paxosType == MessageFactory.PROPOSE || paxosType == MessageFactory.COLLECT) {
-//
-//            proof = new CollectProof(in);
-//
-//        }
-//
-//    }
 
     /**
      * Retrieves the round number to which this message belongs
@@ -241,11 +181,11 @@ public class PaxosMessage extends SystemMessage {
 
 	public static PaxosMessage readFromBuffer(ByteBuffer buf) {
 		//read type for deserialisation and reset it then for beautiful deserialisation
-		buf.mark(); //TODO beautify this
-		buf.get(); //read type
-		buf.getInt(); // read sender
-		int ptype = buf.getInt();
-		buf.reset();
+		buf.mark();                 //mark current position
+		buf.get();                  //read type
+		buf.getInt();               //read sender and drop it
+		int ptype = buf.getInt();   //read type
+		buf.reset();                //reset buffer
 		switch (ptype) {
 		case PROPOSE:
 			return new Propose(buf);
