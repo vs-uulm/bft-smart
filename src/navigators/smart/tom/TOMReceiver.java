@@ -23,8 +23,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import navigators.smart.communication.ForwardedMessageHandler;
 import navigators.smart.communication.ServerCommunicationSystem;
-import navigators.smart.communication.TOMMessageHandler;
+import navigators.smart.communication.StateMessageHandler;
 import navigators.smart.consensus.ConsensusService;
 import navigators.smart.consensus.ConsensusServiceFactory;
 import navigators.smart.tom.core.TOMLayer;
@@ -83,9 +84,8 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
         tomlayer = new TOMLayer( this, cs, conf);
 
-        TOMMessageHandler msghndlr = new TOMMessageHandler(tomlayer);
-        cs.addMessageHandler(SystemMessage.Type.FORWARDED,msghndlr);
-        cs.addMessageHandler(SystemMessage.Type.SM_MSG,msghndlr);
+        cs.addMessageHandler(SystemMessage.Type.FORWARDED,new ForwardedMessageHandler(tomlayer));
+        cs.addMessageHandler(SystemMessage.Type.SM_MSG,new StateMessageHandler(tomlayer));
         cs.setRequestReceiver(tomlayer);
         cs.start();
 
