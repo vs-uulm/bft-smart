@@ -28,15 +28,15 @@ public class StateMessageHandler<A> implements MessageHandler<SMMessage, A> {
 
 	@Override
 	public void processData(SystemMessage sm) {
-		 if(log.isLoggable(Level.FINER))
-                log.finer("(MessageHandler.processData) receiving a state managment message from replica " + sm.getSender());
-            SMMessage smsg = (SMMessage) sm;
-            if (smsg.getType() == TOMUtil.SM_REQUEST) {
-                tomLayer.SMRequestDeliver(smsg);
-            }
-            else {
-                tomLayer.SMReplyDeliver(smsg);
-            }
+		if (log.isLoggable(Level.FINER)) {
+			log.finer("(MessageHandler.processData) receiving a state managment message from replica " + sm.getSender());
+		}
+		SMMessage smsg = (SMMessage) sm;
+		if (smsg.getType() == TOMUtil.SM_REQUEST) {
+			tomLayer.SMRequestDeliver(smsg);
+		} else {
+			tomLayer.SMReplyDeliver(smsg);
+		}
 
 	}
 
