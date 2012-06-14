@@ -15,23 +15,17 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.consensus;
-
 
 /**
  * This class stands for an instance of a consensus which measures the executiontime
  * @param <E> Type of the decidedupon values
  */
-public class MeasuringConsensus<E> extends Consensus<E>{
+public class MeasuringConsensus<E> extends Consensus<E> {
 
-    // TODO: Faz sentido existir aqui um proposer? Porque não ter isto antes no TOM layer?
-    //private Proposer proposer; // the proposer role of the PaW algorithm
-
-    // TODO: Faz sentido ser public?
-    public long startTime; // the consensus start time
-    public long executionTime; // consensus execution time
-    public int batchSize=0; //number of messages included in the batch
+    public final long startTime; // the consensus start time
+    public volatile long executionTime; // consensus execution time
+    public volatile int batchSize = 0; //number of messages included in the batch
 
     /**
      * Creates a new instance of MeasuringConsensus

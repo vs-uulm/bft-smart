@@ -105,7 +105,6 @@ public class LeaderModule {
 
     /**
      * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number
-     * TODO: Isto e mais do que um getter. Sera q nao se devia mudar isto?
      * @param c consensus's execution ID
      * @param r Round number for the specified consensus
      * @return The replica ID of the leader
