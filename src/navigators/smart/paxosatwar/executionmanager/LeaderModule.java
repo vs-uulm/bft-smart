@@ -110,7 +110,6 @@ public class LeaderModule {
      * @return The replica ID of the leader
      */
     public Integer getLeader(Long c, Integer r) {
-        /***/
         List<ConsInfo> list = leaderInfos.get(c);
         if (list == null) {
             //there are no information for the execution c
