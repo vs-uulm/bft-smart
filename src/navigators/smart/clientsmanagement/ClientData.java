@@ -46,7 +46,7 @@ public class ClientData {
     public ClientData(Integer clientId) {
         this.clientId = clientId;
     }
-
+    
     public Integer getClientId() {
         return clientId;
     }

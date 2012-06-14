@@ -306,4 +306,12 @@ public class ClientsManager {
         /******* END CLIENTDATA CRITICAL SECTION ******/
         clientData.clientLock.unlock();
     }
+    
+    /**
+     * Resets all client related information. All incoming client requests
+     * will be treated as new. This is used to reset replicas between tests.
+     */
+    public void resetClients(){
+        clientsData.clear();
     }
+}

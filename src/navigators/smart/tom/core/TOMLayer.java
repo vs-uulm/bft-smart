@@ -18,6 +18,7 @@
 package navigators.smart.tom.core;
 
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,7 +61,10 @@ public class TOMLayer implements RequestReceiver {
     private TOMRequestReceiver receiver;
     private BatchBuilder bb = new BatchBuilder();
     private MessageDigest md;
+    /** Sync used to synchronize between forwarded and normal messages */
     private final Object requestsync = new Object();
+    /** Marker msg indicating a reset request */
+    private byte[] RESET = {2,6,1,2,8,0};
 
     /**
      * Creates a new instance of TOMulticastLayer
@@ -124,20 +128,26 @@ public class TOMLayer implements RequestReceiver {
      * @param msg The request being received
      */
     public void requestReceived(TOMMessage msg) {
-    	synchronized(requestsync){		//synchronize forwareded and client received msg access
-    		// check if this request is valid
-    		if (clientsManager.requestReceived(msg, true, !msg.isReadOnlyRequest())) {
-    			if (msg.isReadOnlyRequest()) {
+        //synchronize forwareded and client received msg access
+        synchronized (requestsync) {
+            // check if reset is triggered
+            // TODO Add property to disable this for "live" usage if ever intended
+            if (Arrays.equals(msg.getContent(), RESET)){
+                clientsManager.resetClients();
+            }
+            // check if this request is valid
+            if (clientsManager.requestReceived(msg, true, !msg.isReadOnlyRequest())) {
+                if (msg.isReadOnlyRequest()) {
                     receiver.receiveUnorderedMessage(msg);
-    			} else {
-    				consensusService.notifyNewRequest(msg);
-    			}
-    		} else {
+                } else {
+                    consensusService.notifyNewRequest(msg);
+                }
+            } else {
                 if (log.isLoggable(Level.FINER)) {
-    				log.finer(" the received TOMMessage " + msg + " was discarded.");
-    		}
-    	}
-    }
+                    log.finer(" the received TOMMessage " + msg + " was discarded.");
+                }
+            }
+        }
     }
 
     /**
