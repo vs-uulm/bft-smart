@@ -78,13 +78,7 @@ import navigators.smart.tom.util.TOMConfiguration;
         super("Server CS");
         inQueue = new ArrayBlockingQueue<SystemMessage>(conf.getInQueueSize());
         
-        //create a new conf, with updated port number for servers
-        TOMConfiguration serversConf = new TOMConfiguration(conf.getProcessId(),
-                Configuration.getHomeDir());
-
-        serversConf.increasePortNumber();
-
-        MessageVerifierFactory<PTPMessageVerifier> ptpFactory = null;
+       MessageVerifierFactory<PTPMessageVerifier> ptpFactory = null;
         switch (conf.getVerifierType()) {
             case PTPVerifier:
                 ptpFactory = createVerifierFactory(conf.getPTPVerifierFactoryClassname());
@@ -99,6 +93,10 @@ import navigators.smart.tom.util.TOMConfiguration;
                 log.info("No verification is used");
         }
         
+        //create a new conf, with updated port number for servers
+        TOMConfiguration serversConf = new TOMConfiguration(conf.getProcessId(),
+                Configuration.getHomeDir());
+        serversConf.increasePortNumber();
         serversConn = new ServersCommunicationLayer(serversConf,inQueue,msgHandlers,ptpFactory,verifier);
 
         clientsConn = CommunicationSystemServerSideFactory.getCommunicationSystemServerSide(conf);
