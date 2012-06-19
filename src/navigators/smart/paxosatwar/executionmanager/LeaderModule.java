@@ -15,7 +15,6 @@
  * 
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.paxosatwar.executionmanager;
 
 import java.io.ByteArrayInputStream;
@@ -29,9 +28,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
+
 /**
  * This class manages information about the leader of each round of each consensus
  * @author edualchieri
@@ -41,9 +40,8 @@ public class LeaderModule {
     // Each value of this map is a list of all the rounds of a consensus
     // Each element of that list is a tuple which stands for a round, and the id
     // of the process that was the leader for that round
-    private SortedMap<Long,List<ConsInfo>> leaderInfos = Collections.synchronizedSortedMap(new TreeMap<Long,List<ConsInfo>>());
-
-    
+    private SortedMap<Long, List<ConsInfo>> leaderInfos = Collections.synchronizedSortedMap(new TreeMap<Long, List<ConsInfo>>());
+    private final Object sync = new Object();
 
     /**
      * Creates a new instance of LeaderModule
@@ -60,7 +58,7 @@ public class LeaderModule {
      * @param r Rounds of the consensus where the replica is a leader
      * @param l ID of the leader
      */
-    public void addLeaderInfo(Long c, Integer r, Integer l) {
+    public final void addLeaderInfo(Long c, Integer r, Integer l) {
         List<ConsInfo> list = leaderInfos.get(c);
         if (list == null) {
             list = new LinkedList<ConsInfo>();
@@ -127,20 +125,20 @@ public class LeaderModule {
             }
         } else {
             ConsInfo info = findInfo(list, r);
-            if(info!=null){
+            if (info != null) {
                 return info.leaderId;
             }
         }
         return null;
     }
-    
+
     /**
      * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number 0
      * @param c consensus's execution ID
      * @return The replica ID of the leader
      */
     public Integer getLeader(Long c) {
-    	return getLeader(c, ROUND_ZERO);
+        return getLeader(c, ROUND_ZERO);
     }
 
     /**
@@ -150,109 +148,109 @@ public class LeaderModule {
      */
     public void removeStableConsenusInfo(Long c) {
 
-        synchronized(leaderInfos){
+        synchronized (sync) {
 
+            Long next = Long.valueOf(c.longValue() + 1);
+
+            List<ConsInfo> list = leaderInfos.get(next);
+
+            try {
+                if (list == null) {//nunca vai acontecer isso!!!
+                    System.err.println("- Executing a code that wasn't supposed to be executed :-)");
+                    System.err.println("- And we have some reports there is a bug here!");
+                    list = new LinkedList<ConsInfo>();
+                    leaderInfos.put(next, list);
+                    List<ConsInfo> rm = leaderInfos.remove(c);
+                    if (rm != null && rm.size() > 0) {
+                        ConsInfo ci = rm.get(rm.size() - 1);
+                        list.add(new ConsInfo(ci.leaderId));
+                    }
+                } else {
+                    leaderInfos.remove(c);
+                }
+            } catch (NullPointerException npe) {
+                System.out.println("Nullpointer when removing " + c);
+                System.out.println(npe);
+            }
+
+        }
+    }
+
+    /**Removes all stable consensusinfos older than c **/
+    public void removeAllStableConsenusInfo(Long c) {
         Long next = Long.valueOf(c.longValue() + 1);
-        	
-        List<ConsInfo> list = leaderInfos.get(next);
 
-        try{
+        synchronized (sync) {
+            List<ConsInfo> list = leaderInfos.get(next);
+
             if (list == null) {//nunca vai acontecer isso!!!
                 System.err.println("- Executing a code that wasn't supposed to be executed :-)");
                 System.err.println("- And we have some reports there is a bug here!");
                 list = new LinkedList<ConsInfo>();
                 leaderInfos.put(next, list);
                 List<ConsInfo> rm = leaderInfos.remove(c);
-                if (rm != null && rm.size()>0) {
+                if (rm != null && rm.size() > 0) {
                     ConsInfo ci = rm.get(rm.size() - 1);
                     list.add(new ConsInfo(ci.leaderId));
                 }
             } else {
-                leaderInfos.remove(c);
+                leaderInfos.headMap(next).clear(); //remove all older infos
             }
-        } catch (NullPointerException npe){
-            System.out.println("Nullpointer when removing "+c);
-            System.out.println(npe);
-        }
-
-        }
-    }
-    
-    /**Removes all stable consensusinfos older than c **/
-    public void removeAllStableConsenusInfo(Long c) {
-    	Long next = Long.valueOf(c.longValue() + 1);
-
-        synchronized(leaderInfos){
-        List<ConsInfo> list = leaderInfos.get(next);
-
-        if (list == null) {//nunca vai acontecer isso!!!
-            System.err.println("- Executing a code that wasn't supposed to be executed :-)");
-            System.err.println("- And we have some reports there is a bug here!");
-            list = new LinkedList<ConsInfo>();
-            leaderInfos.put(next, list);
-            List<ConsInfo> rm = leaderInfos.remove(c);
-            if (rm != null && rm.size()>0) {
-                ConsInfo ci = rm.get(rm.size() - 1);
-                list.add(new ConsInfo(ci.leaderId));
-            }
-        } else {
-            leaderInfos.headMap(next).clear(); //remove all older infos
-        }
 
         }
     }
 
     public void removeMultipleStableConsenusInfos(Long cStart, Long cEnd) {
-    	Long next = Long.valueOf(cEnd.longValue() + 1);
-        synchronized(leaderInfos){
+        Long next = Long.valueOf(cEnd.longValue() + 1);
+        synchronized (sync) {
 
-        List<ConsInfo> list = leaderInfos.get(next);
+            List<ConsInfo> list = leaderInfos.get(next);
 
-        if (list == null) {//nunca vai acontecer isso!!!
-            //System.err.println("- Executing a code that wasn't supposed to be executed :-)");
-            //System.err.println("- And we have some reports there is a bug here!");
-            list = new LinkedList<ConsInfo>();
-            leaderInfos.put(next, list);
-            List<ConsInfo> rm = leaderInfos.get(cEnd);
-            if (rm != null) {
+            if (list == null) {//nunca vai acontecer isso!!!
+                //System.err.println("- Executing a code that wasn't supposed to be executed :-)");
+                //System.err.println("- And we have some reports there is a bug here!");
+                list = new LinkedList<ConsInfo>();
+                leaderInfos.put(next, list);
+                List<ConsInfo> rm = leaderInfos.get(cEnd);
+                if (rm != null) {
                     ConsInfo ci = rm.get(rm.size() - 1);
                     list.add(new ConsInfo(ci.leaderId));
+                }
             }
-        }
 
-        for (long c = cStart.longValue(); c <= cEnd.longValue(); c++) {
+            for (long c = cStart.longValue(); c <= cEnd.longValue(); c++) {
                 leaderInfos.remove(Long.valueOf(c));
-        }
+            }
 
         }
     }
+
     /********************************************************/
+    public byte[] getState() {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
+        ObjectOutputStream oos;
+        try {
+            oos = new ObjectOutputStream(bos);
+            oos.writeObject(leaderInfos);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            // cannot happen with bytearray outputstream
+        }
+        return null;
+    }
 
-    public byte[] getState(){
-    	ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
-    	ObjectOutputStream oos;
-		try {
-			oos = new ObjectOutputStream(bos);
-			oos.writeObject(leaderInfos);
-			return bos.toByteArray();
-		} catch (IOException e) {
-			// cannot happen with bytearray outputstream
-		}
-    	return null;
-    }
-    
     @SuppressWarnings("unchecked")
-	public void setState(byte[] state) throws ClassNotFoundException{
-    	ByteArrayInputStream bais = new ByteArrayInputStream(state);
-    	ObjectInputStream ois;
-		try {
-			ois = new ObjectInputStream(bais);
-			leaderInfos = (SortedMap<Long, List<ConsInfo>>) ois.readObject();
-		} catch (IOException e) {
-			//cannot happen with bais
-		}
+    public void setState(byte[] state) throws ClassNotFoundException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(state);
+        ObjectInputStream ois;
+        try {
+            ois = new ObjectInputStream(bais);
+            leaderInfos = (SortedMap<Long, List<ConsInfo>>) ois.readObject();
+        } catch (IOException e) {
+            //cannot happen with bais
+        }
     }
-    
+
     /**
      * This class represents a tuple formed by a round number and the replica ID of that round's leader
      */
@@ -265,9 +263,10 @@ public class LeaderModule {
             this.round = ROUND_ZERO;
             this.leaderId = l;
         }
+
         public ConsInfo(Integer round, Integer l) {
-        	this.round = round;
-        	this.leaderId = l;
+            this.round = round;
+            this.leaderId = l;
+        }
     }
-}
 }
