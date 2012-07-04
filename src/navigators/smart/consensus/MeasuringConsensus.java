@@ -23,9 +23,9 @@ package navigators.smart.consensus;
  */
 public class MeasuringConsensus<E> extends Consensus<E> {
 
-    public final long startTime; // the consensus start time
-    public volatile long executionTime; // consensus execution time
-    public volatile int batchSize = 0; //number of messages included in the batch
+    public final long startTime;            // the consensus start time
+    public volatile long executionTime;     // consensus execution time
+    public volatile int batchSize = 0;      //number of messages included in the batch
 
     /**
      * Creates a new instance of MeasuringConsensus
