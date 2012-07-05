@@ -182,7 +182,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
             boolean connectedalready = sessionTable.containsKey(sender);
             rl.readLock().unlock();
             if(connectedalready){
-                log.severe("Somebody else with this id is already connected!");
+                log.log(Level.SEVERE, "Somebody else with id {0} is already connected!",sender);
                 ChannelFuture f = channel.close();
                 try {
                     f.await();
@@ -203,6 +203,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
             rl.writeLock().lock();
             sessionTable.put(sender, cs);
             rl.writeLock().unlock();
+	    log.log(Level.INFO,"Client {0} connected.",sender);
             if(log.isLoggable(Level.FINER))
                     log.fine("#active clients " + sessionTable.size());
             return true;

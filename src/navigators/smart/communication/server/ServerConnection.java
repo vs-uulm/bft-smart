@@ -322,7 +322,8 @@ public class ServerConnection {
                         buf.flip();
                         int dataLength = buf.getInt();
 
-                        log.log(Level.FINEST, "Receiving msg of size{0} from {1}", new Object[]{dataLength, remoteId});
+
+						log.log(Level.FINEST, "Receiving msg of size{0} from {1}", new Object[]{dataLength, remoteId});
 
                         if (buf.capacity() < dataLength) {
                             log.log(Level.FINE, "Adjusting buffer to new max datalength: {0}", dataLength);
