@@ -17,6 +17,7 @@ import java.util.logging.SimpleFormatter;
 import navigators.smart.consensus.Consensus;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.core.messages.TOMMessage;
+import org.apache.commons.math.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatistics;
 
 /**
@@ -35,6 +36,9 @@ public class Statistics {
 	private Long[] sent;
 	private Long[] recv;
 	private boolean isLeader;
+	// Vars for dynamic header extension of stats files
+	private volatile boolean headerPrinted = false;
+	private volatile String headerExtension = "";
 	private long start;
 	// Map holding the client statistic objects
 	private final Map<Integer, ClientStats> clientstatsmap = Collections.synchronizedMap(new HashMap<Integer, ClientStats>());
@@ -88,21 +92,42 @@ public class Statistics {
 			statsdir.mkdirs();
 			serverstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + SERVER_STATS_FILE)));
 			clientstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + CLIENT_STATS_FILE)));
+			
 		} catch (IOException ex) {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
 		}
 	}
+	
+	public void extendStats(String name){
+		headerExtension += name+" StdDev Var";
+	}
 
-	public void printStats() {
-		serverstatswriter.println("\"Client rtt\" Rtt Decoding");
+	public void printStats(SummaryStatistics ... stats) {
+		if(!headerPrinted){
+			headerPrinted = true;
+			serverstatswriter.println("\"Client rtt\" Rtt Decoding" + headerExtension);
+			clientstatswriter.println("Client Count Decoding StdDev Var \"Total Duration\" StdDev Var");
+		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
-		serverstatswriter.println(nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean()));
+		String serverstats = nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
+		for(int i = 0;i<stats.length;i++){
+			serverstats += " "+stats[i].getMean()+" "+stats[i].getStandardDeviation()+" "+stats[i].getVariance();
+		}
+		serverstatswriter.println(serverstats);
 
-		clientstatswriter.println("Client Count Decoding StdDev Var \"Total Duration\" StdDev Var");
 		for (Integer i : clientstatsmap.keySet()) {
 			clientstatswriter.println(i + " " + clientstatsmap.get(i).toString());
 		}
+		reset();
+	}
+	
+	public void printAndClose() {
+		printStats();
+		close();
+	}
+	
+	public void close(){
 		serverstatswriter.close();
 		clientstatswriter.close();
 	}
@@ -216,5 +241,12 @@ public class Statistics {
 			clientstatsmap.put(client, clientstats);
 		}
 		return clientstats;
+	}
+
+	private void reset() {
+		rtt.clear();
+		dec.clear();
+		decisionduration.clear();
+		crtt.clear();
 	}
 }
