@@ -89,8 +89,11 @@ import navigators.smart.tom.util.TOMConfiguration;
                 verifier.authenticateAndEstablishAuthKey();
                 assert verifier != null : "Failed to load USIG Service";
                 break;
-            default:
+	    case None:
                 log.info("No verification is used");
+		break;
+	    default:
+		log.severe("Unknown verifier type specified!");
         }
         
         //create a new conf, with updated port number for servers
