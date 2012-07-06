@@ -100,7 +100,7 @@ public class Statistics {
 	}
 	
 	public void extendStats(String name){
-		headerExtension += name+" StdDev Var";
+		headerExtension += name+" StdDev Var 95%";
 	}
 
 	public void printStats(SummaryStatistics ... stats) {
@@ -112,9 +112,10 @@ public class Statistics {
 		NumberFormat nf = NumberFormat.getNumberInstance();
 		String serverstats = nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
 		for(int i = 0;i<stats.length;i++){
-			serverstats += " "+stats[i].getMean()+" "+stats[i].getStandardDeviation()+" "+stats[i].getVariance();
+			serverstats += " "+stats[i].getMean()+" "+stats[i].getStandardDeviation()+" "+stats[i].getVariance()+" "+get95ConfidenceIntervalWidth(stats[i]);
 		}
 		serverstatswriter.println(serverstats);
+		serverstatswriter.flush();
 
 		for (Integer i : clientstatsmap.keySet()) {
 			clientstatswriter.println(i + " " + clientstatsmap.get(i).toString());
@@ -248,5 +249,10 @@ public class Statistics {
 		dec.clear();
 		decisionduration.clear();
 		crtt.clear();
+	}
+	
+	public static double get95ConfidenceIntervalWidth(SummaryStatistics summaryStatistics) {
+		double a = 1.960; // 95% confidence interval width for standard deviation
+		return a * summaryStatistics.getStandardDeviation() / Math.sqrt(summaryStatistics.getN());
 	}
 }
