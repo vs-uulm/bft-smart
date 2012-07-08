@@ -182,7 +182,7 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
             boolean connectedalready = sessionTable.containsKey(sender);
             rl.readLock().unlock();
             if(connectedalready){
-                log.log(Level.SEVERE, "Somebody else with id {0} is already connected!",sender);
+                log.log(Level.SEVERE, "Got Connection for id {0} from {1} but {2} is already connected!",new Object[]{sender,channel.getRemoteAddress(),sessionTable.get(sender).getChannel().getRemoteAddress()});
                 ChannelFuture f = channel.close();
                 try {
                     f.await();
