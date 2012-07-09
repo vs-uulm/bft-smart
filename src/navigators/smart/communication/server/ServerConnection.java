@@ -155,8 +155,15 @@ public class ServerConnection {
                         socketchannel.write(buf);
                     }
                     if (ptpverifier != null) {
-                        socketchannel.write(ByteBuffer.wrap(ptpverifier.generateHash(messageData)));
+						byte[] hash = ptpverifier.generateHash(messageData);
+                        socketchannel.write(ByteBuffer.wrap(hash));
+						if(log.isLoggable(Level.FINEST)){
+						log.log(Level.FINEST,"sent hash:{0} to {1}", new Object[]{hash,remoteId});
+					}
                     }
+					if(log.isLoggable(Level.FINEST)){
+						log.log(Level.FINEST,"sent {0} bytes to {1}", new Object[]{messageData.length,remoteId});
+					}
                     stats.sentMsgToServer(remoteId);
                     return;
                 } catch (IOException ex) {
@@ -276,7 +283,7 @@ public class ServerConnection {
 
                 if (data != null) {
                     if(delaySending){
-                        delaylog.log(Level.FINEST, "[{0}]Undelayed sendtime {1}", new Object[]{remoteId, System.currentTimeMillis()});
+                        delaylog.log(Level.FINEST, "[{0} Sender] Undelayed sendtime {1}", new Object[]{remoteId, System.currentTimeMillis()});
                         delayTimer.schedule(new DelayTask(data), delay);
                     } else {
                         sendBytes(data);
@@ -307,7 +314,7 @@ public class ServerConnection {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            ByteBuffer buf = ByteBuffer.allocate(256);
+            ByteBuffer buf = ByteBuffer.allocate(2048);
             ServerCommunicationSystem.setThreadPriority(this);
             while (doWork) {
                 if (socketchannel != null /*&& socketInStream != null*/) {
@@ -351,7 +358,7 @@ public class ServerConnection {
                             stats.decodedMsg(remoteId,sm);
 
                             if (log.isLoggable(Level.FINEST)) {
-                                log.log(Level.FINEST, "Received {0}", sm);
+                                log.log(Level.FINEST, "[{0} Recv] Received {1}", new Object[]{remoteId, sm});
                             }
 
                             if (sm.getSender() == remoteId) {

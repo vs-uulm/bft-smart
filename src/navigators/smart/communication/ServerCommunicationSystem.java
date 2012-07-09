@@ -20,7 +20,8 @@ package navigators.smart.communication;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Hashtable;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -55,12 +56,10 @@ import navigators.smart.tom.util.TOMConfiguration;
     public static int RR_MSG = 4;
     public static int RT_MSG = 5;
 
-    //public static int IN_QUEUE_SIZE = 200;
-
-    private BlockingQueue<SystemMessage> inQueue = null;//new LinkedBlockingQueue<SystemMessage>(IN_QUEUE_SIZE);
+    private BlockingQueue<SystemMessage> inQueue = null;
 
     @SuppressWarnings("rawtypes")
-	protected Map<SystemMessage.Type,MessageHandler> msgHandlers = new Hashtable<SystemMessage.Type, MessageHandler>();
+	protected Map<SystemMessage.Type,MessageHandler> msgHandlers = Collections.synchronizedMap(new EnumMap<SystemMessage.Type, MessageHandler>(SystemMessage.Type.class));
 
     private ServersCommunicationLayer serversConn;
     private CommunicationSystemServerSide clientsConn;
@@ -115,7 +114,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected MessageVerifierFactory createVerifierFactory(String algorithm){
+    protected final MessageVerifierFactory createVerifierFactory(String algorithm){
         Class<MessageVerifierFactory> serviceclass;
         try {
             serviceclass = (Class<MessageVerifierFactory>) Class.forName(algorithm);
@@ -177,6 +176,9 @@ import navigators.smart.tom.util.TOMConfiguration;
      * @param sm the message to be sent
      */
     public void send(Integer[] targets, SystemMessage sm) {
+		if(log.isLoggable(Level.FINEST)){
+			log.log(Level.FINEST,"Sending message: {0} with length {1}",new Object[]{sm,sm.getMsgSize()});
+		}
         if(sm.type.equals(SystemMessage.Type.TOM_MSG)) {
             //Logger.println("(ServerCommunicationSystem.send) C: "+sm);
             clientsConn.send(targets, (TOMMessage)sm);
