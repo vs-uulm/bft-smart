@@ -66,7 +66,7 @@ public abstract class SystemMessage {
     
     public final Type type;
     protected final Integer sender; // ID of the process which sent the message
-    protected byte[] msgdata; //serialised version of this message
+    protected volatile byte[] msgdata; //serialised version of this message
 
     /**
      * Creates a new instance of SystemMessage
