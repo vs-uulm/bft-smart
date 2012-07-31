@@ -99,9 +99,39 @@ public class ServiceProxy extends TOMSender {
 				Arrays.fill(replies, null);
 				response = null;
 				// Send the request to the replicas, and get its ID
-//        doTOMulticast(request,readOnly);
-				doTOUnicast(request, 0, readOnly);
+				doTOMulticast(request,readOnly);
+//				doTOUnicast(request, 0, readOnly);
 				reqId = getLastSequenceNumber();
+				sync.wait();
+			} catch (InterruptedException ex) {
+				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
+			}
+
+		}
+
+		return response; // return the response
+	}
+	
+	/**
+	 * This method sends a request to the replicas, and returns the related reply. This method is
+	 * thread-safe.
+	 *
+	 * @param request Request to be sent
+	 * @param readOnly it is a read only request (will not be ordered)
+	 * @return The reply from the replicas related to request
+	 */
+	public byte[] invoke(TOMMessage request) {
+
+		// Ahead lies a critical section.
+		// This ensures the thread-safety by means of a semaphore
+		synchronized (sync) {
+			try {
+				// Discard previous replies
+				Arrays.fill(replies, null);
+				response = null;
+				// Send the request to the replicas, and get its ID
+				doTOMulticast( request);
+				reqId = request.getSequence();
 				sync.wait();
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
