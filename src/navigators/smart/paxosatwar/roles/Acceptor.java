@@ -312,8 +312,8 @@ public class Acceptor {
 			if (deserialised != null) {
 				round.getExecution().getConsensus().setDeserialisedDecision(deserialised);
 
-				if (checkAndSendWeak(eid, round)) {             	//send weak if necessary 
-					computeWeak(eid, round, value);	    //compute weak if i just sent a weak
+				if (checkAndSendWeak(eid, round)) {						//send weak if necessary 
+					computeWeak(eid, round, round.propValueHash);		//compute weak if i just sent a weak
 				} else if (round.getExecution().isDecided()) {
 					round.getExecution().decided(round);
 				}
@@ -354,13 +354,14 @@ public class Acceptor {
 	 * @return true if i newly accepted the value, false if it was already accepted before
 	 */
 	private boolean checkAndSendWeak(Long eid, Round round) {
-		if (!round.isWeakSetted(me.intValue())) { //send weak if necessary
+		if (!round.isWeakSetted(me.intValue())) {					//send weak if necessary
 			if (log.isLoggable(Level.FINER)) {
 				log.finer("sending weak for " + eid);
 			}
 
-			round.setWeak(me.intValue(), round.propValueHash); //set myself as weak acceptor
-			communication.send(manager.getOtherAcceptors(), factory.createWeak(eid, round.getNumber(), round.propValueHash));
+			round.setWeak(me.intValue(), round.propValueHash);		//set myself as weak acceptor
+			communication.send(manager.getOtherAcceptors(), 
+					factory.createWeak(eid, round.getNumber(), round.propValueHash));
 			return true;
 		}
 		return false;
@@ -386,7 +387,7 @@ public class Acceptor {
 
 		// Can I go straight to a DECIDE message?
 		if (weakAccepted > manager.quorumFastDecide && !round.getExecution().isDecided()) {
-			if (log.isLoggable(Level.FINE) && eid.intValue() % 250 == 0) {
+			if (log.isLoggable(Level.FINE) ) {
 				log.fine("Deciding " + eid + " with weaks");
 			}
 			decide(eid, round, valuehash);
