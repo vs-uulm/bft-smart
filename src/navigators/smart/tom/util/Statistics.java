@@ -38,6 +38,7 @@ public class Statistics {
 	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 	private volatile boolean headerPrinted = false;
+	private volatile String paramname = "";
 	private volatile String headerExtension = "";
 	private long start;
 	// Map holding the client statistic objects
@@ -99,14 +100,17 @@ public class Statistics {
 		}
 	}
 	
+	public void extendParam(String paramname){
+		this.paramname += paramname;
+	}
 	public void extendStats(String name){
 		headerExtension += name+" StdDev Var 95%";
 	}
 
-	public void printStats(SummaryStatistics ... stats) {
+	public void printStats(String param, SummaryStatistics ... stats) {
 		if(!headerPrinted){
 			headerPrinted = true;
-			serverstatswriter.println("\"Client rtt\" Rtt Decoding" + headerExtension);
+			serverstatswriter.println(paramname + "\"Client rtt\" Rtt Decoding" + headerExtension);
 			clientstatswriter.println("Client Count Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
@@ -124,7 +128,7 @@ public class Statistics {
 	}
 	
 	public void printAndClose() {
-		printStats();
+		printStats("");
 		close();
 	}
 	
