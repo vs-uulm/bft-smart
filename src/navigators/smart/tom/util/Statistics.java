@@ -100,17 +100,36 @@ public class Statistics {
 		}
 	}
 	
+	/**
+	 * Extends the output of this Statistics Object by the specified param name. This can be used to identify different
+	 * output rows with different parameters.
+	 * @param paramname The name of the parameter that distinguishes the different runs
+	 */
 	public void extendParam(String paramname){
-		this.paramname += paramname;
+		this.paramname = paramname;
 	}
+	
+	/**
+	 * Extend the headers of the printed stats by another statistics.
+	 * This adds 4 columns to the gnuplot compatible output: the supplied name, StdDev, Var and 95% (Confidence Interval).
+	 * These 4 stats will also be printed later on when printstats with the specific stat will be called.
+	 * 
+	 * @param name The name of the statistics to be printed later on.
+	 */
 	public void extendStats(String name){
 		headerExtension += name+" StdDev Var 95%";
 	}
 
+	/**
+	 * Prints the current statistics to the provided server and clientstats writers into the
+	 * stats directory of the currently running test.
+	 * @param param The Param must fit the param name that was supplied via extendParam.
+	 * @param stats The stats must correspond in their order to the extensions supplied via extendStats.
+	 */
 	public void printStats(String param, SummaryStatistics ... stats) {
 		if(!headerPrinted){
 			headerPrinted = true;
-			serverstatswriter.println(paramname + "\"Client rtt\" Rtt Decoding" + headerExtension);
+			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding" + headerExtension);
 			clientstatswriter.println("Client Count Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
