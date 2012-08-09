@@ -1,24 +1,21 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
- * 
+ * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ *
+ * @author tags
+ *
  * This file is part of SMaRt.
- * 
- * SMaRt is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * SMaRt is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * SMaRt is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
 package navigators.smart.paxosatwar.roles;
 
 import java.security.SignedObject;
-import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ScheduledFuture;
@@ -26,37 +23,22 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import navigators.smart.communication.ServerCommunicationSystem;
-import navigators.smart.paxosatwar.executionmanager.Execution;
-import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
-import navigators.smart.paxosatwar.executionmanager.LeaderModule;
-import navigators.smart.paxosatwar.executionmanager.ProofVerifier;
-import navigators.smart.paxosatwar.executionmanager.Round;
-import navigators.smart.paxosatwar.executionmanager.TimeoutTask;
-import navigators.smart.paxosatwar.messages.CollectProof;
-import navigators.smart.paxosatwar.messages.FreezeProof;
-import navigators.smart.paxosatwar.messages.MessageFactory;
-import navigators.smart.paxosatwar.messages.PaxosMessage;
-import navigators.smart.paxosatwar.messages.Proof;
-import navigators.smart.paxosatwar.messages.Propose;
-import navigators.smart.paxosatwar.messages.VoteMessage;
+import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
+import navigators.smart.paxosatwar.executionmanager.*;
+import navigators.smart.paxosatwar.messages.*;
 import navigators.smart.paxosatwar.requesthandler.RequestHandler;
 import navigators.smart.tom.core.TOMLayer;
 import navigators.smart.tom.core.timer.messages.RTCollect;
 import navigators.smart.tom.util.TOMConfiguration;
 
-import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
-
-import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
-
 /**
- * This class represents the acceptor role in the paxos protocol.
- * This class work together with the TOMulticastLayer class in order to
- * supply a atomic multicast service.
+ * This class represents the acceptor role in the paxos protocol. This class work together with the TOMulticastLayer class in order to supply a atomic
+ * multicast service.
  *
  * @author Alysson Bessani
  */
+@SuppressWarnings("LoggerStringConcat")
 public class Acceptor {
 
 	private static final Logger log = Logger.getLogger(Acceptor.class.getCanonicalName());
@@ -75,6 +57,7 @@ public class Acceptor {
 
 	/**
 	 * Creates a new instance of Acceptor.
+	 *
 	 * @param communication Replicas comunication system
 	 * @param factory Message factory for PaW messages
 	 * @param verifier Proof verifier
@@ -98,6 +81,7 @@ public class Acceptor {
 
 	/**
 	 * Makes a RTCollect object with this process private key
+	 *
 	 * @param rtc RTCollect object to be signed
 	 * @return A SignedObject containing 'rtc'
 	 */
@@ -107,6 +91,7 @@ public class Acceptor {
 
 	/**
 	 * Sets the execution manager for this acceptor
+	 *
 	 * @param manager Execution manager for this acceptor
 	 */
 	public void setManager(ExecutionManager manager) {
@@ -115,6 +100,7 @@ public class Acceptor {
 
 	/**
 	 * Sets the TOM layer for this acceptor
+	 *
 	 * @param tom TOM layer for this acceptor
 	 */
 	public void setRequesthandler(RequestHandler tom) {
@@ -122,10 +108,9 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called by communication layer to delivery paxos messages. This method
-	 * only verifies if the message can be executed and calls process message
+	 * Called by communication layer to delivery paxos messages. This method only verifies if the message can be executed and calls process message
 	 * (storing it on an out of context message buffer if this is not the case)
-	 * 
+	 *
 	 * @param msg Paxos messages delivered by the comunication layer
 	 */
 	public final void deliver(PaxosMessage msg) {
@@ -135,8 +120,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called when a paxos message is received or when a out of context message must be processed.
-	 * It processes the received messsage acording to its type
+	 * Called when a paxos message is received or when a out of context message must be processed. It processes the received messsage acording to its
+	 * type
 	 *
 	 * @param msg The message to be processed
 	 */
@@ -170,9 +155,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called when a PROPOSE message is received or when processing a formerly out of context propose which
-	 * is know belongs to the current execution.
-	 * 
+	 * Called when a PROPOSE message is received or when processing a formerly out of context propose which is know belongs to the current execution.
+	 *
 	 * @param msg The PROPOSE message to by processed
 	 */
 	@SuppressWarnings("boxing")
@@ -264,8 +248,7 @@ public class Acceptor {
 	 * Called by the delivery thread. Executes the next accepted propose.
 	 *
 	 * @param eid Consensus's execution ID
-	 * @return True if there is a next value to be proposed and it belongs to
-	 * the specified execution, false otherwise
+	 * @return True if there is a next value to be proposed and it belongs to the specified execution, false otherwise
 	 */
 	public boolean executeAcceptedPendent(Long eid) {
 		if (nextProp != null && nextProp.eid.equals(eid)) {
@@ -273,14 +256,16 @@ public class Acceptor {
 				log.finer("Executing accepted propose for " + eid);
 			}
 			Execution execution = manager.getExecution(eid);
-			execution.lock.lock();
+			try {
+				execution.lock.lock();
 
-			Round round = execution.getRound(nextProp.r);
-			executePropose(round, nextProp.value);
-			nextProp = null;
-
-			execution.lock.unlock();
-			return true;
+				Round round = execution.getRound(nextProp.r);
+				executePropose(round, nextProp.value);
+				nextProp = null;
+				return true;
+			} finally {
+				execution.lock.unlock();
+			}
 		} else {
 			nextProp = null;
 			return false;
@@ -312,11 +297,15 @@ public class Acceptor {
 			if (deserialised != null) {
 				round.getExecution().getConsensus().setDeserialisedDecision(deserialised);
 
-				if (checkAndSendWeak(eid, round)) {						//send weak if necessary 
-					computeWeak(eid, round, round.propValueHash);		//compute weak if i just sent a weak
-				} else if (round.getExecution().isDecided()) {
-					round.getExecution().decided(round);
+				if (log.isLoggable(Level.FINER)) {
+					log.finer("sending weak for " + eid);
 				}
+
+				round.setWeak(me.intValue(), round.propValueHash);		//set myself as weak acceptor
+				communication.send(manager.getOtherAcceptors(),
+						factory.createWeak(eid, round.getNumber(), round.propValueHash));
+				computeWeak(eid, round, round.propValueHash);		//compute weak if i just sent a weak
+
 			}
 		}
 	}
@@ -335,42 +324,12 @@ public class Acceptor {
 			log.finer("WEAK from " + sender + " for consensus " + eid);
 		}
 		round.setWeak(sender, value);
-
-		//if this value was not accepted yet and there is a quorum after i accepted it and 
-		//the current id is not yet set to this value set the current exec
-		if (checkAndSendWeak(eid, round) && round.countWeak(value) > manager.quorumF && eid.equals(requesthandler.getNextExec())) {
-			requesthandler.setInExec(eid);
-		}
-
 		computeWeak(eid, round, value);
 	}
 
 	/**
-	 * Checks if the value for this execution and round was already accepted weakly. If not
-	 * it is accepted and a weak message is sent.
-	 * @param eid The execution id to check for
-	 * @param round The round to check for
-	 * @param valuehash The hash of the value to propose
-	 * @return true if i newly accepted the value, false if it was already accepted before
-	 */
-	private boolean checkAndSendWeak(Long eid, Round round) {
-		if (!round.isWeakSetted(me.intValue())) {					//send weak if necessary
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("sending weak for " + eid);
-			}
-
-			round.setWeak(me.intValue(), round.propValueHash);		//set myself as weak acceptor
-			communication.send(manager.getOtherAcceptors(), 
-					factory.createWeak(eid, round.getNumber(), round.propValueHash));
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Computes weakly accepted values according to the standard PaW specification
-	 * (sends STRONG/DECIDE messages, according to the number of weakly accepted
-	 * values received).
+	 * Computes weakly accepted values according to the standard PaW specification (sends STRONG/DECIDE messages, according to the number of weakly
+	 * accepted values received).
 	 *
 	 * @param eid Execution ID of the received message
 	 * @param round Round of the receives message
@@ -387,7 +346,7 @@ public class Acceptor {
 
 		// Can I go straight to a DECIDE message?
 		if (weakAccepted > manager.quorumFastDecide && !round.getExecution().isDecided()) {
-			if (log.isLoggable(Level.FINE) ) {
+			if (log.isLoggable(Level.FINE)) {
 				log.fine("Deciding " + eid + " with weaks");
 			}
 			decide(eid, round, valuehash);
@@ -422,6 +381,7 @@ public class Acceptor {
 
 	/**
 	 * Called when a STRONG message is received
+	 *
 	 * @param eid Execution ID of the received message
 	 * @param round Round of the receives message
 	 * @param sender Replica that sent the message
@@ -438,8 +398,9 @@ public class Acceptor {
 	}
 
 	/**
-	 * Computes strongly accepted values according to the standard PaW specification (sends
-	 * DECIDE messages, according to the number of strongly accepted values received)
+	 * Computes strongly accepted values according to the standard PaW specification (sends DECIDE messages, according to the number of strongly
+	 * accepted values received)
+	 *
 	 * @param round Round of the receives message
 	 * @param value Value sent in the message
 	 */
@@ -459,8 +420,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called when a DECIDE message is received. Computes decided values
-	 * according to the standard PaW specification
+	 * Called when a DECIDE message is received. Computes decided values according to the standard PaW specification
+	 *
 	 * @param round Round of the receives message
 	 * @param sender Replica that sent the message
 	 * @param value Value sent in the message
@@ -487,6 +448,7 @@ public class Acceptor {
 
 	/**
 	 * Schedules a timeout for a given round. It is called by an Execution when a new round is created.
+	 *
 	 * @param round Round to be associated with the timeout
 	 */
 	public void scheduleTimeout(Round round) {
@@ -503,9 +465,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * This mehod is called by timertasks associated with rounds. It will locally freeze
-	 * a round, given that is not already frozen, its not decided, and is not removed from
-	 * its execution
+	 * This mehod is called by timertasks associated with rounds. It will locally freeze a round, given that is not already frozen, its not decided,
+	 * and is not removed from its execution
 	 *
 	 * @param round
 	 */
@@ -528,6 +489,7 @@ public class Acceptor {
 
 	/**
 	 * Called when a FREEZE message is received.
+	 *
 	 * @param round Round of the receives message
 	 * @param sender Replica that sent the message
 	 */
@@ -552,8 +514,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Invoked when a timeout for a round is triggered, or when a FREEZE message is received.
-	 * Computes wether or not to locally freeze this round according to the standard PaW specification
+	 * Invoked when a timeout for a round is triggered, or when a FREEZE message is received. Computes wether or not to locally freeze this round
+	 * according to the standard PaW specification
 	 *
 	 * @param round Round of the receives message
 	 * @param value Value sent in the message
@@ -628,6 +590,7 @@ public class Acceptor {
 
 	/**
 	 * This is the method invoked when a value is decided by this process
+	 *
 	 * @param round Round at which the decision is made
 	 * @param value The decided value (got from WEAK or STRONG messages)
 	 */
@@ -645,7 +608,7 @@ public class Acceptor {
 
 		leaderModule.decided(round.getExecution().getId(), leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
 		round.getTimeoutTask().cancel(false);
-		round.getExecution().decided(round/* , value */);
+		round.getExecution().decided(round /*, value */);
 	}
 
 	/**
