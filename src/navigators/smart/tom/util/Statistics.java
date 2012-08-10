@@ -117,7 +117,7 @@ public class Statistics {
 	 * @param name The name of the statistics to be printed later on.
 	 */
 	public void extendStats(String name){
-		headerExtension += name+" StdDev Var 95%";
+		headerExtension += " " + name+" StdDev Var 95%";
 	}
 
 	/**
@@ -130,7 +130,7 @@ public class Statistics {
 		if(!headerPrinted){
 			headerPrinted = true;
 			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding" + headerExtension);
-			clientstatswriter.println("Client Count Decoding StdDev Var \"Total Duration\" StdDev Var");
+			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
 		String serverstats = nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
