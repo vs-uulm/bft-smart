@@ -135,7 +135,10 @@ public class Statistics {
 		NumberFormat nf = NumberFormat.getNumberInstance();
 		String serverstats = nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
 		for(int i = 0;i<stats.length;i++){
-			serverstats += " "+stats[i].getMean()+" "+stats[i].getStandardDeviation()+" "+stats[i].getVariance()+" "+get95ConfidenceIntervalWidth(stats[i]);
+			serverstats += " "+nf.format(stats[i].getMean())
+					+" "+nf.format(stats[i].getStandardDeviation())
+					+" "+nf.format(stats[i].getVariance())
+					+" "+nf.format(get95ConfidenceIntervalWidth(stats[i]));
 		}
 		serverstatswriter.println(serverstats);
 		serverstatswriter.flush();
