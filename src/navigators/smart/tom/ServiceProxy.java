@@ -78,7 +78,11 @@ public class ServiceProxy extends TOMSender {
 	 * @return The reply from the replicas related to request
 	 */
 	public byte[] invoke(byte[] request) {
-		return invoke(request, false);
+		return invoke(request, false,false);
+	}
+	
+	public byte[] invoke(byte[] request, boolean readonly) {
+		return invoke(request, readonly, false);
 	}
 
 	/**
@@ -89,7 +93,7 @@ public class ServiceProxy extends TOMSender {
 	 * @param readOnly it is a read only request (will not be ordered)
 	 * @return The reply from the replicas related to request
 	 */
-	public byte[] invoke(byte[] request, boolean readOnly) {
+	public byte[] invoke(byte[] request, boolean readOnly, boolean random) {
 
 		// Ahead lies a critical section.
 		// This ensures the thread-safety by means of a semaphore
@@ -99,8 +103,11 @@ public class ServiceProxy extends TOMSender {
 				Arrays.fill(replies, null);
 				response = null;
 				// Send the request to the replicas, and get its ID
-				doTOMulticast(request,readOnly);
-//				doTOUnicast(request, 0, readOnly);
+				if (random){
+					doRandomTOUnicast(request, readOnly);
+				} else {
+					doTOMulticast(request,readOnly);	
+				}
 				reqId = getLastSequenceNumber();
 				sync.wait();
 			} catch (InterruptedException ex) {
