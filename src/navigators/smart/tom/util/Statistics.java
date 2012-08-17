@@ -133,7 +133,7 @@ public class Statistics {
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
-		String serverstats = nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
+		String serverstats = param + " " + nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
 		for(int i = 0;i<stats.length;i++){
 			serverstats += " "+nf.format(stats[i].getMean())
 					+" "+nf.format(stats[i].getStandardDeviation())

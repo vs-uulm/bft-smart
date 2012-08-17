@@ -233,11 +233,12 @@ public class ClientsManager {
                 clientData.setLastMessageReceivedTime(request.receptionTime);
             }
         } else {
-	        if ((clientData.getLastMessageReceived() == -1) //this is the clients first message
-	                || (clientData.getLastMessageReceived() + 1 == request.getSequence()) //this is the next message in the sequence of the client
+					//this is the clients first message
+	        if (	(clientData.getLastMessageReceived() == -1) 
+					//this is the next message in the sequence of the client ( gaps allowed)
+	                || (request.getSequence() > clientData.getLastMessageReceived())){
 	                //this is an out of order message that was forwarded/decided - we don't care about older messages any more
-	                || ((request.getSequence() > clientData.getLastMessageReceived()) && !fromClient)) {
-	            //FIXME Is it really true that we cannot produce holes here in the sequence?
+//	                || ((request.getSequence() > clientData.getLastMessageReceived()) && !fromClient)) {
 	            //check if unsigned or signature is valid
 				if (!request.signed || tomutil.verifySignature(clientData.getPublicKey(),request.getBytes(), request.serializedMessageSignature)) {
 	                if (storeMessage) {
@@ -253,25 +254,25 @@ public class ClientsManager {
 	            } else {
                     if (log.isLoggable(Level.WARNING)) {
 	            		log.warning("Received incorrectly signed message: "+request);
-	            }
+					}
                 }
 	        } else {//I will not put this message on the pending requests list
 	
-	            if (clientData.getLastMessageReceived() >= request.getSequence()) {
+//	            if (clientData.getLastMessageReceived() >= request.getSequence()) {
 	                //I already have/had this message
 	                accounted = true;
                     if (log.isLoggable(Level.FINE)) {
                         log.fine("Ignoring message " + request + " from client " + clientData.getClientId() + "(last received = "
                                 + clientData.getLastMessageReceived() + "), msg was already handled! " + fromClient);
                     }
-	            } else {
-	                //it is an invalid message if it's being sent by a client (sequence number > last received + 1)
-                    if (log.isLoggable(Level.WARNING)) {
-						log.warning("Ignoring message " + request + " from client " + clientData.getClientId() + "(last received = "
-								+ clientData.getLastMessageReceived() + "), msg sent by client? " + fromClient);
-	            }
-	        }
-        }
+//	            } else {
+//	                //it is an invalid message if it's being sent by a client (sequence number > last received + 1)
+//                    if (log.isLoggable(Level.WARNING)) {
+//						log.warning("Ignoring message " + request + " from client " + clientData.getClientId() + "(last received = "
+//								+ clientData.getLastMessageReceived() + "), msg sent by client? " + fromClient);
+//					}
+//				}
+			}
         }
 
         /******* END CLIENTDATA CRITICAL SECTION ******/
