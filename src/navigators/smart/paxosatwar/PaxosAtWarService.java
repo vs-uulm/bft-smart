@@ -18,6 +18,7 @@
 
 package navigators.smart.paxosatwar;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import navigators.smart.communication.MessageHandler;
@@ -116,6 +117,7 @@ public class PaxosAtWarService implements ConsensusService{
     @SuppressWarnings("boxing")
     @Override
     public void deliverState(TransferableState state){
+		log.log(Level.FINE, "Delivering state for {0}",state.lastEid);
     	requestsTimer.unwatchAll(); //clear timer table TODO this is not fully BFT...
         Long lastCheckpointEid = state.lastCheckpointEid;
         Long lastEid = state.lastEid;

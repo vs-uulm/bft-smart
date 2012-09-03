@@ -20,10 +20,8 @@ package navigators.smart.paxosatwar.executionmanager;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.TimerTask;
 import java.util.TreeSet;
 import java.util.concurrent.ScheduledFuture;
-
 import navigators.smart.paxosatwar.messages.CollectProof;
 
 /**
@@ -47,7 +45,6 @@ public class Round {
     private boolean collected = false; // indicates if a collect message for this round was already sent
     private long timeout; // duration of the timeout
     private boolean alreadyRemoved = false; // indicates if this round was removed from its execution
-    private transient TimerTask strongtask; //timertask for delaying the transmission of Strong messages
 
     public byte[] propValue = null; // proposed value
 //    public Object deserializedPropValue = null; //utility var
@@ -448,17 +445,4 @@ public class Round {
 		return true;
 	}
 
-	/**
-	 * @return the strongtask
-	 */
-	public TimerTask getStrongtask() {
-		return strongtask;
-	}
-	
-	/**
-	 * @param strongtask the strongtask to set
-	 */
-	public void setStrongtask(TimerTask strongtask) {
-		this.strongtask = strongtask;
-}    
 }

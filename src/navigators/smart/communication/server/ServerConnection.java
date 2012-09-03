@@ -122,7 +122,7 @@ public class ServerConnection {
             if (useSenderThread) {
                 //only enqueue messages if there queue is not full
                 if (!outQueue.offer(data)) {
-                    log.log(Level.FINE, "out queue for {0} full (message discarded).", remoteId);
+                    log.log(Level.WARNING, "out queue for {0} full (message discarded).", remoteId);
                 }
             } else {
                 try {
@@ -239,7 +239,7 @@ public class ServerConnection {
     private void waitAndConnect() {
         if (doWork) {
             try {
-                log.log(Level.FINE, "Waiting to connect to {0}", remoteId);
+                log.log(Level.FINEST, "Waiting to connect to {0}", remoteId);
                 Thread.sleep(POOL_TIME);
             } catch (InterruptedException ie) {
             }
@@ -357,8 +357,8 @@ public class ServerConnection {
                             SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
                             stats.decodedMsg(remoteId,sm);
 
-                            if (log.isLoggable(Level.FINEST)) {
-                                log.log(Level.FINEST, "[{0} Recv] Received {1}", new Object[]{remoteId, sm});
+                            if (log.isLoggable(Level.FINE)) {
+                                log.log(Level.FINE, "[{0} Recv] Received {1}", new Object[]{remoteId, sm});
                             }
 
                             if (sm.getSender() == remoteId) {

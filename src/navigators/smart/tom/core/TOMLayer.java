@@ -1,19 +1,17 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
- * 
+ * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ *
+ * @author tags
+ *
  * This file is part of SMaRt.
- * 
- * SMaRt is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * SMaRt is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * SMaRt is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
 package navigators.smart.tom.core;
 
@@ -42,350 +40,367 @@ import navigators.smart.tom.util.TOMConfiguration;
 import navigators.smart.tom.util.TOMUtil;
 
 /**
- * This class implements a thread that uses the PaW algorithm to provide the application
- * a layer of total ordered messages
- * 
+ * This class implements a thread that uses the PaW algorithm to provide the application a layer of total ordered messages
+ *
  * TODO There is a bug when we request a statetransfer for eid 0 -> statemanager.waiting is set to -1 then which means we are not waiting for a state
  */
 public class TOMLayer implements RequestReceiver {
-	
-    private static Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());
-    //other components used by the TOMLayer (they are never changed)
-    private ServerCommunicationSystem communication; // Communication system between replicas
-    private final DeliveryThread dt; // Thread which delivers total ordered messages to the appication
-    private TOMConfiguration conf; // TOM configuration
-    /** Store requests received but still not ordered */
-    public final ClientsManager clientsManager;
-    /** Interface to the consensus */
-    private ConsensusService consensusService;
-    private TOMRequestReceiver receiver;
-    private BatchBuilder bb = new BatchBuilder();
-    private MessageDigest md;
-    /** Sync used to synchronize between forwarded and normal messages */
-    private final Object requestsync = new Object();
-    /** Marker msg indicating a reset request */
-    private byte[] RESET = {2,6,1,2,8,0};
 
-    /**
-     * Creates a new instance of TOMulticastLayer
-     * @param receiver Object that receives requests from clients
-     * @param cs Communication system between replicas
-     * @param conf TOM configuration
-     */
-    public TOMLayer(TOMReceiver receiver,
-            ServerCommunicationSystem cs,
-            TOMConfiguration conf) {
-        Statistics.init(conf);
-        this.receiver = receiver;
-        this.communication = cs;
-        this.conf = conf;
+	private static Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());
+	//other components used by the TOMLayer (they are never changed)
+	private ServerCommunicationSystem communication; // Communication system between replicas
+	private final DeliveryThread dt; // Thread which delivers total ordered messages to the appication
+	private TOMConfiguration conf; // TOM configuration
+	/**
+	 * Store requests received but still not ordered
+	 */
+	public final ClientsManager clientsManager;
+	/**
+	 * Interface to the consensus
+	 */
+	private ConsensusService consensusService;
+	private TOMRequestReceiver receiver;
+	private BatchBuilder bb = new BatchBuilder();
+	private MessageDigest md;
+	/**
+	 * Sync used to synchronize between forwarded and normal messages
+	 */
+	private final Object requestsync = new Object();
+	/**
+	 * Marker msg indicating a reset request
+	 */
+	private byte[] RESET = {2, 6, 1, 2, 8, 0};
 
-        try {
-            this.md = MessageDigest.getInstance("MD5"); // TODO: nao devia ser antes SHA?
-        } catch (Exception e) {
-            e.printStackTrace(System.out);
-        }
+	/**
+	 * Creates a new instance of TOMulticastLayer
+	 *
+	 * @param receiver Object that receives requests from clients
+	 * @param cs Communication system between replicas
+	 * @param conf TOM configuration
+	 */
+	public TOMLayer(TOMReceiver receiver,
+			ServerCommunicationSystem cs,
+			TOMConfiguration conf) {
+		Statistics.init(conf);
+		this.receiver = receiver;
+		this.communication = cs;
+		this.conf = conf;
 
-        this.clientsManager = new ClientsManager(conf); // Create clients manager
+		try {
+			this.md = MessageDigest.getInstance("MD5"); // TODO: nao devia ser antes SHA?
+		} catch (Exception e) {
+			e.printStackTrace(System.out);
+		}
 
-        stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(), conf.getN(), conf.getProcessId().intValue(),md);
-        
-        this.dt = new DeliveryThread(this, receiver, conf); // Create delivery thread
-        this.dt.start();
-        //DONT DO ANYTHING BEYOND THIS POINT! This leaked into dt from now on
-    }
+		this.clientsManager = new ClientsManager(conf); // Create clients manager
 
-    /**
-     * Retrieve TOM configuration
-     * @return TOM configuration
-     */
-    public TOMConfiguration getConf() {
-        return this.conf;
-    }
+		stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(), conf.getN(), conf.getProcessId().intValue(), md);
 
-    /**
-     * Computes an hash for a TOM message
-     * @param data The data to hash
-     * @return Hash for teh specified TOM message
-     */
-    public final byte[] computeHash(byte[] data) {
-        return md.digest(data);
-    }
+		this.dt = new DeliveryThread(this, receiver, conf); // Create delivery thread
+		this.dt.start();
+		//DONT DO ANYTHING BEYOND THIS POINT! This leaked into dt from now on
+	}
 
-    /**
-     * Retrieve Communication system between replicas
-     * @return Communication system between replicas
-     */
-    public ServerCommunicationSystem getCommunication() {
-        return this.communication;
-    }
+	/**
+	 * Retrieve TOM configuration
+	 *
+	 * @return TOM configuration
+	 */
+	public TOMConfiguration getConf() {
+		return this.conf;
+	}
 
-    /**
-     * This method is invoked by the comunication system to deliver a request.
-     * It assumes that the communication system delivers the message in FIFO
-     * order.
-     *
-     * @param msg The request being received
-     */
-    public void requestReceived(TOMMessage msg) {
-        //synchronize forwareded and client received msg access
-        synchronized (requestsync) {
-            // check if reset is triggered
-            // TODO Add property to disable this for "live" usage if ever intended
-            if (Arrays.equals(msg.getContent(), RESET)){
-                clientsManager.resetClients();
-            }
-            // check if this request is valid
-            if (clientsManager.requestReceived(msg, true, !msg.isReadOnlyRequest())) {
-                if (msg.isReadOnlyRequest()) {
-                    receiver.receiveUnorderedMessage(msg);
-                } else {
-                    consensusService.notifyNewRequest(msg);
-                }
-            } else {
-                if (log.isLoggable(Level.FINER)) {
-                    log.finer(" the received TOMMessage " + msg + " was discarded.");
-                }
-            }
-        }
-    }
+	/**
+	 * Computes an hash for a TOM message
+	 *
+	 * @param data The data to hash
+	 * @return Hash for teh specified TOM message
+	 */
+	public final byte[] computeHash(byte[] data) {
+		return md.digest(data);
+	}
 
-    /**
-     * Creates a value to be proposed to the acceptors. Invoked if this replica is the leader
-     * @return A value to be proposed to the acceptors
-     */
-    @SuppressWarnings("null")
-    public byte[] createPropose() {
-        // Retrieve a set of pending requests from the clients manager
-        PendingRequests pendingRequests = clientsManager.getPendingRequests();
+	/**
+	 * Retrieve Communication system between replicas
+	 *
+	 * @return Communication system between replicas
+	 */
+	public ServerCommunicationSystem getCommunication() {
+		return this.communication;
+	}
 
-        int numberOfMessages = pendingRequests.size(); // number of messages retrieved
-        int numberOfNonces = conf.getNumberOfNonces(); // ammount of nonces to be generated
+	/**
+	 * This method is invoked by the comunication system to deliver a request. It assumes that the communication system delivers the message in FIFO
+	 * order.
+	 *
+	 * @param msg The request being received
+	 */
+	public void requestReceived(TOMMessage msg) {
+		//synchronize forwareded and client received msg access
+		synchronized (requestsync) {
+			// check if reset is triggered
+			// TODO Add property to disable this for "live" usage if ever intended
+			if (Arrays.equals(msg.getContent(), RESET)) {
+				clientsManager.resetClients();
+			}
+			// check if this request is valid
+			if (clientsManager.requestReceived(msg, true, !msg.isReadOnlyRequest())) {
+				if (msg.isReadOnlyRequest()) {
+					receiver.receiveUnorderedMessage(msg);
+				} else {
+					consensusService.notifyNewRequest(msg);
+				}
+			} else {
+				if (log.isLoggable(Level.FINER)) {
+					log.finer(" the received TOMMessage " + msg + " was discarded.");
+				}
+			}
+		}
+	}
 
-        if(log.isLoggable(Level.FINER) && pendingRequests.size()>0) {
-            log.finer(" creating a PROPOSE with " + numberOfMessages + " msgs from " + pendingRequests.getFirst() +" to "+pendingRequests.getLast());
-        }
+	/**
+	 * Creates a value to be proposed to the acceptors. Invoked if this replica is the leader
+	 *
+	 * @return A value to be proposed to the acceptors
+	 */
+	@SuppressWarnings("null")
+	public byte[] createPropose() {
+		// Retrieve a set of pending requests from the clients manager
+		PendingRequests pendingRequests = clientsManager.getPendingRequests();
 
-        int totalMessageSize = 0; //total size of the messages being batched
-        byte[][] messages = new byte[numberOfMessages][]; //bytes of the message (or its hash)
-        byte[][] signatures = null;
-        if(conf.getUseSignatures() == 1 ){
-        	signatures = new byte[numberOfMessages][]; //bytes of the message (or its hash)
-        }
+		int numberOfMessages = pendingRequests.size(); // number of messages retrieved
+		int numberOfNonces = conf.getNumberOfNonces(); // ammount of nonces to be generated
 
-        // Fill the array of bytes for the messages/signatures being batched
-        int i = 0;
-        for (Iterator<TOMMessage> li = pendingRequests.iterator(); li.hasNext(); i++) {
-            TOMMessage msg = li.next();
-            if(log.isLoggable(Level.FINEST)){
-                log.finest(" adding req " + msg + " to PROPOSE");
-            }
-            messages[i] = msg.getBytes();
-            if(conf.getUseSignatures() == 1){
-            	signatures[i] = msg.serializedMessageSignature;
-            }
+		if (log.isLoggable(Level.FINER) && pendingRequests.size() > 0) {
+			log.finer(" creating a PROPOSE with " + numberOfMessages + " msgs from " + pendingRequests.getFirst() + " to " + pendingRequests.getLast());
+		}
 
-            totalMessageSize += messages[i].length;
-        }
+		int totalMessageSize = 0; //total size of the messages being batched
+		byte[][] messages = new byte[numberOfMessages][]; //bytes of the message (or its hash)
+		byte[][] signatures = null;
+		if (conf.getUseSignatures() == 1) {
+			signatures = new byte[numberOfMessages][]; //bytes of the message (or its hash)
+		}
 
-        // return the batch
-        return bb.createBatch(System.currentTimeMillis(), numberOfNonces, numberOfMessages, totalMessageSize, messages, signatures);
-    }
+		// Fill the array of bytes for the messages/signatures being batched
+		int i = 0;
+		for (Iterator<TOMMessage> li = pendingRequests.iterator(); li.hasNext(); i++) {
+			TOMMessage msg = li.next();
+			if (log.isLoggable(Level.FINEST)) {
+				log.finest(" adding req " + msg + " to PROPOSE");
+			}
+			messages[i] = msg.getBytes();
+			if (conf.getUseSignatures() == 1) {
+				signatures[i] = msg.serializedMessageSignature;
+			}
 
-    /**
-     * Called by the current consensus's execution, to notify the TOM layer that a value was decided
-     * @param cons The decided consensus
-     */
-    public void decided(Consensus<TOMMessage[]> cons) {
-        this.dt.delivery(cons); // Delivers the consensus to the delivery thread
-    }
+			totalMessageSize += messages[i].length;
+		}
 
-    /**
-     * Verify if the value being proposed for a round is valid. It verifies the
-     * client signature of all batch requests.
-     *
-     * TODO: verify timestamps and nonces
-     *
-     * @param proposedValue the value being proposed
-     * @return
-     */
-    public TOMMessage[] checkProposedValue(byte[] proposedValue) {
-        if(log.isLoggable(Level.FINER)) {
-            log.finer(" starting");
-        }
-        BatchReader batchReader = new BatchReader(proposedValue, conf.getUseSignatures() == 1,conf.getSignatureSize());
+		// return the batch
+		return bb.createBatch(System.currentTimeMillis(), numberOfNonces, numberOfMessages, totalMessageSize, messages, signatures);
+	}
 
-        TOMMessage[] requests = null;
+	/**
+	 * Called by the current consensus's execution, to notify the TOM layer that a value was decided
+	 *
+	 * @param cons The decided consensus
+	 */
+	public void decided(Consensus<TOMMessage[]> cons) {
+		this.dt.delivery(cons); // Delivers the consensus to the delivery thread
+	}
 
-        try {
-            //deserialize the message
-            //TODO: verify Timestamps and Nonces
-            requests = batchReader.deserialiseRequests();
+	/**
+	 * Verify if the value being proposed for a round is valid. It verifies the client signature of all batch requests.
+	 *
+	 * TODO: verify timestamps and nonces
+	 *
+	 * @param proposedValue the value being proposed
+	 * @return
+	 */
+	public TOMMessage[] checkProposedValue(byte[] proposedValue) {
+		if (log.isLoggable(Level.FINER)) {
+			log.finer(" starting");
+		}
+		BatchReader batchReader = new BatchReader(proposedValue, conf.getUseSignatures() == 1, conf.getSignatureSize());
 
-            //log.finer(" Got clientsManager lock");
-            for (int i = 0; i < requests.length; i++) {
-                //notifies the client manager that this request was received and get
-                //the result of its validation
-                if (!clientsManager.requestReceived(requests[i], false, true)) {
-                    if(log.isLoggable(Level.FINER)) {
-                        log.finer(" finished, return=false");
-                    }
-                    return null;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            if(log.isLoggable(Level.FINER)) {
-                log.finer(" finished, return=false");
-            }
-            return null;
-        }
-        //clientsManager.getClientsLock().unlock();
-        if(log.isLoggable(Level.FINER)) {
-            log.finer(" finished, return=true");
-        }
+		TOMMessage[] requests = null;
 
-        return requests;
-    }
-    /** ISTO E CODIGO DO JOAO, PARA TRATAR DOS CHECKPOINTS */
-    private StateManager stateManager = null;
-    
+		try {
+			//deserialize the message
+			//TODO: verify Timestamps and Nonces
+			requests = batchReader.deserialiseRequests();
+
+			//log.finer(" Got clientsManager lock");
+			for (int i = 0; i < requests.length; i++) {
+				//notifies the client manager that this request was received and get
+				//the result of its validation
+				if (!clientsManager.requestReceived(requests[i], false, true)) {
+					if (log.isLoggable(Level.FINER)) {
+						log.finer(" finished, return=false");
+					}
+					return null;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			if (log.isLoggable(Level.FINER)) {
+				log.finer(" finished, return=false");
+			}
+			return null;
+		}
+		//clientsManager.getClientsLock().unlock();
+		if (log.isLoggable(Level.FINER)) {
+			log.finer(" finished, return=true");
+		}
+
+		return requests;
+	}
+	/**
+	 * ISTO E CODIGO DO JOAO, PARA TRATAR DOS CHECKPOINTS
+	 */
+	private StateManager stateManager = null;
+
 	/**
 	 * Saves the state to the statelog
+	 *
 	 * @param lastEid The last executionid that is in this state
 	 * @param decisionRound The round of the last execution in this state
 	 * @param leader The leader of the last execution in this state
 	 * @param lmstate The current state of the leadermodule
-	 */	
-    @SuppressWarnings("boxing")
-	public void saveState( Long lastEid, Integer decisionRound, Integer leader, byte[] lmstate) {
-    	
-        byte[] recvstate = receiver.getState();
+	 */
+	@SuppressWarnings("boxing")
+	public void saveState(Long lastEid, Integer decisionRound, Integer leader, byte[] lmstate) {
 
-        stateManager.saveState(lastEid,decisionRound,leader,lmstate,recvstate,computeHash(recvstate));
+		byte[] recvstate = receiver.getState();
+
+		stateManager.saveState(lastEid, decisionRound, leader, lmstate, recvstate, computeHash(recvstate));
 
 
-    }
+	}
 
-    public void saveBatch(byte[] batch, Long lastEid, Integer decisionRound, int leader) {
-       stateManager.saveBatch(batch,lastEid,decisionRound,leader);
-    }
+	public void saveBatch(byte[] batch, Long lastEid, Integer decisionRound, int leader) {
+		stateManager.saveBatch(batch, lastEid, decisionRound, leader);
+	}
 
-    /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO */
-    @SuppressWarnings("boxing")
+	/**
+	 * ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO
+	 */
+	@SuppressWarnings("boxing")
 	public void requestStateTransfer(Integer me, Integer[] otherAcceptors, Integer sender, Long eid) {
 
-        /************************* TESTE *************************
-        System.out.println("[TOMLayer.requestState]");
-        System.out.println("Mensagem adiantada! (eid " + eid + " vindo de " + sender + ") ");
-        /************************* TESTE *************************/
-        if (conf.isStateTransferEnabled()) {
-            if (!stateManager.isWaitingForState()) {
+		/**
+		 * *********************** TESTE ************************* System.out.println("[TOMLayer.requestState]"); System.out.println("Mensagem
+		 * adiantada! (eid " + eid + " vindo de " + sender + ") "); /************************* TESTE ************************
+		 */
+		if (conf.isStateTransferEnabled()) {
+			if (!stateManager.isWaitingForState()) {
 
-                if (log.isLoggable(Level.FINER)) {
-                    log.finer(" I'm not waiting for any state, so I will keep record of this message");
-                }
-                if(stateManager.addEIDAndCheckStateTransfer(sender, eid)){
-                    SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
-                    communication.send(otherAcceptors, smsg);
-                }
+				log.log(Level.FINE, "Requesting state transfer because of msg for exe {1} from {0}", new Object[]{sender, eid});
 
-                
-            } else {
-            	log.fine("I'm already waiting for a state - not starting state transfer");
-            }
-        } else {
-            if (log.isLoggable(Level.WARNING)) {
-                log.warning(" The state transfer protocol is disabled: /n"
-                        + "################################################################################## /n"
-                        + "- Ahead-of-time message discarded/n"
-                        + "- If many messages of the same consensus are discarded, the replica can halt!/n"
-                        + "- Try to increase the 'system.paxos.highMarc' configuration parameter./n"
-                        + "- Last consensus executed: " + consensusService.getLastExecuted() + "/n"
-                        + "##################################################################################");
-        }
-    }
-        /************************* TESTE *************************
-        log.finer("[/TOMLayer.requestState]");
-        /************************* TESTE *************************/
-    }
-
-    public void SMRequestDeliver(SMMessage msg) {
-
-        if (conf.isStateTransferEnabled()) {
+				if (stateManager.addEIDAndCheckStateTransfer(sender, eid)) {
+					log.log(Level.FINE, "Sending staterequest for {1} to {0}", new Object[]{sender, eid});
+					SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
+					communication.send(otherAcceptors, smsg);
+				} else {
+					log.log(Level.FINE, "Not yet requesting state for {1} from {0}", new Object[]{sender, eid});
+				}
 
 
-            boolean sendState = msg.getReplica() == conf.getProcessId().intValue();
-            if (log.isLoggable(Level.FINE)) { 
-                if (sendState) {
-					log.fine(" Received " + msg + " - sending full state");
-                } else {
-					log.fine(" Received " + msg + " - sending hash");
+			} else {
+				log.fine("I'm already waiting for a state - not starting state transfer");
 			}
-            }
+		} else {
+			if (log.isLoggable(Level.WARNING)) {
+				log.warning(" The state transfer protocol is disabled: /n"
+						+ "################################################################################## /n"
+						+ "- Ahead-of-time message discarded/n"
+						+ "- If many messages of the same consensus are discarded, the replica can halt!/n"
+						+ "- Try to increase the 'system.paxos.highMarc' configuration parameter./n"
+						+ "- Last consensus executed: " + consensusService.getLastExecuted() + "/n"
+						+ "##################################################################################");
+			}
+		}
+		/**
+		 * *********************** TESTE ************************* log.finer("[/TOMLayer.requestState]"); /************************* TESTE ************************
+		 */
+	}
 
-            TransferableState state = stateManager.getTransferableState(msg.getEid(), sendState);
+	public void SMRequestDeliver(SMMessage msg) {
 
-            if (state == null) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.fine(" I don't have the state requested :-(");
-                }
-                state = new TransferableState();
-            }
+		if (conf.isStateTransferEnabled()) {
 
-            Integer[] targets = {msg.getSender()};
-            SMMessage smsg = new SMMessage(consensusService.getId(), msg.getEid(), TOMUtil.SM_REPLY, -1, state);
-            communication.send(targets, smsg);
 
-            if (log.isLoggable(Level.FINE)) {
-                log.fine(" I sent the state for checkpoint " + state.lastCheckpointEid + " with batches until EID " + state.lastEid);
-        }
-    }
-    }
+			boolean sendState = msg.getReplica() == conf.getProcessId().intValue();
+			if (log.isLoggable(Level.FINE)) {
+				if (sendState) {
+					log.fine(" Received " + msg + " - sending full state");
+				} else {
+					log.fine(" Received " + msg + " - sending hash");
+				}
+			}
 
-    public void SMReplyDeliver(SMMessage msg) {
+			TransferableState state = stateManager.getTransferableState(msg.getEid(), sendState);
 
-        if (conf.isStateTransferEnabled()) {
+			if (state == null) {
+				if (log.isLoggable(Level.FINE)) {
+					log.fine(" I don't have the state requested :-(");
+				}
+				state = new TransferableState();
+			}
 
-            if(log.isLoggable(Level.FINER)){
-                log.finer(" The state transfer protocol is enabled");
-                log.finer(" I received a state reply for EID " + msg.getEid() + " from replica " + msg.getSender());
-            }
+			Integer[] targets = {msg.getSender()};
+			SMMessage smsg = new SMMessage(consensusService.getId(), msg.getEid(), TOMUtil.SM_REPLY, -1, state);
+			communication.send(targets, smsg);
 
-	    TransferableState state = stateManager.registerSMMessage(msg);
-                        if (state != null) {
-                        dt.updateState(state);
-			                stateManager.resetWaiting();
-            }
-        }
-    }
+			if (log.isLoggable(Level.FINE)) {
+				log.fine(" I sent the state for checkpoint " + state.lastCheckpointEid + " with batches until EID " + state.lastEid);
+			}
+		}
+	}
 
-    public boolean isRetrievingState() {
-        return stateManager.isWaitingForState();
-    }
+	public void SMReplyDeliver(SMMessage msg) {
 
-    public void setConsensusService(ConsensusService manager) {
-        this.consensusService = manager;
-        dt.setConsensusservice(consensusService);
-    }
+		if (conf.isStateTransferEnabled()) {
 
-    public boolean hasPendingRequests() {
-        return clientsManager.hasPendingRequests();
-    }
+			if (log.isLoggable(Level.FINER)) {
+				log.finer(" The state transfer protocol is enabled");
+				log.finer(" I received a state reply for EID " + msg.getEid() + " from replica " + msg.getSender());
+			}
+
+			TransferableState state = stateManager.registerSMMessage(msg);
+			if (state != null) {
+				dt.updateState(state);
+				stateManager.resetWaiting();
+			}
+		}
+	}
+
+	public boolean isRetrievingState() {
+		return stateManager.isWaitingForState();
+	}
+
+	public void setConsensusService(ConsensusService manager) {
+		this.consensusService = manager;
+		dt.setConsensusservice(consensusService);
+	}
+
+	public boolean hasPendingRequests() {
+		return clientsManager.hasPendingRequests();
+	}
 
 	public byte[] getState() {
 		return receiver.getState();
 	}
-    
-    /**
-     * Waits until the currently running Statetransfer is finished. If no State-
-     * transfer is currently running this method returns immediatly
-     */
-    public void checkAndWaitForState() {
-        stateManager.checkAndWaitForSTF();
-}
 
-    public StateManager getStateManager() {
-        return stateManager;
-    }
+	/**
+	 * Waits until the currently running Statetransfer is finished. If no State- transfer is currently running this method returns immediatly
+	 */
+	public void checkAndWaitForState() {
+		stateManager.checkAndWaitForSTF();
+	}
+
+	public StateManager getStateManager() {
+		return stateManager;
+	}
 }

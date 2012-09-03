@@ -1,21 +1,18 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
- * 
+ * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ *
+ * @author tags
+ *
  * This file is part of SMaRt.
- * 
- * SMaRt is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * SMaRt is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * SMaRt is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.communication.server;
 
 import java.io.IOException;
@@ -26,6 +23,8 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -39,13 +38,12 @@ import navigators.smart.tom.util.TOMConfiguration;
 import static navigators.smart.tom.util.Statistics.stats;
 
 /**
- * 
+ *
  * @author alysson
  */
 public class ServersCommunicationLayer extends Thread {
-	
-	private static final Logger log = Logger.getLogger(ServersCommunicationLayer.class.getCanonicalName());
 
+	private static final Logger log = Logger.getLogger(ServersCommunicationLayer.class.getCanonicalName());
 	private TOMConfiguration conf;
 	private BlockingQueue<SystemMessage> inQueue;
 	private ServerConnection[] connections;
@@ -55,7 +53,9 @@ public class ServersCommunicationLayer extends Thread {
 	@SuppressWarnings("rawtypes")
 	private final Map<SystemMessage.Type, MessageHandler> msgHandlers;
 	private MessageVerifierFactory<PTPMessageVerifier> verifierfactory;
-	/** Holds the global verifier reference */
+	/**
+	 * Holds the global verifier reference
+	 */
 	private GlobalMessageVerifier<SystemMessage> globalverifier;
 	private CountDownLatch latch;
 
@@ -64,8 +64,7 @@ public class ServersCommunicationLayer extends Thread {
 			BlockingQueue<SystemMessage> inQueue,
 			Map<SystemMessage.Type, MessageHandler> msgHandlers,
 			MessageVerifierFactory<PTPMessageVerifier> verifierfactory,
-			GlobalMessageVerifier<SystemMessage> globalverifier) throws IOException
-			{
+			GlobalMessageVerifier<SystemMessage> globalverifier) throws IOException {
 		super("ServersCommunicationLayer");
 		this.conf = conf;
 		this.inQueue = inQueue;
@@ -81,26 +80,29 @@ public class ServersCommunicationLayer extends Thread {
 		serverSocket.socket().setReuseAddress(true);
 		serverSocket.socket().bind(new InetSocketAddress(conf.getPort(conf.getProcessId())));
 	}
-	
+
 	@Override
-	public void start(){
-                ServerCommunicationSystem.setThreadPriority(this);
+	public void start() {
+		ServerCommunicationSystem.setThreadPriority(this);
 		super.start();
 		try {
 			latch.await(); // wait for all connections on startup
 		} catch (InterruptedException e) {
-			log.severe(e.getMessage()+": Got interrupted while waiting for other connections!");
-		} 
+			log.severe(e.getMessage() + ": Got interrupted while waiting for other connections!");
+		}
 	}
 
 	@SuppressWarnings("boxing")
 	public final void send(Integer[] targets, SystemMessage sm) {
-            stats.sendingMsgToServer(targets,sm);
-            byte[] data = sm.getBytes();
-
+		stats.sendingMsgToServer(targets, sm);
+		byte[] data = sm.getBytes();
+		//send in random order to prevent lagging behind
+		//Collections.shuffle(Arrays.asList(targets));
+		
 		for (int i : targets) {
-			if(log.isLoggable(Level.FINEST))
-				log.finest("Sending "+sm+" to "+i);
+			if (log.isLoggable(Level.FINEST)) {
+				log.finest("Sending " + sm + " to " + i);
+			}
 			// br.ufsc.das.tom.util.Logger.println("(ServersCommunicationLayer.send) Sending msg to replica "+i);
 			try {
 				if (i == me) {
@@ -153,8 +155,7 @@ public class ServersCommunicationLayer extends Thread {
 						// first time that this connection is being established
 						PTPMessageVerifier verifier = null;
 						if (verifierfactory != null) {
-							verifier = verifierfactory
-									.generateMessageVerifier();
+							verifier = verifierfactory.generateMessageVerifier();
 						}
 						connections[remoteId] = new ServerConnection(conf,
 								newSocketChannel, remoteId, inQueue, msgHandlers,
@@ -170,8 +171,7 @@ public class ServersCommunicationLayer extends Thread {
 			} catch (SocketTimeoutException ex) {
 				// timeout on the accept... do nothing
 			} catch (IOException ex) {
-				Logger.getLogger(ServersCommunicationLayer.class.getName())
-						.log(Level.SEVERE, null, ex);
+				Logger.getLogger(ServersCommunicationLayer.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
 
