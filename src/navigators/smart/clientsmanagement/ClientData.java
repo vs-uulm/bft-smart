@@ -35,16 +35,19 @@ public class ClientData {
     private long lastMessageReceivedTime = 0;
     private int lastMessageExecuted = -1;
     private PendingRequests pendingRequests = new PendingRequests();
+	private int maxPendingRequests = 1;
     private Queue<TOMMessage> proposedRequests = new LinkedList<TOMMessage>();
     private TOMMessage lastReplySent = null;
 
     /**
      * Class constructor. Just store the clientId.
      *
-     * @param clientId
+     * @param clientId The id of this client
+	 * @param maxPending The number of pending Requests stored for this client
      */
-    public ClientData(Integer clientId) {
+    public ClientData(Integer clientId, int maxPending) {
         this.clientId = clientId;
+		this.maxPendingRequests = maxPending;
     }
     
     public Integer getClientId() {
@@ -118,6 +121,10 @@ public class ClientData {
 	}
 
 	public boolean addRequest(TOMMessage request) {
+		//Keep pending requests at a reasonable size
+		if(pendingRequests.size() > maxPendingRequests) {
+			pendingRequests.remove();
+		}
 		return pendingRequests.add(request);
 	}
 

@@ -50,9 +50,10 @@ public class TOMConfiguration extends Configuration {
     private boolean stateTransferEnabled;
     private int checkpoint_period;
     private int useControlFlow;
-    private int strongDelay;
     private int signatureSize;
     private long sendDelay;
+	/** Cap for the number of pending messages each client can have */
+	private int maxPendingMessages;
 
     public TOMConfiguration(TOMConfiguration conf, int processId) {
         super(conf, processId);
@@ -80,7 +81,7 @@ public class TOMConfiguration extends Configuration {
         this.useControlFlow = conf.useControlFlow;
         this.inQueueSize = conf.inQueueSize;
         this.outQueueSize = conf.outQueueSize;
-        this.strongDelay = conf.strongDelay;
+        this.maxPendingMessages = conf.maxPendingMessages;
         this.signatureSize = conf.signatureSize;
         this.sendDelay = conf.sendDelay;
     }
@@ -270,13 +271,13 @@ public class TOMConfiguration extends Configuration {
                     outQueueSize = 200;
                 }
             }
-            s = configs.remove("system.paxos.strongdelay");
+            s = configs.remove("system.client.maxPendingMessages");
             if (s == null) {
-                strongDelay = 5;
+                maxPendingMessages = 5;
             } else {
-                strongDelay = Integer.parseInt(s);
-                if (strongDelay < 0) {
-                    strongDelay = 5;
+                maxPendingMessages = Integer.parseInt(s);
+                if (maxPendingMessages < 0) {
+                    maxPendingMessages = 5;
                 }
             }
             s = configs.remove("system.testing.sendDelay");
@@ -461,10 +462,6 @@ public class TOMConfiguration extends Configuration {
         }
     }
 
-    public long getStrongDelay() {
-        return strongDelay;
-    }
-
     public int getSignatureSize() {
         return signatureSize;
     }
@@ -472,4 +469,8 @@ public class TOMConfiguration extends Configuration {
     public long getSendDelay() {
         return sendDelay;
     }
+
+	public int getMaxPending() {
+		return maxPendingMessages;
+	}
 }

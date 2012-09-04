@@ -95,7 +95,7 @@ public class ClientsManager {
             if (log.isLoggable(Level.FINEST)) {
             		log.finest("Creating new client data for client id=" + clientId);
             }
-            clientData = new ClientData(clientId);
+            clientData = new ClientData(clientId,conf.getMaxPending());
             clientsData.put(clientId, clientData);
         }
 
