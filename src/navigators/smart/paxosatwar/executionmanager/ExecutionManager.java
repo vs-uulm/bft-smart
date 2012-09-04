@@ -260,8 +260,8 @@ public final class ExecutionManager{
         	if(stopped) {//just an optimization to avoid calling the lock in normal case
                 stoppedMsgsLock.lock();
                 if (stopped) {
-                    if (log.isLoggable(Level.FINER)) {
-						log.finer("Adding " + msg + " for execution " + consId + " to stopped");
+                    if (log.isLoggable(Level.FINEST)) {
+						log.finest("Adding " + msg + " for execution " + consId + " to stopped");
                     }
                     //store for later execution
                     stoppedMsgs.add(msg);
@@ -271,8 +271,8 @@ public final class ExecutionManager{
 
 			if (isRetrievingState || 				// add to ooc when retrieving state
                     consId.longValue() > (lastConsId.longValue() + 1)) {	// or normal ooc msg
-                if (log.isLoggable(Level.FINER)) {
-                    log.finer("Adding "+ msg +" to out of context set");
+                if (log.isLoggable(Level.FINEST)) {
+                    log.finest("Adding "+ msg +" to out of context set");
                 }
                 addOutOfContextMessage(msg); 		//store it as an ahead of time message (out of context)
             } else {
