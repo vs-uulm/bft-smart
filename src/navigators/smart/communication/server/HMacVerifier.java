@@ -66,15 +66,21 @@ public class HMacVerifier implements PTPMessageVerifier {
 
 	/**
 	 * Generates the hash for the given message
+	 *
 	 * @param messageData The data to hash
 	 * @return The generated hash
 	 */
 	public byte[] generateHash(byte[] messageData) {
-		return macSend.doFinal(messageData);
+		byte[] hash = macSend.doFinal(messageData);
+		if (log.isLoggable(Level.FINEST)) {
+			log.log(Level.FINEST, "Hashed: {0}", Arrays.toString(messageData));
+		}
+		return hash;
 	}
 
 	/**
 	 * Returns the size of the provided hashes
+	 *
 	 * @return The hashsize
 	 */
 	public int getHashSize() {
@@ -82,8 +88,8 @@ public class HMacVerifier implements PTPMessageVerifier {
 	}
 
 	/**
-	 * Verifies the given data with the given hash. The Bytebuffers position
-	 * will be reset to where it was upon return.
+	 * Verifies the given data with the given hash. The Bytebuffers position will be reset to where it was upon return.
+	 *
 	 * @param data The data to check
 	 * @param receivedHash The provided hash to compare to
 	 * @return true if the hash fits the data, false otherwhise
@@ -95,11 +101,10 @@ public class HMacVerifier implements PTPMessageVerifier {
 		data.reset();
 		assert (receivedHash.capacity() == macSize) : "Receivedhash buffer is not of the correct size";
 		byte[] computedHash = macReceive.doFinal();
-		if (log.isLoggable(Level.FINEST)) {
-			if (!Arrays.equals(computedHash, receivedHash.array())) {
-				log.log(Level.FINEST, "comparing computed hash {0} and received hash {1}", new Object[]{Arrays.toString(computedHash), Arrays.toString(receivedHash.array())});
-			}
+		boolean verified = Arrays.equals(computedHash, receivedHash.array());
+		if (!verified) {
+			log.log(Level.SEVERE, "Verification Failur: hash {0} and received hash {1} differ", new Object[]{Arrays.toString(computedHash), Arrays.toString(receivedHash.array())});
 		}
-		return Arrays.equals(computedHash, receivedHash.array());
+		return verified;
 	}
 }
