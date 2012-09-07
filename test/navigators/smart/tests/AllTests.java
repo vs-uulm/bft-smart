@@ -3,6 +3,7 @@ package navigators.smart.tests;
 import navigators.smart.communication.server.TestSerialization;
 import navigators.smart.paxosatwar.executionmanager.ExecutionManagerTest;
 import navigators.smart.paxosatwar.messages.PaxosMessageTest;
+import navigators.smart.statemanagment.SMMessageTest;
 import navigators.smart.tom.core.TOMLayerTest;
 
 import org.junit.runner.RunWith;
@@ -15,7 +16,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	TestSerialization.class,
 	ExecutionManagerTest.class,
 	PaxosMessageTest.class,
-	TOMLayerTest.class})
+	TOMLayerTest.class,
+	SMMessageTest.class})
 
 
 public class AllTests {
