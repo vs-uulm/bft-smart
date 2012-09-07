@@ -43,8 +43,8 @@ public class PaxosMessage extends SystemMessage {
         super(Type.PAXOS_MSG,in);
         
         paxosType = in.getInt();
-	number = Long.valueOf(in.getLong());
-	round = Integer.valueOf(in.getInt());
+		number = Long.valueOf(in.getLong());
+		round = Integer.valueOf(in.getInt());
 		
     }
 
