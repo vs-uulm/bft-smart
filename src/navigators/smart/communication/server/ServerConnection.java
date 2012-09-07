@@ -368,7 +368,13 @@ public class ServerConnection {
                             }
                         } else {
                             //TODO: violation of authentication... we should do something
-                            log.log(Level.SEVERE, "Received bad {0} from {1}", new Object[]{Arrays.toString(Arrays.copyOfRange(buf.array(), 0, buf.limit() > 100 ? 100 : buf.limit())), remoteId});
+							StringBuilder output = new StringBuilder();
+							byte[] data = Arrays.copyOfRange(buf.array(),0, buf.limit() > 100 ? 100 : buf.limit());
+							for(byte b:data){
+								String bs = Integer.toBinaryString(b);
+								output.append(bs).append(" ");
+							}
+                            log.log(Level.SEVERE, "Received bad {0} from {1}", new Object[]{output, remoteId});
                             log.log(Level.SEVERE, "Limit is: {0}", buf.limit());
                         }
 
@@ -408,7 +414,11 @@ public class ServerConnection {
             boolean verified = false;
             switch (conf.getVerifierType()) {
                 case PTPVerifier:
-                    socketchannel.read(receivedHash);
+					 while (receivedHash.hasRemaining()) {
+						if (socketchannel.read(receivedHash) == -1) {
+							throw new IOException("Reached eof while waiting for data");
+						}
+					}
                     verified = ptpverifier.verifyHash(buf, receivedHash);
                     receivedHash.rewind(); // reset hash buffer
                     break;
