@@ -87,17 +87,17 @@ public interface ConsensusService {
 	public void start();
 	
 	
-	/** 
-	 * Returns some currently interesting systems parameters to get a good feeling of the
-	 * current state of the system.
-	 */
-	public String getCurrentStats();
-	
-	/**
-	 * Returns a space separated String describing every returned part of the
-	 * getCurrentStats(). Should be directly usable with gnuplot
-	 * @return 
-	 */
-	public String getCurrentStatsHeader();
+//	/** 
+//	 * Returns some currently interesting systems parameters to get a good feeling of the
+//	 * current state of the system.
+//	 */
+//	public String getCurrentStats();
+//	
+//	/**
+//	 * Returns a space separated String describing every returned part of the
+//	 * getCurrentStats(). Should be directly usable with gnuplot
+//	 * @return 
+//	 */
+//	public String getCurrentStatsHeader();
 
 }

@@ -15,7 +15,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.paxosatwar;
 
 import java.util.logging.Level;
@@ -40,132 +39,125 @@ import navigators.smart.tom.util.TOMConfiguration;
  *
  * @author Christian Spann <christian.spann at uni-ulm.de>
  */
-public class PaxosAtWarService implements ConsensusService{
-	
+public class PaxosAtWarService implements ConsensusService {
+
 	private static final Logger log = Logger.getLogger(PaxosAtWarService.class.getCanonicalName());
-	
-    /** Module managing the current and past leaders*/
-    private final LeaderModule lm;
-
-    /** Manages the seperate executions */
-    private final ExecutionManager execmng;
-
-    /** Manage timers for pending requests */
-    public RequestsTimer requestsTimer;
-
-    /** Handler for PaWMessages*/
+	/** Module managing the current and past leaders*/
+	private final LeaderModule lm;
+	/** Manages the seperate executions */
+	private final ExecutionManager execmng;
+	/** Manage timers for pending requests */
+	public RequestsTimer requestsTimer;
+	/** Handler for PaWMessages*/
 	private final PaWMessageHandler<?> msghandler;
-
 	/** Handler for state management */
 	private final StateManager statemgr;
-	
 	/** TOM Configuration object */
 	private final TOMConfiguration conf;
-	
 	/** TOMLayer for state reception */
 	private final TOMLayer tom;
-	
-    /**
-     * Creates a new PaxosAtWar instance with the given modules that handle
-     * several internal tasks
-     * @param lm The LeaderManager
-     * @param manager The ExecutionManager
-     * @param msghandler The MessageHandler for PaxosAtWar Messages
-     */
-    public PaxosAtWarService(LeaderModule lm, ExecutionManager manager, PaWMessageHandler<?> msghandler, TOMConfiguration conf, TOMLayer tom){
-        this.lm = lm;
-        this.execmng = manager;
-        this.msghandler = msghandler;
+
+	/**
+	 * Creates a new PaxosAtWar instance with the given modules that handle
+	 * several internal tasks
+	 * @param lm The LeaderManager
+	 * @param manager The ExecutionManager
+	 * @param msghandler The MessageHandler for PaxosAtWar Messages
+	 */
+	public PaxosAtWarService(LeaderModule lm, ExecutionManager manager, PaWMessageHandler<?> msghandler, TOMConfiguration conf, TOMLayer tom) {
+		this.lm = lm;
+		this.execmng = manager;
+		this.msghandler = msghandler;
 		this.statemgr = tom.getStateManager();
 		this.conf = conf;
 		this.tom = tom;
-        //do not create a timer manager if the timeout is 0
-        if (manager.getTOMLayer().getConf().getRequestTimeout()==0){
+		//do not create a timer manager if the timeout is 0
+		if (manager.getTOMLayer().getConf().getRequestTimeout() == 0) {
 			log.info("Not using Requeststimer");
-            this.requestsTimer = null;
-        }
-        else {
-            // Create requests timers manager (a thread)
+			this.requestsTimer = null;
+		} else {
+			// Create requests timers manager (a thread)
 			// FIXME Requeststimer is not fully implemented and anyways problematic with state transfers.
 //            this.requestsTimer = new RequestsTimer(manager.getRequestHandler(), manager.getTOMLayer().getConf().getRequestTimeout());
-        }
-    }
+		}
+	}
 
-    @Override
-    public long getLastExecuted() {
-        return execmng.getRequestHandler().getLastExec().longValue();
-    }
+	@Override
+	public long getLastExecuted() {
+		return execmng.getRequestHandler().getLastExec().longValue();
+	}
 
-    @Override
-    public void notifyNewRequest(TOMMessage msg) {
-		if(requestsTimer != null)
+	@Override
+	public void notifyNewRequest(TOMMessage msg) {
+		if (requestsTimer != null) {
 			requestsTimer.watch(msg);
-        execmng.getRequestHandler().notifyNewRequest();
-    }
-    @Override
-    public void notifyRequestDecided(TOMMessage msg){
-		if(requestsTimer != null)
+		}
+		execmng.getRequestHandler().notifyNewRequest();
+	}
+
+	@Override
+	public void notifyRequestDecided(TOMMessage msg) {
+		if (requestsTimer != null) {
 			requestsTimer.unwatch(msg);
-    }
+		}
+	}
 
-    @Override
-    public Integer getId() {
-        return execmng.getProcessId();
-    }
+	@Override
+	public Integer getId() {
+		return execmng.getProcessId();
+	}
 
-    @Override
-    public String toString(){
-        return "Consensus in execution: " + execmng.getRequestHandler().getInExec() + " last executed consensus: "+execmng.getRequestHandler().getLastExec();
-    }
+	@Override
+	public String toString() {
+		return "Consensus in execution: " + execmng.getRequestHandler().getInExec() + " last executed consensus: " + execmng.getRequestHandler().getLastExec();
+	}
 
-    
-    /**
-     * @param cons The consensus of whom we wish to know the final proposer
-     * @return The id of the final proposer
-     */
-    @Override
-    public int getProposer(Consensus<?> cons) {
-        return lm.getLeader(cons.getId(), cons.getDecisionRound()).intValue();
-    }
+	/**
+	 * @param cons The consensus of whom we wish to know the final proposer
+	 * @return The id of the final proposer
+	 */
+	@Override
+	public int getProposer(Consensus<?> cons) {
+		return lm.getLeader(cons.getId(), cons.getDecisionRound()).intValue();
+	}
 
-    @Override
-    public void startDeliverState() {
-        //nothing to do here
-    }
+	@Override
+	public void startDeliverState() {
+		//nothing to do here
+	}
 
-    @SuppressWarnings("boxing")
-    @Override
-    public void deliverState(TransferableState state){
-		log.log(Level.FINE, "Delivering state for {0}",state.lastEid);
-		if(requestsTimer != null)
+	@SuppressWarnings("boxing")
+	@Override
+	public void deliverState(TransferableState state) {
+		log.log(Level.FINE, "Delivering state for {0}", state.lastEid);
+		if (requestsTimer != null) {
 			requestsTimer.unwatchAll(); //clear timer table TODO this is not fully BFT...
-        Long lastCheckpointEid = state.lastCheckpointEid;
-        Long lastEid = state.lastEid;
-        if(state.leadermodulestate != null){
-	        try {
+		}
+		Long lastCheckpointEid = state.lastCheckpointEid;
+		Long lastEid = state.lastEid;
+		if (state.leadermodulestate != null) {
+			try {
 				lm.setState(state.leadermodulestate);
 			} catch (ClassNotFoundException e) {
 				log.severe(e.getLocalizedMessage());
 			}
-        }
-        //add leaderinfo of the last checkpoint
-        lm.addLeaderInfo(Long.valueOf(lastCheckpointEid), state.lastCheckpointRound, state.lastCheckpointLeader);
-        //add leaderinfo for previous message batches
-        for (long eid = lastCheckpointEid + 1; eid <= lastEid; eid++) {
-                lm.addLeaderInfo(Long.valueOf(eid), state.getMessageBatch(eid).round, state.getMessageBatch(eid).leader);
-        }
-        //deliver the state to executionmanager
-        execmng.deliverState(state);
-    }
+		}
+		//add leaderinfo of the last checkpoint
+		lm.addLeaderInfo(Long.valueOf(lastCheckpointEid), state.lastCheckpointRound, state.lastCheckpointLeader);
+		//add leaderinfo for previous message batches
+		for (long eid = lastCheckpointEid + 1; eid <= lastEid; eid++) {
+			lm.addLeaderInfo(Long.valueOf(eid), state.getMessageBatch(eid).round, state.getMessageBatch(eid).leader);
+		}
+		//deliver the state to executionmanager
+		execmng.deliverState(state);
+	}
 
 //    @Override
 //    public byte[] getState(Consensus<?> cons) {
 //            return lm.getState();
 //    }
-
-
-    @Override
-    public void deliveryFinished(Consensus<?> cons) {
+	@Override
+	public void deliveryFinished(Consensus<?> cons) {
 		if (conf.isStateTransferEnabled()) {
 			if (log.isLoggable(Level.FINER)) {
 				log.finer("The state transfer protocol is enabled");
@@ -189,23 +181,11 @@ public class PaxosAtWarService implements ConsensusService{
 				}
 			}
 		}
-        execmng.decided(cons);
-    }
+		execmng.decided(cons);
+	}
 
 	@Override
 	public void start() {
-        //nothing to do for paw
+		//nothing to do for paw
 	}
-
-	public String getCurrentStats() {
-		return 
-	}
-
-	public String getCurrentStatsHeader() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	
-	
-   
-	}
+}

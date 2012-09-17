@@ -148,9 +148,20 @@ public class Statistics {
 		reset();
 	}
 	
+	public void printRunningStatsHeader(String header){
+		runningstatswriter
+				.append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ')
+				.append("\"Pending Requests\" ")
+				.append(header)
+				.flush();
+	}
+	
 	public void printRunningStats(String output) {
-		runningstatswriter.append(TOMReceiver.getServerComQueues()).append(" ").append(output);
-		runningstatswriter.flush();
+		runningstatswriter
+				.append(TOMReceiver.getCurrentServerComQueues()).append(' ')
+				.append(TOMReceiver.getCurrentPendingRequests()).append(' ')
+				.append(output)
+				.flush();
 	}
 	
 	public void printAndClose() {

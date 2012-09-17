@@ -128,8 +128,16 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
         return null;
     }
 	
-	public static String getServerComQueues(){
+	public static String getCurrentServerComQueues(){
 		return cs.getQueueLengths();
+	}
+	
+	public static String getCurrentServerComQueuesNames(){
+		return cs.getQueueNames();
+	}
+	
+	public static String getCurrentPendingRequests(){
+		return tomlayer.clientsManager.pendingreqs.toString();
 	}
 }
 

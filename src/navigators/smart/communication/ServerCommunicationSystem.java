@@ -199,6 +199,10 @@ import navigators.smart.tom.util.TOMConfiguration;
 	public String getQueueLengths(){
 		return serversConn.getQueueLengths();
 	}
+	
+	public String getQueueNames() {
+		return serversConn.getQueueNames();
+	}
 
     /**
      * Checks if the "navigators.smart.communication.threadpriority" is set and
@@ -218,5 +222,6 @@ import navigators.smart.tom.util.TOMConfiguration;
        //set increased priority if System property is not set or invalid
        t.setPriority(Thread.NORM_PRIORITY + 1);
     }
+
 }
 
