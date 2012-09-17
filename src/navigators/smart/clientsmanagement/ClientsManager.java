@@ -126,7 +126,7 @@ public class ClientsManager {
 		/*  ****** BEGIN CLIENTS CRITICAL SECTION ***** */
 		int noMoreMessages = 0;
 		List<ClientData> clients = new ArrayList<ClientData>(clientsData.values());
-		int i = lastClient++;
+		int i = ++lastClient;
 		lastClient = -1;					//reset last handled client;
 		do {
 			for (;i<clients.size();i++) {
