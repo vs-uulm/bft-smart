@@ -153,6 +153,7 @@ public class Statistics {
 				.append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ')
 				.append("\"Pending Requests\" ")
 				.append(header)
+				.append("\n")
 				.flush();
 	}
 	
@@ -161,6 +162,7 @@ public class Statistics {
 				.append(TOMReceiver.getCurrentServerComQueues()).append(' ')
 				.append(TOMReceiver.getCurrentPendingRequests()).append(' ')
 				.append(output)
+				.append("\n")
 				.flush();
 	}
 	
@@ -172,6 +174,7 @@ public class Statistics {
 	public void close(){
 		serverstatswriter.close();
 		clientstatswriter.close();
+		runningstatswriter.close();
 	}
 
 	/**
