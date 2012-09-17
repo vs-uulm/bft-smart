@@ -130,7 +130,7 @@ public class StateManager {
 	 * @param newstate
 	 */
 	public int addState(Integer sender, TransferableState newstate) {
-		senderStates.add(new SenderState(sender, newstate));
+//		senderStates.add(new SenderState(sender, newstate));
 		if (sender.equals(replica) && newstate.state != null) {
 			if (log.isLoggable(Level.FINER)) {
 				log.finer(" I received the state, from the replica that I was expecting");

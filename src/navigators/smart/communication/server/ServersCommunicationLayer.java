@@ -117,6 +117,14 @@ public class ServersCommunicationLayer extends Thread {
 		// br.ufsc.das.tom.util.Logger.println("(ServersCommunicationLayer.send) Finished sending messages to replicas");
 	}
 
+	public String printOutqueueSizes() {
+		StringBuilder sb = new StringBuilder();
+		for(ServerConnection con: connections){
+			sb.append(con.outQueue.size()).append(' ');
+		}
+		return sb.toString();
+	}
+	
 	public void shutdown() {
 		doWork = false;
 
@@ -207,5 +215,18 @@ public class ServersCommunicationLayer extends Thread {
 		}
 
 		return str;
+	}
+	
+	public String getQueueLengths() {
+		StringBuilder str = new StringBuilder();
+		str.append(inQueue.size()).append(' ');
+		for (int i = 0; i < connections.length; i++) {
+			if (connections[i] != null) {
+				str.append(connections[i].outQueue.size()).append(' ');
+			} else {
+				str.append("N/A ");
+			}
+		}
+		return str.toString();
 	}
 }

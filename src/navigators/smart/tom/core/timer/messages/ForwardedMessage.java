@@ -39,13 +39,14 @@ public final class ForwardedMessage extends SystemMessage {
         super(Type.FORWARDED, in);
 
         byte[] serReq = SerialisationHelper.readByteArray(in);
-
-        byte[] serReqSign = SerialisationHelper.readByteArray(in);
-
-
         request = new TOMMessage(ByteBuffer.wrap(serReq));
         request.setBytes(serReq);
-        request.serializedMessageSignature = serReqSign;
+
+		if(in.get() == 1){											// Signature present?
+			request.serializedMessageSignature = 
+					SerialisationHelper.readByteArray(in);
+		}
+
     }
 
     public ForwardedMessage(Integer senderId, TOMMessage request) {
@@ -60,15 +61,24 @@ public final class ForwardedMessage extends SystemMessage {
     @Override
     public void serialise(ByteBuffer out) {
         super.serialise(out);
-
         SerialisationHelper.writeByteArray(request.getBytes(), out);
-
-       SerialisationHelper.writeByteArray(request.serializedMessageSignature, out);
+		out.put(request.signed?(byte)1:(byte)0);					// indicator byte for signature
+		if(request.signed){
+			SerialisationHelper.
+					writeByteArray(request.serializedMessageSignature, out);
+		}
     }
 
     @Override
     public int getMsgSize(){
-    	return super.getMsgSize()+8+request.getBytes().length+request.serializedMessageSignature.length;
+		int size = super.getMsgSize();
+		size += 4 + request.getBytes().length;						// Add TOMMessage + length field
+		// Handle signature
+		size += 1;													// Add byte to indicate signature presence
+		if (request.signed) { 
+			size += 4 + request.serializedMessageSignature.length;	// Add sig lenth + length field
+		}
+    	return size;
     }
 
 }

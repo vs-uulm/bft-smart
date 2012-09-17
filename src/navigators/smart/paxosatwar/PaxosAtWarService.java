@@ -30,8 +30,11 @@ import navigators.smart.paxosatwar.executionmanager.LeaderModule;
 import navigators.smart.paxosatwar.messages.PaWMessageHandler;
 import navigators.smart.paxosatwar.requesthandler.OutOfContextMessageThread;
 import navigators.smart.paxosatwar.requesthandler.timer.RequestsTimer;
+import navigators.smart.statemanagment.StateManager;
 import navigators.smart.statemanagment.TransferableState;
+import navigators.smart.tom.core.TOMLayer;
 import navigators.smart.tom.core.messages.TOMMessage;
+import navigators.smart.tom.util.TOMConfiguration;
 
 /**
  *
@@ -51,8 +54,17 @@ public class PaxosAtWarService implements ConsensusService{
     public RequestsTimer requestsTimer;
 
     /** Handler for PaWMessages*/
-	private PaWMessageHandler<?> msghandler;
+	private final PaWMessageHandler<?> msghandler;
 
+	/** Handler for state management */
+	private final StateManager statemgr;
+	
+	/** TOM Configuration object */
+	private final TOMConfiguration conf;
+	
+	/** TOMLayer for state reception */
+	private final TOMLayer tom;
+	
     /**
      * Creates a new PaxosAtWar instance with the given modules that handle
      * several internal tasks
@@ -60,17 +72,22 @@ public class PaxosAtWarService implements ConsensusService{
      * @param manager The ExecutionManager
      * @param msghandler The MessageHandler for PaxosAtWar Messages
      */
-    public PaxosAtWarService(LeaderModule lm, ExecutionManager manager, PaWMessageHandler<?> msghandler){
+    public PaxosAtWarService(LeaderModule lm, ExecutionManager manager, PaWMessageHandler<?> msghandler, TOMConfiguration conf, TOMLayer tom){
         this.lm = lm;
         this.execmng = manager;
         this.msghandler = msghandler;
+		this.statemgr = tom.getStateManager();
+		this.conf = conf;
+		this.tom = tom;
         //do not create a timer manager if the timeout is 0
         if (manager.getTOMLayer().getConf().getRequestTimeout()==0){
+			log.info("Not using Requeststimer");
             this.requestsTimer = null;
         }
         else {
             // Create requests timers manager (a thread)
-            this.requestsTimer = new RequestsTimer(manager.getRequestHandler(), manager.getTOMLayer().getConf().getRequestTimeout());
+			// FIXME Requeststimer is not fully implemented and anyways problematic with state transfers.
+//            this.requestsTimer = new RequestsTimer(manager.getRequestHandler(), manager.getTOMLayer().getConf().getRequestTimeout());
         }
     }
 
@@ -81,12 +98,14 @@ public class PaxosAtWarService implements ConsensusService{
 
     @Override
     public void notifyNewRequest(TOMMessage msg) {
-        requestsTimer.watch(msg);
+		if(requestsTimer != null)
+			requestsTimer.watch(msg);
         execmng.getRequestHandler().notifyNewRequest();
     }
     @Override
     public void notifyRequestDecided(TOMMessage msg){
-        requestsTimer.unwatch(msg);
+		if(requestsTimer != null)
+			requestsTimer.unwatch(msg);
     }
 
     @Override
@@ -118,7 +137,8 @@ public class PaxosAtWarService implements ConsensusService{
     @Override
     public void deliverState(TransferableState state){
 		log.log(Level.FINE, "Delivering state for {0}",state.lastEid);
-    	requestsTimer.unwatchAll(); //clear timer table TODO this is not fully BFT...
+		if(requestsTimer != null)
+			requestsTimer.unwatchAll(); //clear timer table TODO this is not fully BFT...
         Long lastCheckpointEid = state.lastCheckpointEid;
         Long lastEid = state.lastEid;
         if(state.leadermodulestate != null){
@@ -138,14 +158,37 @@ public class PaxosAtWarService implements ConsensusService{
         execmng.deliverState(state);
     }
 
-    @Override
-    public byte[] getState(Consensus<?> cons) {
-            return lm.getState();
-    }
+//    @Override
+//    public byte[] getState(Consensus<?> cons) {
+//            return lm.getState();
+//    }
 
 
     @Override
     public void deliveryFinished(Consensus<?> cons) {
+		if (conf.isStateTransferEnabled()) {
+			if (log.isLoggable(Level.FINER)) {
+				log.finer("The state transfer protocol is enabled");
+			}
+			if (conf.getCheckpoint_period() > 0) {
+				if ((cons.getId().longValue() > 0) && ((cons.getId().longValue() % conf.getCheckpoint_period()) == 0)) {
+					if (log.isLoggable(Level.FINER)) {
+						log.finer("Performing checkpoint for consensus " + cons.getId());
+					}
+
+					byte[] recvstate = tom.getState();
+					statemgr.saveState(cons.getId(), cons.getDecisionRound(), getProposer(cons), lm.getState(), recvstate, tom.computeHash(recvstate));
+
+					//TODO: possivelmente fazer mais alguma coisa
+				} else {
+					if (log.isLoggable(Level.FINER)) {
+						log.finer("Storing message batch in the state log for consensus " + cons.getId());
+					}
+					statemgr.saveBatch(cons.getDecision(), cons.getId(), cons.getDecisionRound(), getProposer(cons));
+					//TODO: possivelmente fazer mais alguma coisa
+				}
+			}
+		}
         execmng.decided(cons);
     }
 
@@ -154,5 +197,15 @@ public class PaxosAtWarService implements ConsensusService{
         //nothing to do for paw
 	}
 
+	public String getCurrentStats() {
+		return 
+	}
+
+	public String getCurrentStatsHeader() {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	
+	
    
 	}

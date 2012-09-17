@@ -44,9 +44,9 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
     protected final TOMConfiguration conf;
 
-    protected ServerCommunicationSystem cs = null; // Server side comunication system
+    protected static ServerCommunicationSystem cs = null; // Server side comunication system
 
-    protected TOMLayer tomlayer;
+    protected static TOMLayer tomlayer;
 
     public TOMReceiver( TOMConfiguration conf) throws IOException {
         this.conf = conf;
@@ -127,5 +127,9 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
         }
         return null;
     }
+	
+	public static String getServerComQueues(){
+		return cs.getQueueLengths();
+	}
 }
 

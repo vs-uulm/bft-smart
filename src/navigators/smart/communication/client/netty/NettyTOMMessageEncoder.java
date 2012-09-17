@@ -89,8 +89,8 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
 	        /* signature */
 	        if (signatureData != null)
 	            buf.writeBytes(signatureData);
-                //log to statistics module
-                Statistics.stats.sentMsgToClient(sm.destination,sm);
+			//log to statistics module
+			Statistics.stats.sentMsgToClient(sm.destination,sm);
 
     	} else {
     		buf = (ChannelBuffer)msg;

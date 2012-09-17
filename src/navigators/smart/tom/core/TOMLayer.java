@@ -261,23 +261,7 @@ public class TOMLayer implements RequestReceiver {
 	 */
 	private StateManager stateManager = null;
 
-	/**
-	 * Saves the state to the statelog
-	 *
-	 * @param lastEid The last executionid that is in this state
-	 * @param decisionRound The round of the last execution in this state
-	 * @param leader The leader of the last execution in this state
-	 * @param lmstate The current state of the leadermodule
-	 */
-	@SuppressWarnings("boxing")
-	public void saveState(Long lastEid, Integer decisionRound, Integer leader, byte[] lmstate) {
-
-		byte[] recvstate = receiver.getState();
-
-		stateManager.saveState(lastEid, decisionRound, leader, lmstate, recvstate, computeHash(recvstate));
-
-
-	}
+	
 
 	public void saveBatch(byte[] batch, Long lastEid, Integer decisionRound, int leader) {
 		stateManager.saveBatch(batch, lastEid, decisionRound, leader);

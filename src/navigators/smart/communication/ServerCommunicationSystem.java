@@ -195,6 +195,10 @@ import navigators.smart.tom.util.TOMConfiguration;
     public String toString() {
         return serversConn.toString();
     }
+	
+	public String getQueueLengths(){
+		return serversConn.getQueueLengths();
+	}
 
     /**
      * Checks if the "navigators.smart.communication.threadpriority" is set and

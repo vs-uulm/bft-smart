@@ -182,24 +182,7 @@ public class DeliveryThread extends Thread {
                 if(log.isLoggable(Level.FINER))
                     log.finer("I just delivered the batch of EID " + cons.getId());
 
-                if (conf.isStateTransferEnabled()) {
-                    if(log.isLoggable(Level.FINER))
-                        log.finer("The state transfer protocol is enabled");
-                    if (conf.getCheckpoint_period() > 0) {
-                        if ((cons.getId().longValue() > 0) && ((cons.getId().longValue() % conf.getCheckpoint_period()) == 0)) {
-                            if(log.isLoggable(Level.FINER))
-                                log.finer("Performing checkpoint for consensus " + cons.getId());
-                            tomLayer.saveState( cons.getId(), cons.getDecisionRound(), consensusservice.getProposer(cons),consensusservice.getState(cons));
-                            //TODO: possivelmente fazer mais alguma coisa
-                        }
-                        else {
-                            if(log.isLoggable(Level.FINER))
-                                    log.finer("Storing message batch in the state log for consensus " + cons.getId());
-                            tomLayer.saveBatch(cons.getDecision(), cons.getId(), cons.getDecisionRound(), consensusservice.getProposer(cons));
-                            //TODO: possivelmente fazer mais alguma coisa
-                        }
-                    }
-                }
+                
                 
                 consensusservice.deliveryFinished(cons);
                 if(log.isLoggable(Level.FINER))

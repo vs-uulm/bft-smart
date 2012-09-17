@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import navigators.smart.consensus.Consensus;
+import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.core.messages.TOMMessage;
 import org.apache.commons.math.stat.descriptive.SummaryStatistics;
@@ -27,8 +28,9 @@ public class Statistics {
 	private static boolean isfine;
 	public static final String SERVER_STATS_FILE = "serverstats.log";
 	public static final String CLIENT_STATS_FILE = "clientstats.log";
+	public static final String RUNNING_STATS_FILE = "runningstats.log";
 	public static final String STATS_DIR = "navigators.smart.statsdir";
-	public PrintWriter serverstatswriter, clientstatswriter;
+	public PrintWriter serverstatswriter, clientstatswriter, runningstatswriter;
 	private Long[] sent;
 	private Long[] recv;
 	private boolean isLeader;
@@ -87,6 +89,7 @@ public class Statistics {
 
 			//setup stats logging
 			statsdir.mkdirs();
+			runningstatswriter= new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + RUNNING_STATS_FILE)));
 			serverstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + SERVER_STATS_FILE)));
 			clientstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + CLIENT_STATS_FILE)));
 			
@@ -143,6 +146,11 @@ public class Statistics {
 			clientstatswriter.println(i + " " + clientstatsmap.get(i).toString());
 		}
 		reset();
+	}
+	
+	public void printRunningStats(String output) {
+		runningstatswriter.append(TOMReceiver.getServerComQueues()).append(" ").append(output);
+		runningstatswriter.flush();
 	}
 	
 	public void printAndClose() {
