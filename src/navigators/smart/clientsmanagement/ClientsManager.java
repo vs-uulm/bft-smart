@@ -126,11 +126,11 @@ public class ClientsManager {
 		/*  ****** BEGIN CLIENTS CRITICAL SECTION ***** */
 		int noMoreMessages = 0;
 		List<ClientData> clients = new ArrayList<ClientData>(clientsData.values());
+		int i = lastClient++;
+		lastClient = -1;					//reset last handled client;
 		do {
-			lastClient++;
-			for (int i = lastClient;i<clients.size();i++) {
+			for (;i<clients.size();i++) {
 				ClientData clientData = clients.get(i);
-				lastClient = -1;	//reset last handled client;
 				clientData.clientLock.lock();
 				/******* BEGIN CLIENTDATA CRITICAL SECTION ******/
 				TOMMessage request = clientData.proposeReq();
@@ -154,6 +154,7 @@ public class ClientsManager {
 					}
 				}
 			}
+			i = 0; 
 			// I inserted a message on the batch, now I must verify if the max
 			// batch size is reached or no more messages are present
 		} while (allReq.size() <= conf.getMaxBatchSize() && clientsData.size() > noMoreMessages);
