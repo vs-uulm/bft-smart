@@ -54,6 +54,9 @@ public class TOMConfiguration extends Configuration {
     private long sendDelay;
 	/** Cap for the number of pending messages each client can have */
 	private int maxPendingMessages;
+	/** Shall we not use the previously implemented unfair 'fair' clienthandling 
+	 that always starts batches with client (0)*/
+	private boolean fairClientHandling;
 
     public TOMConfiguration(TOMConfiguration conf, int processId) {
         super(conf, processId);
@@ -84,6 +87,7 @@ public class TOMConfiguration extends Configuration {
         this.maxPendingMessages = conf.maxPendingMessages;
         this.signatureSize = conf.signatureSize;
         this.sendDelay = conf.sendDelay;
+		this.fairClientHandling = conf.fairClientHandling;
     }
 
     /** Creates a new instance of TOMConfiguration
@@ -289,6 +293,13 @@ public class TOMConfiguration extends Configuration {
                     sendDelay = 0;
                 }
             }
+			
+			s = configs.remove("system.client.fairhandling");
+			if(s == null) {
+				fairClientHandling = true;
+			} else {
+				fairClientHandling = Boolean.parseBoolean(s);
+			}
 
             rsaLoader = new RSAKeyLoader(this, configHome);
 
@@ -472,5 +483,9 @@ public class TOMConfiguration extends Configuration {
 
 	public int getMaxPending() {
 		return maxPendingMessages;
+	}
+
+	public boolean isFairClientHandling() {
+		return fairClientHandling;
 	}
 }

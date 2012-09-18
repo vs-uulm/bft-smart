@@ -55,7 +55,7 @@ public class ClientsManager {
 	private final List<ClientRequestListener> reqlisteners = new LinkedList<ClientRequestListener>();
 	private final TOMUtil tomutil;
 	public final AtomicInteger pendingreqs = new AtomicInteger();
-	private volatile int lastClient = -1;
+	private volatile int nextClient = -1;
 
 	/**
 	 * Creates a new ClientsManager object with the given configuration.
@@ -126,11 +126,9 @@ public class ClientsManager {
 		/*  ****** BEGIN CLIENTS CRITICAL SECTION ***** */
 		int noMoreMessages = 0;
 		List<ClientData> clients = new ArrayList<ClientData>(clientsData.values());
-		int i = ++lastClient;
-		lastClient = -1;					//reset last handled client;
 		do {
-			for (;i<clients.size();i++) {
-				ClientData clientData = clients.get(i);
+			for (;nextClient<clients.size();nextClient++) {
+				ClientData clientData = clients.get(nextClient);
 				clientData.clientLock.lock();
 				/******* BEGIN CLIENTDATA CRITICAL SECTION ******/
 				TOMMessage request = clientData.proposeReq();
@@ -141,7 +139,6 @@ public class ClientsManager {
 					allReq.addLast(request);
 					// I inserted a message on the batch, now I must check if the max batch size is reached
 					if (allReq.size() == conf.getMaxBatchSize()) {
-						lastClient = i;	//store last handled client
 						break;
 					}
 				} else {
@@ -149,12 +146,12 @@ public class ClientsManager {
 					noMoreMessages++;
 					//break if all clients are empty
 					if (clientsData.size() == noMoreMessages) {
-						lastClient = i;		// store last handled client
 						break;
 					}
 				}
 			}
-			i = 0; 
+			if(nextClient >= clients.size()||!conf.isFairClientHandling())	//reset nextClient if we handled all
+				nextClient = 0;
 			// I inserted a message on the batch, now I must verify if the max
 			// batch size is reached or no more messages are present
 		} while (allReq.size() <= conf.getMaxBatchSize() && clientsData.size() > noMoreMessages);
