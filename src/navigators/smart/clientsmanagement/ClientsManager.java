@@ -55,7 +55,7 @@ public class ClientsManager {
 	private final List<ClientRequestListener> reqlisteners = new LinkedList<ClientRequestListener>();
 	private final TOMUtil tomutil;
 	public final AtomicInteger pendingreqs = new AtomicInteger();
-	private volatile int nextClient = -1;
+	private volatile int nextClient = 0;
 
 	/**
 	 * Creates a new ClientsManager object with the given configuration.
