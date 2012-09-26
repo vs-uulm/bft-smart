@@ -1,6 +1,7 @@
 package navigators.smart.tom.util;
 
 import java.io.*;
+import java.net.Inet4Address;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +50,8 @@ public class Statistics {
 	private final SynchronizedSummaryStatistics dec = new SynchronizedSummaryStatistics();
 	private final SynchronizedSummaryStatistics consensusduration = new SynchronizedSummaryStatistics();
 	private final SynchronizedSummaryStatistics decisionduration = new SynchronizedSummaryStatistics();
+	
+	// Static reference to have easy access from everywhere
 	public static Statistics stats;
 
 	static {
@@ -89,9 +92,21 @@ public class Statistics {
 
 			//setup stats logging
 			statsdir.mkdirs();
-			runningstatswriter= new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + RUNNING_STATS_FILE)));
-			serverstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + SERVER_STATS_FILE)));
-			clientstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + conf.getHost(conf.getProcessId()) + "_" + CLIENT_STATS_FILE)));
+			
+			//Setup prefix for replicas 
+			String prefix = conf.getHost(conf.getProcessId());
+			//or for clients
+			if(prefix == null) {
+				String hostname = Inet4Address.getLocalHost().getHostName();
+				if(hostname.contains(".")){
+					hostname = hostname.substring(0, hostname.indexOf("."));
+				}
+				prefix = hostname;
+			}
+			//open statsfiles for writing
+			runningstatswriter= new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + RUNNING_STATS_FILE)));
+			serverstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + SERVER_STATS_FILE)));
+			clientstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + CLIENT_STATS_FILE)));
 			
 		} catch (IOException ex) {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
