@@ -50,7 +50,6 @@ public class Statistics {
 	private final SynchronizedSummaryStatistics dec = new SynchronizedSummaryStatistics();
 	private final SynchronizedSummaryStatistics consensusduration = new SynchronizedSummaryStatistics();
 	private final SynchronizedSummaryStatistics decisionduration = new SynchronizedSummaryStatistics();
-	
 	// Static reference to have easy access from everywhere
 	public static Statistics stats;
 
@@ -92,67 +91,64 @@ public class Statistics {
 
 			//setup stats logging
 			statsdir.mkdirs();
-			
+
 			//Setup prefix for replicas 
 			String prefix = conf.getHost(conf.getProcessId());
 			//or for clients
-			if(prefix == null) {
+			if (prefix == null) {
 				String hostname = Inet4Address.getLocalHost().getHostName();
-				if(hostname.contains(".")){
+				if (hostname.contains(".")) {
 					hostname = hostname.substring(0, hostname.indexOf("."));
 				}
 				prefix = hostname;
 			}
 			//open statsfiles for writing
-			runningstatswriter= new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + RUNNING_STATS_FILE)));
+			runningstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + RUNNING_STATS_FILE)));
 			serverstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + SERVER_STATS_FILE)));
 			clientstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + CLIENT_STATS_FILE)));
-			
+
 		} catch (IOException ex) {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
 		}
 	}
-	
+
 	/**
-	 * Extends the output of this Statistics Object by the specified param name. This can be used to identify different
-	 * output rows with different parameters.
+	 * Extends the output of this Statistics Object by the specified param name. This can be used to identify different output rows with different
+	 * parameters.
+	 *
 	 * @param paramname The name of the parameter that distinguishes the different runs
 	 */
-	public void extendParam(String paramname){
+	public void extendParam(String paramname) {
 		this.paramname = paramname;
-	}
-	
-	/**
-	 * Extend the headers of the printed stats by another statistics.
-	 * This adds 4 columns to the gnuplot compatible output: the supplied name, StdDev, Var and 95% (Confidence Interval).
-	 * These 4 stats will also be printed later on when printstats with the specific stat will be called.
-	 * 
-	 * @param name The name of the statistics to be printed later on.
-	 */
-	public void extendStats(String name){
-		headerExtension += " " + name+" StdDev Var 95%";
 	}
 
 	/**
-	 * Prints the current statistics to the provided server and clientstats writers into the
-	 * stats directory of the currently running test.
+	 * Extend the headers of the printed stats by another statistics. This adds 4 columns to the gnuplot compatible output: the supplied name, StdDev,
+	 * Var and 95% (Confidence Interval). These 4 stats will also be printed later on when printstats with the specific stat will be called.
+	 *
+	 * @param name The name of the statistics to be printed later on.
+	 */
+	public void extendStats(String name) {
+		headerExtension += " "+formatStatsString(name);
+	}
+
+	/**
+	 * Prints the current statistics to the provided server and clientstats writers into the stats directory of the currently running test.
+	 *
 	 * @param param The Param must fit the param name that was supplied via extendParam.
 	 * @param stats The stats must correspond in their order to the extensions supplied via extendStats.
 	 */
-	public void printStats(String param, SummaryStatistics ... stats) {
-		if(!headerPrinted){
+	public void printStats(String param, SummaryStatistics... stats) {
+		if (!headerPrinted) {
 			headerPrinted = true;
 			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding" + headerExtension);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
 		String serverstats = param + " " + nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
-		for(int i = 0;i<stats.length;i++){
-			serverstats += " "+nf.format(stats[i].getMean())
-					+" "+nf.format(stats[i].getStandardDeviation())
-					+" "+nf.format(stats[i].getVariance())
-					+" "+nf.format(get95ConfidenceIntervalWidth(stats[i]));
+		for (int i = 0; i < stats.length; i++) {
+			serverstats += " " + formatStats(stats[i]);
 		}
 		serverstatswriter.println(serverstats);
 		serverstatswriter.flush();
@@ -162,31 +158,21 @@ public class Statistics {
 		}
 		reset();
 	}
-	
-	public void printRunningStatsHeader(String header){
-		runningstatswriter
-				.append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ')
-				.append("\"Pending Requests\" ")
-				.append(header)
-				.append("\n")
-				.flush();
+
+	public void printRunningStatsHeader(String header) {
+		runningstatswriter.append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ').append("\"Pending Requests\" ").append(header).append("\n").flush();
 	}
-	
+
 	public void printRunningStats(String output) {
-		runningstatswriter
-				.append(TOMReceiver.getCurrentServerComQueues()).append(' ')
-				.append(TOMReceiver.getCurrentPendingRequests()).append(' ')
-				.append(output)
-				.append("\n")
-				.flush();
+		runningstatswriter.append(TOMReceiver.getCurrentServerComQueues()).append(' ').append(TOMReceiver.getCurrentPendingRequests()).append(' ').append(output).append("\n").flush();
 	}
-	
+
 	public void printAndClose() {
 		printStats("");
 		close();
 	}
-	
-	public void close(){
+
+	public void close() {
 		serverstatswriter.close();
 		clientstatswriter.close();
 		runningstatswriter.close();
@@ -194,7 +180,8 @@ public class Statistics {
 
 	/**
 	 * Store the start time of this consensus for measurement
-	 * @param c 
+	 *
+	 * @param c
 	 */
 	public void consensusStarted(Consensus<TOMMessage> c) {
 		consensusstarts.put(c, System.currentTimeMillis());
@@ -289,8 +276,8 @@ public class Statistics {
 	}
 
 	/**
-	 * Returns the statistics object for this client. If none is existant
-	 * a new one is created and returned.
+	 * Returns the statistics object for this client. If none is existant a new one is created and returned.
+	 *
 	 * @param client The client that sent the msg
 	 * @return The statistics holder for this client
 	 */
@@ -309,9 +296,26 @@ public class Statistics {
 		decisionduration.clear();
 		crtt.clear();
 	}
-	
+
 	public static double get95ConfidenceIntervalWidth(SummaryStatistics summaryStatistics) {
 		double a = 1.960; // 95% confidence interval width for standard deviation
 		return a * summaryStatistics.getStandardDeviation() / Math.sqrt(summaryStatistics.getN());
+	}
+
+	public static String formatStats(SummaryStatistics stats) {
+		NumberFormat nf = NumberFormat.getNumberInstance();
+		StringBuilder s = new StringBuilder();
+		s.append(nf.format(stats.getMean()))
+				.append(" ")
+				.append(nf.format(stats.getStandardDeviation()))
+				.append(" ")
+				.append(nf.format(stats.getVariance()))
+				.append(" ")
+				.append(nf.format(get95ConfidenceIntervalWidth(stats)));
+		return s.toString();
+	}
+	
+	public static String formatStatsString(String statsname){
+		return statsname + " StdDev Var 95%";
 	}
 }
