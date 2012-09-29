@@ -21,14 +21,12 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -50,7 +48,7 @@ public class ClientsManager {
 
 	private static final Logger log = Logger.getLogger(ClientsManager.class.getCanonicalName());
 	private final TOMConfiguration conf;
-	private final HashMap<Integer, ClientData> clientsData = new HashMap<Integer, ClientData>();
+	private final SortedMap<Integer, ClientData> clientsData = new TreeMap<Integer, ClientData>();
 	private final ReentrantLock clientsLock = new ReentrantLock();
 	private final List<ClientRequestListener> reqlisteners = new LinkedList<ClientRequestListener>();
 	private final TOMUtil tomutil;
