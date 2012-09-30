@@ -319,6 +319,9 @@ public class ClientsManager {
 				log.fine("(ClientsManager.requestOrdered) Request " + request + " does not exist in pending requests");
 			}
 		} else {
+			if (log.isLoggable(Level.FINEST)) {
+				log.finest("(ClientsManager.requestOrdered) Request " + request + " finished");
+			}
 			pendingreqs.decrementAndGet();
 		}
 		/******* END CLIENTDATA CRITICAL SECTION ******/
