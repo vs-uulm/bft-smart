@@ -158,7 +158,7 @@ public class ClientsManager {
 		/*  ****** end critical section ****** */
 		clientsLock.unlock();
 		if(log.isLoggable(Level.FINEST))
-						log.log(Level.FINEST, "Returning {0} messages", allReq.size());
+						log.log(Level.FINEST, "Returning {0} messages, maxBatchsize: {1}", new Object[]{ allReq.size(),conf.getMaxBatchSize()});
 		return allReq;
 	}
 
