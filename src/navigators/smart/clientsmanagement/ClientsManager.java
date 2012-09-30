@@ -133,6 +133,8 @@ public class ClientsManager {
 				/******* END CLIENTDATA CRITICAL SECTION ******/
 				clientData.clientLock.unlock();
 				if (request != null) {
+					if(log.isLoggable(Level.FINEST))
+						log.log(Level.FINEST, "Adding message from {0}", clientData.getClientId());
 					// this client have pending message
 					allReq.addLast(request);
 					// I inserted a message on the batch, now I must check if the max batch size is reached
@@ -155,6 +157,8 @@ public class ClientsManager {
 		} while (allReq.size() <= conf.getMaxBatchSize() && clientsData.size() > noMoreMessages);
 		/*  ****** end critical section ****** */
 		clientsLock.unlock();
+		if(log.isLoggable(Level.FINEST))
+						log.log(Level.FINEST, "Returning {0} messages", allReq.size());
 		return allReq;
 	}
 
