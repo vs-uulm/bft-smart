@@ -154,7 +154,7 @@ public class ClientsManager {
 				nextClient = 0;
 			// I inserted a message on the batch, now I must verify if the max
 			// batch size is reached or no more messages are present
-		} while (allReq.size() <= conf.getMaxBatchSize() && clientsData.size() > noMoreMessages);
+		} while (allReq.size() < conf.getMaxBatchSize() && clientsData.size() > noMoreMessages);
 		/*  ****** end critical section ****** */
 		clientsLock.unlock();
 		if(log.isLoggable(Level.FINEST))
