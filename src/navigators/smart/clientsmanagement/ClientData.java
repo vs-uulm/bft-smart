@@ -145,7 +145,11 @@ public class ClientData {
 		return result;
 	}
 
-	public int getPendingRequests() {
+	public int getAllPendingRequests() {
 		return pendingRequests.size()+proposedRequests.size();
+	}
+	
+	public int getPendingRequests() {
+		return pendingRequests.size();
 	}
 }
