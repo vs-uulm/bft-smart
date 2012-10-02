@@ -70,5 +70,11 @@
     properties which you can use, check the target you are overriding in the
     nbproject/build-impl.xml file. 
 
-    -->
+	-->
+	<property name="smart" value="dist/modular_SMaRt.jar"/>
+	<target name="deploy" depends="jar">
+			<copy file="${smart}" todir="${user.home}/repos/smart/smarttest/trunk/lib/"/>
+			<copy file="${smart}" todir="${user.home}/repos/smart/ebawaeval/trunk/lib/"/>
+			<copy file="${smart}" todir="${user.home}/repos/ebawa/trunk/lib/"/>
+	</target>
 </project>
