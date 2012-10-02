@@ -179,7 +179,7 @@ public class ClientsManager {
 		if(log.isLoggable(Level.FINEST)){
 			StringBuilder s = new StringBuilder();
 			for (ClientData c : clientsData.values()) {
-				s.append("Client: ").append(c.getClientId()).append(" reqs: ").append(c.getPendingRequests()).append('\n');
+				s.append('\n').append("Client: ").append(c.getClientId()).append(" reqs: ").append(c.getPendingRequests()).append(" proposed: ").append(c.getProposedRequests()).append('\n');
 			}
 			log.log(Level.FINEST,s.toString());
 		}
