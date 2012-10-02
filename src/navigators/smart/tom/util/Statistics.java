@@ -82,35 +82,60 @@ public class Statistics {
 			Arrays.fill(recv, 0l);
 			isLeader = conf.getProcessId() == 0;
 
-			File statsdir;
-			if (System.getProperty(STATS_DIR) != null) {
-				statsdir = new File(System.getProperty(STATS_DIR));
-			} else {
-				statsdir = new File("stats");
-			}
-
-			//setup stats logging
-			statsdir.mkdirs();
-
 			//Setup prefix for replicas 
-			String prefix = conf.getHost(conf.getProcessId());
-			//or for clients
-			if (prefix == null) {
-				String hostname = Inet4Address.getLocalHost().getHostName();
-				if (hostname.contains(".")) {
-					hostname = hostname.substring(0, hostname.indexOf("."));
-				}
-				prefix = hostname;
-			}
+			String prefix = createPrefix();
 			//open statsfiles for writing
-			runningstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + RUNNING_STATS_FILE)));
-			serverstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + SERVER_STATS_FILE)));
-			clientstatswriter = new PrintWriter(new BufferedWriter(new FileWriter(statsdir + "/" + prefix + "_" + CLIENT_STATS_FILE)));
+			runningstatswriter = createStatsFileWriter(prefix + "_" + RUNNING_STATS_FILE);
+			serverstatswriter = createStatsFileWriter( prefix + "_" + SERVER_STATS_FILE);
+			clientstatswriter = createStatsFileWriter( prefix + "_" + CLIENT_STATS_FILE);
 
 		} catch (IOException ex) {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
 		}
+	}
+	
+	/**
+	 * Checks, creates and returns the stats dir for this jvm instance running
+	 * this SMaRt instance
+	 * @return The stats directory
+	 */
+	private static File checkAndGetStatsDir(){
+		File statsdir;
+		if (System.getProperty(STATS_DIR) != null) {
+				statsdir = new File(System.getProperty(STATS_DIR));
+		} else {
+			statsdir = new File("stats");
+		}
+		if(!statsdir.exists()){
+			//setup stats logging
+			statsdir.mkdirs();
+		}
+		return statsdir;
+	}
+	
+	/**
+	 * Creates a statsfile with the given name in the proper stats directory which 
+	 * can be specified via the "navigators.smart.statsfile" property
+	 * @param name The name of the outputfile
+	 * @return The writer to log stats to
+	 * @throws IOException 
+	 */
+	public static PrintWriter createStatsFileWriter(String name) throws IOException{
+		return new PrintWriter(new BufferedWriter(new FileWriter(checkAndGetStatsDir() + "/" +name)));
+	}
+	
+	/**
+	 * Create a prefix for logfiles using the local hostname and stripping all domains.
+	 * @return
+	 * @throws IOException 
+	 */
+	public static String createPrefix() throws IOException{
+		String hostname = Inet4Address.getLocalHost().getHostName();
+		if (hostname.contains(".")) {
+			hostname = hostname.substring(0, hostname.indexOf("."));
+		}
+		return hostname;
 	}
 
 	/**
