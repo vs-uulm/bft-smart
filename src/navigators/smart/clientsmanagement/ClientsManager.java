@@ -157,9 +157,9 @@ public class ClientsManager {
 					}
 				}
 			}
-			if (nextClient >= clients.size() || !conf.isFairClientHandling()) //reset nextClient if we handled all
-			{
-				nextClient = 0;
+			if (nextClient >= clients.size() || !conf.isFairClientHandling()) { 
+				log.log(Level.FINE,"Resetting nextClient");
+				nextClient = 0; //reset nextClient if we handled all or want to be unfair
 			}
 			// I inserted a message on the batch, now I must verify if the max
 			// batch size is reached or no more messages are present
@@ -177,9 +177,9 @@ public class ClientsManager {
 
 	private void printPending() {
 		if(log.isLoggable(Level.FINEST)){
-			StringBuilder s = new StringBuilder();
+			StringBuilder s = new StringBuilder('\n');
 			for (ClientData c : clientsData.values()) {
-				s.append('\n').append("Client: ").append(c.getClientId()).append(" reqs: ").append(c.getPendingRequests()).append(" proposed: ").append(c.getProposedRequests()).append('\n');
+				s.append("Client: ").append(c.getClientId()).append(" reqs: ").append(c.getPendingRequests()).append(" proposed: ").append(c.getProposedRequests()).append('\n');
 			}
 			log.log(Level.FINEST,s.toString());
 		}
