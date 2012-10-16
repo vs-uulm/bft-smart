@@ -309,7 +309,7 @@ public class ClientsManager {
 					accounted = true;
 	            } else {
 	                //it is an invalid message if it's being sent by a client (sequence number < last received )
-                    if (log.isLoggable(Level.WARNING)) {
+                    if (fromClient && log.isLoggable(Level.WARNING)) {
 						log.warning("Ignoring message " + request + " from client " + clientData.getClientId() + "(last received = "
 								+ clientData.getLastMessageReceived() + "), msg sent by client? " + fromClient);
 					}
