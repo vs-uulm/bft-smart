@@ -362,9 +362,10 @@ public class ServerConnection {
 						if (verified) {
 							SystemMessage.Type type = SystemMessage.Type.getByByte(buf.get(0));
 							assert (msgHandlers.containsKey(type)) : "Messagehandlers does not contain " + type + ". It contains: " + msgHandlers;
+							log.finest("Starting deserialisation");
 							SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
+							log.finest("Finished deserialisation");
 							stats.decodedMsg(remoteId, sm);
-
 							if (log.isLoggable(Level.FINE)) {
 								log.log(Level.FINE, "[{0} Recv] Received {1}", new Object[]{remoteId, sm});
 							}
@@ -418,11 +419,13 @@ public class ServerConnection {
 		 * @throws IOException When sth fails during reading from the socketchannel
 		 */
 		private boolean checkverfication(ByteBuffer buf) throws IOException {
+			log.finest("Starting verification");
 			boolean verified = false;
 			switch (conf.getVerifierType()) {
 				case PTPVerifier:
 					while (receivedHash.hasRemaining()) {
 						if (socketchannel.read(receivedHash) == -1) {
+							receivedHash.rewind();
 							throw new IOException("Reached eof while waiting for data");
 						}
 					}
@@ -446,6 +449,7 @@ public class ServerConnection {
 					log.warning("Unknown verificationtype selected! Did you forget to"
 							+ "update ServerConnection.java?");
 			}
+			log.finest("Verification done");
 			return verified;
 		}
 	}

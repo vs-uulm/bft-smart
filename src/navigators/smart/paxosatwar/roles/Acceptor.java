@@ -404,7 +404,7 @@ public class Acceptor {
 
 		if (round.countStrong(value) > manager.quorum2F && !round.getExecution().isDecided()) {
 
-			if (log.isLoggable(Level.FINE) && eid.intValue() % 250 == 0) {
+			if (log.isLoggable(Level.FINE)) {
 				log.fine("Deciding " + eid + " with strongs");
 			}
 			decide(eid, round, value);

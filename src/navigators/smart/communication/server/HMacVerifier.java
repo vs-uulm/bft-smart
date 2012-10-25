@@ -103,7 +103,7 @@ public class HMacVerifier implements PTPMessageVerifier {
 		byte[] computedHash = macReceive.doFinal();
 		boolean verified = Arrays.equals(computedHash, receivedHash.array());
 		if (!verified) {
-			log.log(Level.SEVERE, "Verification Failur: hash {0} and received hash {1} differ", new Object[]{Arrays.toString(computedHash), Arrays.toString(receivedHash.array())});
+			log.log(Level.SEVERE, "Verification Failure: hash {0} and received hash {1} differ", new Object[]{Arrays.toString(computedHash), Arrays.toString(receivedHash.array())});
 		}
 		return verified;
 	}

@@ -109,8 +109,11 @@ import navigators.smart.tom.util.TOMConfiguration;
     @Override
     public synchronized void start(){
         setThreadPriority(this);
-    	serversConn.start();
+    	log.info("Starting Servers Com System to accept and establish connections.");
+		serversConn.start();
+    	log.info("Started Servers Com System, starting inqueue handler (Server Com System)");
     	super.start();
+    	log.info("Started inqueue handler (Server Com System)");
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -151,6 +154,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     @Override
     public void run() {
         long count=0;
+		log.info("Inqueue handler starts running");
         while (true) {
             try {
                 if (log.isLoggable(Level.FINE)) {
