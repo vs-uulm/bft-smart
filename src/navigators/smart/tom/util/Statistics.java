@@ -185,11 +185,11 @@ public class Statistics {
 	}
 
 	public void printRunningStatsHeader(String header) {
-		runningstatswriter.append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ').append("\"Pending Requests\" ").append(header).append("\n").flush();
+		runningstatswriter.append("Time(ns) ").append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ').append("\"Pending Requests\" ").append(header).append("\n").flush();
 	}
 
-	public void printRunningStats(String output) {
-		runningstatswriter.append(TOMReceiver.getCurrentServerComQueues()).append(' ').append(TOMReceiver.getCurrentPendingRequests()).append(' ').append(output).append("\n").flush();
+	public void printRunningStats(String timestamp, String output) {
+		runningstatswriter.append(timestamp).append(' ').append(TOMReceiver.getCurrentServerComQueues()).append(' ').append(TOMReceiver.getCurrentPendingRequests()).append(' ').append(output).append("\n").flush();
 	}
 
 	public void printAndClose() {

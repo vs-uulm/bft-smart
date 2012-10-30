@@ -223,7 +223,7 @@ public class ServersCommunicationLayer extends Thread {
 	}
 	
 	public String getQueueNames() {
-		StringBuilder sb = new StringBuilder("InQueue");
+		StringBuilder sb = new StringBuilder("InQueue ");
 		for(int i = 0; i<connections.length;i++){
 			sb.append(i).append(' ');
 		}
