@@ -61,8 +61,8 @@ public class ServiceProxy extends TOMSender {
 	 * @param id Process id for this client
 	 * @param timeout The timeout to wait for the request to finish before printing some logging info.
 	 */
-	public ServiceProxy(int id,long timeout) {
-		TOMConfiguration conf = new TOMConfiguration(id, "./config");
+	public ServiceProxy(int id, String configdir, long timeout) {
+		TOMConfiguration conf = new TOMConfiguration(id, configdir);
 		this.timeout = timeout;
 		init(conf);
 	}
