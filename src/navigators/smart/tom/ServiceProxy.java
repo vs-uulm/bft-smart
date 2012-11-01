@@ -33,6 +33,8 @@ import navigators.smart.tom.util.TOMConfiguration;
  *
  */
 public class ServiceProxy extends TOMSender {
+	
+	public static final Logger log = Logger.getLogger(ServiceProxy.class.getCanonicalName());
 
 	private int n; // Number of total replicas in the system
 	private int f; // Number of maximum faulty replicas assumed to occur
@@ -40,6 +42,8 @@ public class ServiceProxy extends TOMSender {
 	private int reqId = -1; // request id
 	private TOMMessage replies[] = null; // Replies from replicas are stored here
 	private byte[] response = null; // Pointer to the reply that is actually delivered to the application
+	boolean decided = false;
+	long timeout = 0; //timeout to wait for the client request
 
 	/**
 	 * Constructor
@@ -48,6 +52,18 @@ public class ServiceProxy extends TOMSender {
 	 */
 	public ServiceProxy(int id) {
 		TOMConfiguration conf = new TOMConfiguration(id, "./config");
+		init(conf);
+	}
+	
+	/**
+	 * Constructor
+	 * 
+	 * @param id Process id for this client
+	 * @param timeout The timeout to wait for the request to finish before printing some logging info.
+	 */
+	public ServiceProxy(int id,long timeout) {
+		TOMConfiguration conf = new TOMConfiguration(id, "./config");
+		this.timeout = timeout;
 		init(conf);
 	}
 
@@ -109,7 +125,15 @@ public class ServiceProxy extends TOMSender {
 					doTOMulticast(request,readOnly);	
 				}
 				reqId = getLastSequenceNumber();
-				sync.wait();
+				while (!decided){
+					sync.wait(timeout);
+					if(!decided){
+						StringBuilder s = new StringBuilder("Timeout while waiting for replies, got replies from: \n");
+						s.append(Arrays.toString(replies));
+						log.warning(s.toString());
+					}
+				}
+				decided = false; //reset
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
 			}
@@ -139,7 +163,15 @@ public class ServiceProxy extends TOMSender {
 				// Send the request to the replicas, and get its ID
 				doTOMulticast( request);
 				reqId = request.getSequence();
-				sync.wait();
+				while (!decided){
+					sync.wait(timeout);
+					if(!decided){
+						StringBuilder s = new StringBuilder("Timeout while waiting for replies, got replies from: \n");
+						s.append(Arrays.toString(replies));
+						log.warning(s.toString());
+					}
+				}
+				decided = false; //reset decided
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
 			}
@@ -165,7 +197,6 @@ public class ServiceProxy extends TOMSender {
 			// This ensures the thread-safety by means of a semaphore
 			if (reply.getSequence() == reqId) { // Is this a reply for the last request sent?
 				replies[sender] = reply;
-
 				// Compare the reply just received, to the others
 				for (int i = 0; i < replies.length; i++) {
 					if (replies[i] != null) {
@@ -187,6 +218,7 @@ public class ServiceProxy extends TOMSender {
 						if (sameContent >= f + 1) {
 							response = content;
 							reqId = -1;
+							decided = true;
 							sync.notify(); // unblocks the thread that is executing the "invoke" method,
 							// so it can deliver the reply to the application
 							break;
