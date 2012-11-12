@@ -104,7 +104,7 @@ public class ThroughputTestClient extends TOMSender implements Runnable {
                             java.util.logging.Logger.getLogger(LatencyTestClient.class.getName()).log(Level.SEVERE, null, ex);
                         }
                         System.arraycopy(out.toByteArray(), 0, command, 0, 4);
-                        this.doTOMulticast(command);
+                        this.doTOMulticast(createTOMMsg(command));
                 //    }
                 //    else {
                 //        this.doTOMulticast(generatedMessages.get(i));

@@ -28,6 +28,7 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -229,14 +230,14 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
         this.trr = trr;
     }
 
-    public void send(boolean sign, Integer[] targets, TOMMessage sm) {
+    public void send(boolean sign, List<Integer> targets, TOMMessage sm) {
     	if(sign){
     		//checks if msg is serialized and signs it then
     		sign(sm);
     	} 
 
-        for (int i = targets.length - 1; i >= 0; i--) {
-            writeToChannel(sm,targets[i]);
+        for (Integer t:targets) {
+            writeToChannel(sm,t);
         }
     }
     public void send(boolean sign, Integer target, TOMMessage sm) {

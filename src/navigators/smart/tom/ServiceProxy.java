@@ -18,6 +18,7 @@
 package navigators.smart.tom;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,6 +44,7 @@ public class ServiceProxy extends TOMSender {
 	private TOMMessage replies[] = null; // Replies from replicas are stored here
 	private byte[] response = null; // Pointer to the reply that is actually delivered to the application
 	boolean decided = false;
+	private int randomreplica = 0;
 	long timeout = 0; //timeout to wait for the client request
 
 	/**
@@ -118,22 +120,34 @@ public class ServiceProxy extends TOMSender {
 				// Discard previous replies
 				Arrays.fill(replies, null);
 				response = null;
-				// Send the request to the replicas, and get its ID
-				if (random){
-					doRandomTOUnicast(request, readOnly);
-				} else {
-					doTOMulticast(request,readOnly);	
+				TOMMessage tommsg = createTOMMsg(request, readOnly);
+				if(random){
+					Collections.shuffle(group);
 				}
 				reqId = getLastSequenceNumber();
 				while (!decided){
+					// Send the request to the replicas, and get its ID
+					if (random){
+						doTOUnicast( group.get(randomreplica),tommsg);
+					} else {
+						doTOMulticast(tommsg);	
+					}
 					sync.wait(timeout);
 					if(!decided){
-						StringBuilder s = new StringBuilder("Timeout while waiting for replies, got replies from: \n");
-						s.append(Arrays.toString(replies));
+						StringBuilder s = new StringBuilder("Timeout while waiting for replies, replica was ")
+						.append(group.get(randomreplica))
+						.append(", got replies from: \n")
+						.append(Arrays.toString(replies));
 						log.warning(s.toString());
+						//Try all replicas clockwise until decision.
+						randomreplica++;
+						if (randomreplica == group.size()){
+							randomreplica = 0;
+						}
 					}
 				}
 				decided = false; //reset
+				randomreplica = 0;
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
 			}

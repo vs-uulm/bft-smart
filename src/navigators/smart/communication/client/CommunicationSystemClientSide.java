@@ -18,6 +18,7 @@
 
 package navigators.smart.communication.client;
 
+import java.util.List;
 import navigators.smart.tom.core.messages.TOMMessage;
 
 /**
@@ -26,7 +27,7 @@ import navigators.smart.tom.core.messages.TOMMessage;
  * @author Paulo
  */
 public interface CommunicationSystemClientSide {   
-   public void send(boolean sign, Integer[] targets, TOMMessage sm);
+   public void send(boolean sign, List<Integer> targets, TOMMessage sm);
    public void send(boolean sign, Integer target, TOMMessage sm);
    public void setReplyReceiver(ReplyReceiver trr);
    public void sign(TOMMessage sm);

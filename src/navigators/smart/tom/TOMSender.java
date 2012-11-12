@@ -18,10 +18,11 @@
 
 package navigators.smart.tom;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import navigators.smart.communication.client.CommunicationSystemClientSide;
 import navigators.smart.communication.client.ReplyReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
@@ -35,12 +36,13 @@ import navigators.smart.tom.util.TOMConfiguration;
 public abstract class TOMSender implements ReplyReceiver {
 
     private Integer me; // process id
-    private Integer[] group; // group of replicas
+    protected List<Integer> group; // group of replicas
     private int sequence = 0; // sequence number
     private CommunicationSystemClientSide cs; // Client side comunication system
     private Lock lock = new ReentrantLock(); // lock to manage concurrent access to this object by other threads
     private boolean useSignatures = false;
     private Random rnd = new Random();
+	private volatile int lastReplica = 0; // The last replica that got the request to handle it;
 
     /**
      * This method initializes the object
@@ -56,7 +58,6 @@ public abstract class TOMSender implements ReplyReceiver {
     public void init(CommunicationSystemClientSide cs, TOMConfiguration conf, int sequence) {
         this.init(cs, conf);
         this.sequence = sequence;
-        this.useSignatures = conf.getUseSignatures()==1?true:false;
     }
 
     /**
@@ -72,9 +73,9 @@ public abstract class TOMSender implements ReplyReceiver {
         this.cs.setReplyReceiver(this); // This object itself shall be a reply receiver
         this.me = conf.getProcessId();
 
-        this.group = new Integer[conf.getN()];
-        for (int i = 0; i < group.length; i++) {
-            group[i] = i;
+        this.group = new ArrayList<Integer>(conf.getN());
+        for (int i = 0; i < conf.getN(); i++) {
+            group.add(i);
         }
         this.useSignatures = conf.getUseSignatures()==1?true:false;
     }
@@ -108,57 +109,7 @@ public abstract class TOMSender implements ReplyReceiver {
         cs.send(useSignatures, group, sm);
     }
 
-    /**
-     * Multicast data to the group of replicas
-     *
-     * @param m Data to be multicast
-     */
-    public void doTOMulticast(byte[] m) {
-        cs.send(useSignatures, group, new TOMMessage(me, getNextSequenceNumber(), m));
-    }
-
-    /**
-     * Multicast data to the group of replicas
-     *
-     * @param m Data to be multicast
-     * @param readOnly it is a readonly request
-     */
-    public void doTOMulticast(byte[] m, boolean readOnly) {
-        cs.send(useSignatures, group, new TOMMessage(me, getNextSequenceNumber(), m, readOnly));
-    }
-    
-    /**
-     * Unicast data to a random member of the group
-     *
-     * @param m Data to be multicast
-     * @param readOnly it is a readonly request
-     */
-    @SuppressWarnings("boxing")
-    public void doRandomTOUnicast(byte[] m, boolean readOnly) {
-    	cs.send(useSignatures, rnd.nextInt(group.length), new TOMMessage(me, getNextSequenceNumber(), m, readOnly));
-    }
-    
-    /**
-     * Unicast data to a random member of the group
-     *
-     * @param m Data to be multicast
-     * @param readOnly it is a readonly request
-     */
-    @SuppressWarnings("boxing")
-    public void doRandomTOUnicast(TOMMessage m) {
-    	cs.send(useSignatures, rnd.nextInt(group.length), m);
-    }
-    /**
-     * Unicast data to a member of the group
-     *
-     * @param m Data to be multicast
-     * @param recv The receiver of the message
-     * @param readOnly it is a readonly request
-     */
-    @SuppressWarnings("boxing")
-    public void doTOUnicast(byte[] m, int receiver, boolean readOnly) {
-    	cs.send(useSignatures, receiver, new TOMMessage(me, getNextSequenceNumber(), m, readOnly));
-    }
+//    
     
     /**
      * Unicast data to a member of the group
@@ -182,6 +133,21 @@ public abstract class TOMSender implements ReplyReceiver {
      */
     public TOMMessage createTOMMsg(byte[] m) {
         TOMMessage tm = new TOMMessage(me, getNextSequenceNumber(), m);
+        if(useSignatures){
+        	cs.sign(tm);
+        }
+        return tm;
+    }
+    /**
+     * Create TOMMessage and sign it
+     *
+     * @param m Data to be included in TOMMessage
+	 * @param readonly  Is this request readonly
+     *
+     * @return TOMMessage with serializedMsg and serializedMsgSignature fields filled
+     */
+    public TOMMessage createTOMMsg(byte[] m, boolean readonly) {
+        TOMMessage tm = new TOMMessage(me, getNextSequenceNumber(), m, readonly);
         if(useSignatures){
         	cs.sign(tm);
         }
