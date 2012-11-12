@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import navigators.smart.communication.client.CommunicationSystemClientSideFactory;
 import navigators.smart.tom.core.messages.TOMMessage;
+import navigators.smart.tom.util.BlackList;
 import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 
@@ -46,6 +47,7 @@ public class ServiceProxy extends TOMSender {
 	boolean decided = false;
 	private int randomreplica = 0;
 	long timeout = 0; //timeout to wait for the client request
+	private BlackList blacklist;
 
 	/**
 	 * Constructor
@@ -84,6 +86,7 @@ public class ServiceProxy extends TOMSender {
 		init(CommunicationSystemClientSideFactory.getCommunicationSystemClientSide(conf), conf);
 		n = conf.getN();
 		f = conf.getF();
+		blacklist = new BlackList(n,f);
 		replies = new TOMMessage[n];
 		Statistics.init(conf);
 	}
@@ -128,6 +131,13 @@ public class ServiceProxy extends TOMSender {
 				while (!decided){
 					// Send the request to the replicas, and get its ID
 					if (random){
+						while (blacklist.contains(group.get(randomreplica))) {
+							//Try all replicas clockwise until decision.
+							randomreplica++;
+							if (randomreplica == group.size()) {
+								randomreplica = 0;
+							}
+						}
 						doTOUnicast( group.get(randomreplica),tommsg);
 					} else {
 						doTOMulticast(tommsg);	
@@ -139,10 +149,9 @@ public class ServiceProxy extends TOMSender {
 						.append(", got replies from: \n")
 						.append(Arrays.toString(replies));
 						log.warning(s.toString());
-						//Try all replicas clockwise until decision.
-						randomreplica++;
-						if (randomreplica == group.size()){
-							randomreplica = 0;
+						//Blacklist the evil non proposer
+						if(random){
+							blacklist.addFirst(group.get(randomreplica));
 						}
 					}
 				}
