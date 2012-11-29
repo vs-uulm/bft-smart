@@ -30,6 +30,7 @@ import navigators.smart.paxosatwar.messages.*;
 import navigators.smart.paxosatwar.requesthandler.RequestHandler;
 import navigators.smart.tom.core.TOMLayer;
 import navigators.smart.tom.core.timer.messages.RTCollect;
+import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 
 /**
@@ -472,6 +473,7 @@ public class Acceptor {
 		//System.out.println(round);
 
 		if (!round.getExecution().isDecided() && !round.isFrozen() && !round.isRemoved()) {
+			Statistics.stats.timeout();
 			doFreeze(round);
 			computeFreeze(round);
 		}

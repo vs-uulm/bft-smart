@@ -72,7 +72,7 @@ public class ServiceProxy extends TOMSender {
 	}
 
 	/**
-	 * Constructor
+	 * Constructo
 	 * 
 	 * @param id Process id for this client
 	 */

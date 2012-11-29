@@ -34,6 +34,8 @@ public class Statistics {
 	public PrintWriter serverstatswriter, clientstatswriter, runningstatswriter;
 	private Long[] sent;
 	private Long[] recv;
+	private volatile int timeouts;
+	private volatile int viewchanges;
 	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 	private volatile boolean headerPrinted = false;
@@ -167,11 +169,11 @@ public class Statistics {
 	public void printStats(String param, SummaryStatistics... stats) {
 		if (!headerPrinted) {
 			headerPrinted = true;
-			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding" + headerExtension);
+			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges" + headerExtension);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
-		String serverstats = param + " " + nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean());
+		String serverstats = param + " " + nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean()) + " " + timeouts;
 		for (int i = 0; i < stats.length; i++) {
 			serverstats += " " + formatStats(stats[i]);
 		}
@@ -342,5 +344,19 @@ public class Statistics {
 	
 	public static String formatStatsString(String statsname){
 		return statsname + " StdDev Var 95%";
+	}
+	
+	/**
+	 * Logs a timeout and prints it to the serverstats file when the testrun is finished.
+	 */
+	public void timeout(){
+		timeouts++;
+	}
+	
+	/**
+	 * Logs an actual view change and prints it to the serverstats file when the testrun is finished.
+	 */
+	public void viewChange(){
+		viewchanges++;
 	}
 }

@@ -28,6 +28,7 @@ import navigators.smart.paxosatwar.messages.CollectProof;
 import navigators.smart.paxosatwar.messages.MessageFactory;
 import navigators.smart.paxosatwar.messages.Proof;
 import navigators.smart.tom.util.Logger;
+import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 
 
@@ -132,6 +133,8 @@ public class Proposer {
                 round.setCollectProof(msg.getSender().intValue(),cp);
 
                 if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
+					//Count view changes
+					Statistics.stats.viewChange();
                     if(Logger.debug)
                         Logger.println("(Proposer.collectReceived) proposing for "+
                             execution.getId()+","+nextRoundNumber);
