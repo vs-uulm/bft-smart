@@ -173,7 +173,12 @@ public class Statistics {
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
-		String serverstats = param + " " + nf.format(crtt.getMean()) + " " + nf.format(rtt.getMean()) + " " + nf.format(dec.getMean()) + " " + timeouts;
+		String serverstats = param 
+				+ " " + nf.format(crtt.getMean())
+				+ " " + nf.format(rtt.getMean())
+				+ " " + nf.format(dec.getMean())
+				+ " " + timeouts 
+				+ " " + viewchanges;
 		for (int i = 0; i < stats.length; i++) {
 			serverstats += " " + formatStats(stats[i]);
 		}
@@ -338,12 +343,14 @@ public class Statistics {
 				.append(" ")
 				.append(nf.format(stats.getVariance()))
 				.append(" ")
-				.append(nf.format(get95ConfidenceIntervalWidth(stats)));
+				.append(nf.format(get95ConfidenceIntervalWidth(stats)))
+				.append(" ")
+				.append(stats.getN());
 		return s.toString();
 	}
 	
 	public static String formatStatsString(String statsname){
-		return statsname + " StdDev Var 95%";
+		return statsname + " StdDev Var 95% N";
 	}
 	
 	/**

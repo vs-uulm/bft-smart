@@ -467,8 +467,8 @@ public class Acceptor {
 		Execution execution = round.getExecution();
 		execution.lock.lock();
 
-		if (log.isLoggable(Level.FINER)) {
-			log.finer("timeout for round " + round.getNumber() + " of consensus " + execution.getId());
+		if (log.isLoggable(Level.INFO)) {
+			log.info("TIMEOUT for round " + round.getNumber() + " of consensus " + execution.getId());
 		}
 		//System.out.println(round);
 
