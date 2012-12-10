@@ -284,6 +284,7 @@ public class TOMLayer implements RequestReceiver {
 
 				if (stateManager.addEIDAndCheckStateTransfer(sender, eid)) {
 					log.log(Level.FINE, "Sending staterequest for {1} to {0}", new Object[]{sender, eid});
+					Statistics.stats.stateTransferRequested();
 					SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
 					communication.send(otherAcceptors, smsg);
 				} else {
@@ -319,6 +320,7 @@ public class TOMLayer implements RequestReceiver {
 			if (log.isLoggable(Level.FINE)) {
 				if (sendState) {
 					log.fine(" Received " + msg + " - sending full state");
+					Statistics.stats.stateTransferRequested();
 				} else {
 					log.fine(" Received " + msg + " - sending hash");
 				}

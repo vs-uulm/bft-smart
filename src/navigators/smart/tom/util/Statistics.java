@@ -34,8 +34,14 @@ public class Statistics {
 	public PrintWriter serverstatswriter, clientstatswriter, runningstatswriter;
 	private Long[] sent;
 	private Long[] recv;
+	/** Timeouts on this node */
 	private volatile int timeouts;
+	/** Viewchanges seen by this node */
 	private volatile int viewchanges;
+	/** State transfer requests sent by this node */
+	private volatile int strequestssent;
+	/** State transfer requests received by this node */
+	private volatile int strequestsreceived;
 	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 	private volatile boolean headerPrinted = false;
@@ -169,7 +175,7 @@ public class Statistics {
 	public void printStats(String param, SummaryStatistics... stats) {
 		if (!headerPrinted) {
 			headerPrinted = true;
-			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges" + headerExtension);
+			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges STReqsSent STReqsReceived" + headerExtension);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance();
@@ -178,7 +184,9 @@ public class Statistics {
 				+ " " + nf.format(rtt.getMean())
 				+ " " + nf.format(dec.getMean())
 				+ " " + timeouts 
-				+ " " + viewchanges;
+				+ " " + viewchanges
+				+ " " + strequestssent
+				+ " " + strequestsreceived;
 		for (int i = 0; i < stats.length; i++) {
 			serverstats += " " + formatStats(stats[i]);
 		}
@@ -365,5 +373,19 @@ public class Statistics {
 	 */
 	public void viewChange(){
 		viewchanges++;
+	}
+	
+	/**
+	 * A state transfer is requested due to a large gap between this replica and the others
+	 */
+	public void stateTransferRequested(){
+		strequestssent++;
+	}
+	
+	/**
+	 * A state transfer is received
+	 */
+	public void stateTransferReceived(){
+		strequestsreceived++;
 	}
 }
