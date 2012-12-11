@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import navigators.smart.clientsmanagement.ClientsManager;
 import navigators.smart.clientsmanagement.PendingRequests;
 import navigators.smart.communication.ServerCommunicationSystem;
@@ -33,20 +32,17 @@ import navigators.smart.statemanagment.TransferableState;
 import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.TOMRequestReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.BatchBuilder;
-import navigators.smart.tom.util.BatchReader;
-import navigators.smart.tom.util.Statistics;
-import navigators.smart.tom.util.TOMConfiguration;
-import navigators.smart.tom.util.TOMUtil;
+import navigators.smart.tom.util.*;
 
 /**
  * This class implements a thread that uses the PaW algorithm to provide the application a layer of total ordered messages
  *
  * TODO There is a bug when we request a statetransfer for eid 0 -> statemanager.waiting is set to -1 then which means we are not waiting for a state
  */
+@SuppressWarnings("LoggerStringConcat")
 public class TOMLayer implements RequestReceiver {
 
-	private static Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());
 	//other components used by the TOMLayer (they are never changed)
 	private ServerCommunicationSystem communication; // Communication system between replicas
 	private final DeliveryThread dt; // Thread which delivers total ordered messages to the appication
@@ -216,20 +212,16 @@ public class TOMLayer implements RequestReceiver {
 	 * TODO: verify timestamps and nonces
 	 *
 	 * @param proposedValue the value being proposed
-	 * @return
+	 * @return	null if the value is not correct, a List of TOMMessages if it is.
 	 */
 	public TOMMessage[] checkProposedValue(byte[] proposedValue) {
 		if (log.isLoggable(Level.FINER)) {
-			log.finer(" starting");
+			log.finer("Checking proposed values");
 		}
-		BatchReader batchReader = new BatchReader(proposedValue, conf.getUseSignatures() == 1, conf.getSignatureSize());
-
-		TOMMessage[] requests = null;
-
 		try {
 			//deserialize the message
 			//TODO: verify Timestamps and Nonces
-			requests = batchReader.deserialiseRequests();
+			TOMMessage[] requests = new BatchReader(proposedValue, conf.getUseSignatures() == 1, conf.getSignatureSize()).deserialiseRequests();
 
 			//log.finer(" Got clientsManager lock");
 			for (int i = 0; i < requests.length; i++) {
@@ -237,31 +229,22 @@ public class TOMLayer implements RequestReceiver {
 				//the result of its validation
 				if (!clientsManager.requestReceived(requests[i], false, true)) {
 					if (log.isLoggable(Level.FINER)) {
-						log.finer(" finished, return=false");
+						log.finer("Something is wrong with this batch, returning null");
 					}
 					return null;
 				}
 			}
+			return requests;
 		} catch (Exception e) {
-			e.printStackTrace();
-			if (log.isLoggable(Level.FINER)) {
-				log.finer(" finished, return=false");
-			}
+			log.log(Level.SEVERE, "Error while checking proposed value", e);
 			return null;
-		}
-		//clientsManager.getClientsLock().unlock();
-		if (log.isLoggable(Level.FINER)) {
-			log.finer(" finished, return=true");
-		}
-
-		return requests;
+		} 
 	}
+	
 	/**
 	 * ISTO E CODIGO DO JOAO, PARA TRATAR DOS CHECKPOINTS
 	 */
 	private StateManager stateManager = null;
-
-	
 
 	public void saveBatch(byte[] batch, Long lastEid, Integer decisionRound, int leader) {
 		stateManager.saveBatch(batch, lastEid, decisionRound, leader);
@@ -307,7 +290,8 @@ public class TOMLayer implements RequestReceiver {
 			}
 		}
 		/**
-		 * *********************** TESTE ************************* log.finer("[/TOMLayer.requestState]"); /************************* TESTE ************************
+		 * *********************** TESTE ************************* log.finer("[/TOMLayer.requestState]"); /************************* TESTE
+		 * ************************
 		 */
 	}
 
@@ -315,14 +299,15 @@ public class TOMLayer implements RequestReceiver {
 
 		if (conf.isStateTransferEnabled()) {
 
+			Statistics.stats.stateTransferReqReceived();
 
 			boolean sendState = msg.getReplica() == conf.getProcessId().intValue();
 			if (log.isLoggable(Level.FINE)) {
 				if (sendState) {
-					log.fine(" Received " + msg + " - sending full state");
-					Statistics.stats.stateTransferRequested();
+					log.fine("Received " + msg + " - sending full state");
 				} else {
-					log.fine(" Received " + msg + " - sending hash");
+					log.fine("Received " + msg + " - sending hash");
+
 				}
 			}
 
@@ -330,7 +315,7 @@ public class TOMLayer implements RequestReceiver {
 
 			if (state == null) {
 				if (log.isLoggable(Level.FINE)) {
-					log.fine(" I don't have the state requested :-(");
+					log.log(Level.FINE, "State for id {0} not present on this node", msg.getEid());
 				}
 				state = new TransferableState();
 			}
@@ -339,7 +324,7 @@ public class TOMLayer implements RequestReceiver {
 			SMMessage smsg = new SMMessage(consensusService.getId(), msg.getEid(), TOMUtil.SM_REPLY, -1, state);
 			communication.send(targets, smsg);
 
-			if (log.isLoggable(Level.FINE)) {
+			if (log.isLoggable(Level.FINER)) {
 				log.fine(" I sent the state for checkpoint " + state.lastCheckpointEid + " with batches until EID " + state.lastEid);
 			}
 		}

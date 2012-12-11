@@ -385,7 +385,7 @@ public class Statistics {
 	/**
 	 * A state transfer is received
 	 */
-	public void stateTransferReceived(){
+	public void stateTransferReqReceived(){
 		strequestsreceived++;
 	}
 }
