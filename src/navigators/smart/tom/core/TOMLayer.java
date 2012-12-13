@@ -271,7 +271,7 @@ public class TOMLayer implements RequestReceiver {
 					SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
 					communication.send(otherAcceptors, smsg);
 				} else {
-					log.log(Level.FINE, "Not yet requesting state for {1} from {0}", new Object[]{sender, eid});
+					log.log(Level.FINER, "Not yet requesting state for {1} from {0}", new Object[]{sender, eid});
 				}
 
 

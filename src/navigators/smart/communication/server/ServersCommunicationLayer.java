@@ -96,8 +96,9 @@ public class ServersCommunicationLayer extends Thread {
 	public final void send(Integer[] targets, SystemMessage sm) {
 		stats.sendingMsgToServer(targets, sm);
 		byte[] data = sm.getBytes();
+		
 		//send in random order to prevent lagging behind
-		//Collections.shuffle(Arrays.asList(targets));
+		Collections.shuffle(Arrays.asList(targets));
 		
 		for (int i : targets) {
 			if (log.isLoggable(Level.FINEST)) {
