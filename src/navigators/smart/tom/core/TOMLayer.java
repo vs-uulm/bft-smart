@@ -15,11 +15,15 @@
  */
 package navigators.smart.tom.core;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.management.MBeanServer;
 import navigators.smart.clientsmanagement.ClientsManager;
 import navigators.smart.clientsmanagement.PendingRequests;
 import navigators.smart.communication.ServerCommunicationSystem;
@@ -263,13 +267,22 @@ public class TOMLayer implements RequestReceiver {
 		if (conf.isStateTransferEnabled()) {
 			if (!stateManager.isWaitingForState()) {
 
-				log.log(Level.FINE, "Requesting state transfer because of msg for exe {1} from {0}", new Object[]{sender, eid});
+				log.log(Level.FINER, "Checking state transfer request due to for exec {1} from {0}", new Object[]{sender, eid});
 
 				if (stateManager.addEIDAndCheckStateTransfer(sender, eid)) {
-					log.log(Level.FINE, "Sending staterequest for {1} to {0}", new Object[]{sender, eid});
-					Statistics.stats.stateTransferRequested();
-					SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
-					communication.send(otherAcceptors, smsg);
+//					try {
+//						MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+//						HotSpotDiagnosticMXBean bean = 
+//							ManagementFactory.newPlatformMXBeanProxy(server,
+//							"com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
+//						bean.dumpHeap("/tmp/heapDumplive", true);
+					   log.log(Level.FINE, "Sending staterequest for {1} to {0}", new Object[]{sender, eid});
+					   Statistics.stats.stateTransferRequested();
+					   SMMessage smsg = new SMMessage(me, eid - 1, TOMUtil.SM_REQUEST, stateManager.getReplica(), null);
+					   communication.send(otherAcceptors, smsg);
+//					} catch (IOException ex) {
+//						Logger.getLogger(TOMLayer.class.getName()).log(Level.SEVERE, null, ex);
+//					}
 				} else {
 					log.log(Level.FINER, "Not yet requesting state for {1} from {0}", new Object[]{sender, eid});
 				}

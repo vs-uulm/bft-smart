@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import navigators.smart.communication.ServerCommunicationSystem;
+import navigators.smart.consensus.Consensus;
 import navigators.smart.paxosatwar.executionmanager.Execution;
 import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
 import navigators.smart.paxosatwar.executionmanager.LeaderModule;
@@ -40,6 +41,7 @@ import navigators.smart.tom.util.TOMUtil;
  *
  * @author Christian Spann <christian.spann at uni-ulm.de>
  */
+@SuppressWarnings("LoggerStringConcat")
 public class RequestHandler extends Thread {
 
 	private static final Logger log = Logger.getLogger(RequestHandler.class.getCanonicalName());
@@ -622,31 +624,12 @@ public class RequestHandler extends Thread {
 	public boolean isIdle() {
 		return inExecution.equals(IDLE);
 	}
-
-	/*
-	 * ISTO SAO MAIS COISAS DO JOAO, PARA RETIRAR A THREAD OUTOFCONTEXT
-	 */
-	public void processOutOfContext() {
-
-		Execution execution = null;
-
-		while (true) {
-
-			Long nextExecution = getNextExec();
-			if (execManager.thereArePendentMessages(nextExecution)) {
-				if (log.isLoggable(Level.FINER)) {
-					log.finer("Starting processing out of context messages for consensus " + nextExecution);
-				}
-				execution = execManager.getExecution(nextExecution);
-				if (log.isLoggable(Level.FINER)) {
-					log.finer("Finished processing out fo context messages for consensus " + nextExecution);
-				}
-			} else {
-				break;
-			}
-		}
+	
+	public void executionFinished(Long eid){
+		//set this consensus as the last executed
+		setLastExec(eid);
+		// process ooc messages within the ooc lock 
+		// idle mode is set within this call to prevent simulataneous message processing of the next consensus
+		execManager.processOOCMessages(getNextExec());
 	}
-	/**
-	 * *****************************************************************
-	 */
 }

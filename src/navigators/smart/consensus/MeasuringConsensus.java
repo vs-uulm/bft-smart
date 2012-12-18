@@ -36,4 +36,10 @@ public class MeasuringConsensus<E> extends Consensus<E> {
         super(eid);
         this.startTime = startTime;
     }
+	
+	@Override
+	public void decided(byte[] value, Integer round){
+		executionTime = System.currentTimeMillis() - startTime;
+		super.decided(value, batchSize);
+	}
 }

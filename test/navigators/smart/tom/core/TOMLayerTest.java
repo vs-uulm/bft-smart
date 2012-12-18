@@ -79,6 +79,7 @@ public class TOMLayerTest {
 	public void testRequestReceived() {
 		TOMMessage msg = mock(TOMMessage.class);
 		when(msg.isReadOnlyRequest()).thenReturn(true);
+		when(msg.getSender()).thenReturn(10);
 		tl.requestReceived(msg);
 		verify(recv).receiveUnorderedMessage(msg);
 		msg = mock(TOMMessage.class);

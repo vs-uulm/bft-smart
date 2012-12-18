@@ -48,6 +48,7 @@ import navigators.smart.tom.core.TOMLayer;
  *
  * @author Alysson
  */
+@SuppressWarnings("LoggerStringConcat")
 public final class ExecutionManager{
 	
 	private static final Logger log = Logger.getLogger(ExecutionManager.class.getCanonicalName());
@@ -238,60 +239,72 @@ public final class ExecutionManager{
      * @return true in case the message can be executed, false otherwise
      */
     public final boolean checkLimits(PaxosMessage msg) {
-        outOfContextLock.lock();
-        Long consId = msg.getNumber();
-        Long lastConsId = requesthandler.getLastExec();
-        boolean isRetrievingState = tomLayer.isRetrievingState();
+		try{
+			// This lock is required to block the addition of messages during ooc processing
+			outOfContextLock.lock();
+			Long consId = msg.getNumber();
+			Long lastConsId = requesthandler.getLastExec();
 
-        if (isRetrievingState && log.isLoggable(Level.FINEST)) {
-            log.finest(" I'm waiting for a state and received " + msg + " at execution " + requesthandler.getInExec() + " last las execution is " + lastConsId);
-        }
-        
-        boolean canProcessTheMessage = false;
-        
-        if (
-                // this swicht is to redirect ooc messages when we are receiving a state transfer
-                isRetrievingState || // Is this replica retrieving a state?
-                (!(requesthandler.isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark))
-                && // Is this not a revived replica?
 
-                (consId.longValue() > lastConsId.longValue() && (consId.longValue() < (lastConsId.longValue() + paxosHighMark))))) { // Is this message within the low and high marks (or maybe is the replica synchronizing) ?
+			if(consId <= lastConsId){	// Old message -> discard
+				return false;
+			}
 
-        	if(stopped) {//just an optimization to avoid calling the lock in normal case
-                stoppedMsgsLock.lock();
-                if (stopped) {
-                    if (log.isLoggable(Level.FINEST)) {
-						log.finest("Adding " + msg + " for execution " + consId + " to stopped");
-                    }
-                    //store for later execution
-                    stoppedMsgs.add(msg);
-                }
-                stoppedMsgsLock.unlock();
-            }
+			boolean isRetrievingState = tomLayer.isRetrievingState();
 
-			if (isRetrievingState || 				// add to ooc when retrieving state
-                    consId.longValue() > (lastConsId.longValue() + 1)) {	// or normal ooc msg
-                if (log.isLoggable(Level.FINEST)) {
-                    log.finest("Adding "+ msg +" to out of context set");
-                }
-                addOutOfContextMessage(msg); 		//store it as an ahead of time message (out of context)
-            } else {
-                if (log.isLoggable(Level.FINEST)) {
-					log.finest("Message for execution " + consId + " can be processed directly");
-                }
-                canProcessTheMessage = true; 		//msg should be processed normally
-            }
-        } else if ((requesthandler.isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark)) || // Is this replica revived?
-                (consId.longValue() >= (lastConsId.longValue() + paxosHighMark))) { // Does this message exceeds the high mark?
-            if (log.isLoggable(Level.FINE)) {
-				log.fine(msg + " is beyond the paxos highmark, adding it to ooc set and checking if state transfer is needed");
-            }
-            addOutOfContextMessage(msg);					//add to ooc 
-            tomLayer.requestStateTransfer(me, getOtherAcceptors(), msg.getSender(), consId);	//request state
-        }
-        outOfContextLock.unlock();
+			if (isRetrievingState && log.isLoggable(Level.FINEST)) {
+				log.finest(" I'm waiting for a state and received " + msg + " at execution " + requesthandler.getInExec() + " last las execution is " + lastConsId);
+			}
 
-        return canProcessTheMessage;
+			boolean canProcessTheMessage = false;
+
+			if (    // this switch is to redirect ooc messages when we are receiving a state transfer
+					isRetrievingState || 
+					// Check revival bounds -> not idle and lastmsg == -1 (revived indicator) and msgid >= revivalHighmark
+					(!(requesthandler.isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark))
+					// Msg is within the low and high marks (or the is replica synchronizing)
+					&& (consId.longValue() > lastConsId.longValue() && (consId.longValue() < (lastConsId.longValue() + paxosHighMark))))) { 
+
+				//just an optimization to avoid calling the lock in normal case
+				if(stopped) {
+					try {
+						stoppedMsgsLock.lock();
+						if (stopped) {
+							if (log.isLoggable(Level.FINEST)) {
+								log.finest("Adding " + msg + " for execution " + consId + " to stopped");
+						}
+						//store for later execution
+						stoppedMsgs.add(msg);
+					}} finally {
+						stoppedMsgsLock.unlock();
+					}
+				}
+
+				if (isRetrievingState ||															// add to ooc when retrieving state
+						consId.longValue() > (lastConsId.longValue() + 1)) {						// or msg is a normal ooc msg between boundaries
+					if (log.isLoggable(Level.FINEST)) {
+						log.finest("Adding "+ msg +" to out of context set");
+					}
+					addOutOfContextMessage(msg);													//store it as an ahead of time message (out of context)
+				} else {
+					if (log.isLoggable(Level.FINEST)) {
+						log.finest("Message for execution " + consId + " can be processed directly");
+					}
+					canProcessTheMessage = true;													//msg should be processed normally
+				}
+			} else if ((requesthandler.isIdle() && lastConsId.longValue() == -1 
+					&& consId.longValue() >= (lastConsId.longValue() + revivalHighMark))			// Replica is revived and idle TODO this is an unclear case
+					|| (consId.longValue() >= (lastConsId.longValue() + paxosHighMark))) {			// Message is beyond highmark
+				if (log.isLoggable(Level.FINE)) {
+					log.fine(msg + " is beyond the paxos highmark, adding it to ooc set and checking if state transfer is needed");
+				}
+				addOutOfContextMessage(msg);														//add to ooc 
+				tomLayer.requestStateTransfer(me, getOtherAcceptors(), msg.getSender(), consId);	//request statetx to recover from idle state
+			}
+			return canProcessTheMessage;
+		} finally {
+			outOfContextLock.unlock();
+		}
     }
 
     /**
@@ -372,66 +385,75 @@ public final class ExecutionManager{
      */
 	@SuppressWarnings("rawtypes")
 	public Execution getExecution(Long eid) {
-        executionsLock.lock();
-        /******* BEGIN EXECUTIONS CRITICAL SECTION *******/
+		try{
+			executionsLock.lock();
+			/******* BEGIN EXECUTIONS CRITICAL SECTION *******/
 
-        Execution execution = executions.get(eid);
+			Execution execution = executions.get(eid);
 
-        //there is no execution with the given eid
-        if (execution == null) {
-            //let's create one...
-            execution = new Execution(this, new MeasuringConsensus(eid, System.currentTimeMillis()),
-                    initialTimeout);
-            //...and add it to the executions table
-            executions.put(eid, execution);
+			//there is no execution with the given eid
+			if (execution == null) {
+				//let's create one...
+				execution = new Execution(this, new MeasuringConsensus(eid, System.currentTimeMillis()),
+						initialTimeout);
+				//...and add it to the executions table
+				executions.put(eid, execution);
 
-            /******* END EXECUTIONS CRITICAL SECTION *******/
-            executionsLock.unlock();
-            //now it is time to see if there are pending requests for this new execution. 
-            processOOCMessages(execution);
-        } else {
-            /******* END EXECUTIONS CRITICAL SECTION *******/
-            executionsLock.unlock();
-        }
+				/******* END EXECUTIONS CRITICAL SECTION *******/				
+			}
+			return execution;
         
+		} finally {
+            executionsLock.unlock();
+		}
 
-        return execution;
     }
 
 
-    private void processOOCMessages(Execution execution) {
-    	Long eid = execution.getId();
-    	// First check for a propose...
-        outOfContextLock.lock();
-        /******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
-
-        VoteMessage prop = outOfContextProposes.remove(eid);
-        if (prop != null) {
-        	if(log.isLoggable(Level.FINER))
-                log.finer("(" + eid + ") Processing an out of context propose for "+eid);
-            acceptor.processMessage(prop);
-        }
-
-        //then we have to put the pending paxos messages
-        List<PaxosMessage> messages = outOfContext.remove(eid);
-        if (messages != null) {
-        	if(log.isLoggable(Level.FINER))
-                log.finer("(" + eid + ") Processing " + messages.size() + " out of context messages");
-            for (Iterator<PaxosMessage> i = messages.iterator(); i.hasNext();) {
-                acceptor.processMessage(i.next());
-                if (execution.isDecided()) {
-                	if(log.isLoggable(Level.FINER))
-                        log.finer(" execution " + eid + " decided.");
-                    break;
-                }
-            }
-            if(log.isLoggable(Level.FINER))
-                log.finer(" (" + eid + ") Finished out of context processing");
-        }
-
-        /******* END OUTOFCONTEXT CRITICAL SECTION *******/
-        outOfContextLock.unlock();
+	/**
+	 * Handles all OOC Messages that are present for the given execution.
+	 * @param eid The Execution ID to process
+	 */
+    public void processOOCMessages(Long eid) {
 		
+    	Execution execution = getExecution(eid);
+		try {
+//			Guard all by the outofcontextlock			
+			outOfContextLock.lock();
+			//define that end of the prior execution
+			requesthandler.setIdle();
+			/******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
+			// First check for a propose...
+			if (thereArePendentMessages(eid)){
+
+				VoteMessage prop = outOfContextProposes.remove(eid);
+				if (prop != null) {
+					if(log.isLoggable(Level.FINER))
+						log.finer("(" + eid + ") Processing an out of context propose for "+eid);
+					acceptor.processMessage(prop);
+				}
+
+				//then we have to put the pending paxos messages
+				List<PaxosMessage> messages = outOfContext.remove(eid);
+				if (messages != null) {
+					if(log.isLoggable(Level.FINER))
+						log.finer("(" + eid + ") Processing " + messages.size() + " out of context messages");
+					for (Iterator<PaxosMessage> i = messages.iterator(); i.hasNext();) {
+						acceptor.processMessage(i.next());
+						if (execution.isDecided()) {
+							if(log.isLoggable(Level.FINER))
+								log.finer(" execution " + eid + " decided.");
+							break;
+						}
+					}
+					if(log.isLoggable(Level.FINER))
+						log.finer(" (" + eid + ") Finished out of context processing");
+				}
+			}
+		} finally {
+			/******* END OUTOFCONTEXT CRITICAL SECTION *******/
+			outOfContextLock.unlock();
+		}
 	}
 
 	/**
@@ -473,28 +495,29 @@ public final class ExecutionManager{
         return requesthandler;
     }
 
-    public void decided(Consensus<?> cons) {
-          //set this consensus as the last executed
-            requesthandler.setLastExec(cons.getId());
+	/**
+	 * This method is called when the execution of the current consensus is finished
+	 * and so it is clear that the results are stable.
+	 * 
+	 * @param cons The consensus that was finished.
+	 */
+    public void executionFinished(Consensus<?> cons) {
+         
 
             //define the last stable consensus... the stable consensus can
             //be removed from the leaderManager and the executionManager
             if (cons.getId().longValue() > 2) {
-                @SuppressWarnings("boxing")
 				Long stableConsensus = cons.getId().longValue() - 3;
                 lm.removeStableConsenusInfo(stableConsensus);
                 removeExecution(stableConsensus);
             }
-            /**/
-            //define that end of this execution
-            requesthandler.setIdle();
-            requesthandler.processOutOfContext();
+			
+			requesthandler.executionFinished(cons.getId());
+			
             //verify if there is a next proposal to be executed
             //(it only happens if the previous consensus were decided in a
             //round > 0
-            @SuppressWarnings("boxing")
-			Long nextExecution = cons.getId() + 1;
-            acceptor.executeAcceptedPendent(nextExecution);
+            acceptor.executeAcceptedPendent(requesthandler.getNextExec());
     }
 
     public void deliverState(TransferableState state){
@@ -522,7 +545,6 @@ public final class ExecutionManager{
 
         //define that end of this execution
         //stateManager.setWaiting(-1);
-        requesthandler.setIdle();
-        requesthandler.processOutOfContext();
+        requesthandler.executionFinished(state.lastEid);
     }
 }

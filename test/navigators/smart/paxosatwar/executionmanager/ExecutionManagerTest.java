@@ -227,13 +227,13 @@ public class ExecutionManagerTest {
 	@Test
 	public void testDecided() {
 		mng.getExecution(0l);
-		mng.decided(new Consensus<Object>(0l));
+		mng.executionFinished(new Consensus<Object>(0l));
 		verify(handlr).setLastExec(0l);
 		verify(acceptor).executeAcceptedPendent(1l);
 
 		//verify with removal of stable consensus
 		mng.getExecution(0l);
-		mng.decided(new Consensus<Object>(3l));
+		mng.executionFinished(new Consensus<Object>(3l));
 		verify(handlr,times(2)).setIdle(); //verify  both resets of inExec
 		verify(handlr).setLastExec(3l);
 		verify(lm).removeStableConsenusInfo(0l);

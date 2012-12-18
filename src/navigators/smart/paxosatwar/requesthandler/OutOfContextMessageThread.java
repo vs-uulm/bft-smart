@@ -28,6 +28,7 @@ import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
 /**
  * This thread manages out of context messages
  */
+@Deprecated
 public class OutOfContextMessageThread extends Thread {
 	
 	private static final Logger log = Logger.getLogger(OutOfContextMessageThread.class.getCanonicalName());

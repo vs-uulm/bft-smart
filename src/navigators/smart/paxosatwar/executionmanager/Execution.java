@@ -179,7 +179,7 @@ public class Execution {
         }
         if(round.propValue != null){
             consensus.decided(round.propValue,decisionRound);
-            consensus.executionTime = System.currentTimeMillis() - consensus.startTime;
+            
             manager.getTOMLayer().decided(consensus);
         }
     }

@@ -16,8 +16,6 @@
 package navigators.smart.paxosatwar.roles;
 
 import java.security.SignedObject;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -283,6 +281,10 @@ public class Acceptor {
 		if (round.propValue == null) {
 			round.propValue = value;
 			round.propValueHash = tomlayer.computeHash(value);
+			
+			if(round.getExecution().isDecided()){
+				round.getExecution().decided(round);
+			}
 
 			//start this execution if it is not already running
 			if (eid.intValue() == requesthandler.getLastExec().intValue() + 1) {

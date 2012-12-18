@@ -27,7 +27,7 @@ import navigators.smart.consensus.MeasuringConsensus;
 import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
 import navigators.smart.paxosatwar.executionmanager.LeaderModule;
 import navigators.smart.paxosatwar.messages.PaWMessageHandler;
-import navigators.smart.paxosatwar.requesthandler.OutOfContextMessageThread;
+//import navigators.smart.paxosatwar.requesthandler.OutOfContextMessageThread;
 import navigators.smart.paxosatwar.requesthandler.timer.RequestsTimer;
 import navigators.smart.statemanagment.StateManager;
 import navigators.smart.statemanagment.TransferableState;
@@ -181,7 +181,7 @@ public class PaxosAtWarService implements ConsensusService {
 				}
 			}
 		}
-		execmng.decided(cons);
+		execmng.executionFinished(cons);
 	}
 
 	@Override

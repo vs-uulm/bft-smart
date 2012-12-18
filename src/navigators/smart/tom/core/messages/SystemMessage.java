@@ -105,7 +105,7 @@ public abstract class SystemMessage {
      * Returns the ID of the process which sent the message
      * @return
      */
-    public final Integer getSender() {
+    public Integer getSender() {
         return sender;
     }
 
