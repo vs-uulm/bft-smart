@@ -19,7 +19,7 @@ import navigators.smart.tom.util.Logger;
  *
  * @author Christian Spann <christian.spann at uni-ulm.de>
  */
-public class PaWMessageHandler<T> implements MessageHandler<PaxosMessage,T>{
+public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
     
     
     private Proposer proposer;
@@ -58,11 +58,12 @@ public class PaWMessageHandler<T> implements MessageHandler<PaxosMessage,T>{
         }
     }
 
-	public PaxosMessage deserialise(Type type, ByteBuffer buf, Object result) throws ClassNotFoundException, IOException {
+	public SystemMessage deserialise(Type type, ByteBuffer buf, Object result) throws ClassNotFoundException, IOException {
          switch(type){
             case PAXOS_MSG:
-            	
                 return PaxosMessage.readFromBuffer(buf);
+			case RT_MSG:
+				return new RTMessage(buf);
             default:
                 Logger.println("Received msg for unknown msg type");
                 return null;

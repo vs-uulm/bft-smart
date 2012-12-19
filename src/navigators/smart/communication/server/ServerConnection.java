@@ -362,18 +362,23 @@ public class ServerConnection {
 						if (verified) {
 							SystemMessage.Type type = SystemMessage.Type.getByByte(buf.get(0));
 							assert (msgHandlers.containsKey(type)) : "Messagehandlers does not contain " + type + ". It contains: " + msgHandlers;
-							log.finest("Starting deserialisation");
-							SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
-							log.finest("Finished deserialisation");
-							stats.decodedMsg(remoteId, sm);
-							if (log.isLoggable(Level.FINE)) {
-								log.log(Level.FINE, "[{0} Recv] Received {1}", new Object[]{remoteId, sm});
-							}
-
-							if (sm.getSender() == remoteId) {
-								if (!inQueue.offer(sm)) {
-									navigators.smart.tom.util.Logger.println("(ReceiverThread.run) in queue full (message from " + remoteId + " discarded).");
+							if(msgHandlers.containsKey(type)){
+								log.finest("Starting deserialisation");
+								SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
+								log.finest("Finished deserialisation");
+								stats.decodedMsg(remoteId, sm);
+								if (log.isLoggable(Level.FINE)) {
+									log.log(Level.FINE, "[{0} Recv] Received {1}", new Object[]{remoteId, sm});
 								}
+
+								if (sm.getSender() == remoteId) {
+									if (!inQueue.offer(sm)) {
+										navigators.smart.tom.util.Logger.println("(ReceiverThread.run) in queue full (message from " + remoteId + " discarded).");
+									}
+								}
+							} else {
+								log.log(Level.WARNING,"MsgHandler for {0} not found",type);
+								
 							}
 						} else {
 							//TODO: violation of authentication... we should do something

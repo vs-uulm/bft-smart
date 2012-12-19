@@ -15,15 +15,11 @@
  */
 package navigators.smart.tom.core;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.MBeanServer;
 import navigators.smart.clientsmanagement.ClientsManager;
 import navigators.smart.clientsmanagement.PendingRequests;
 import navigators.smart.communication.ServerCommunicationSystem;

@@ -19,15 +19,11 @@ package navigators.smart.paxosatwar;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import navigators.smart.communication.MessageHandler;
 import navigators.smart.consensus.Consensus;
 import navigators.smart.consensus.ConsensusService;
-import navigators.smart.consensus.MeasuringConsensus;
 import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
 import navigators.smart.paxosatwar.executionmanager.LeaderModule;
 import navigators.smart.paxosatwar.messages.PaWMessageHandler;
-//import navigators.smart.paxosatwar.requesthandler.OutOfContextMessageThread;
 import navigators.smart.paxosatwar.requesthandler.timer.RequestsTimer;
 import navigators.smart.statemanagment.StateManager;
 import navigators.smart.statemanagment.TransferableState;
@@ -72,13 +68,13 @@ public class PaxosAtWarService implements ConsensusService {
 		this.conf = conf;
 		this.tom = tom;
 		//do not create a timer manager if the timeout is 0
-		if (manager.getTOMLayer().getConf().getRequestTimeout() == 0) {
+		if (conf.getRequestTimeout() == 0) {
 			log.info("Not using Requeststimer");
 			this.requestsTimer = null;
 		} else {
 			// Create requests timers manager (a thread)
 			// FIXME Requeststimer is not fully implemented and anyways problematic with state transfers.
-//            this.requestsTimer = new RequestsTimer(manager.getRequestHandler(), manager.getTOMLayer().getConf().getRequestTimeout());
+            this.requestsTimer = new RequestsTimer(manager.getRequestHandler(), conf.getRequestTimeout());
 		}
 	}
 

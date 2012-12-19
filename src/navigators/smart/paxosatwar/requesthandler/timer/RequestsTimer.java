@@ -126,6 +126,9 @@ public class RequestsTimer {
 					for (ListIterator<TOMMessage> li = pendingRequests.listIterator(); li.hasNext(); ) {
 						TOMMessage request = li.next();
 						if (!request.timeout) {
+							if(log.isLoggable(Level.FINE)) {
+							log.log(Level.FINE, "Messages {0} are forwarded to the Leader due to a timeout", pendingRequests);
+						}
 							reqhandler.forwardRequestToLeader(request);
 							request.timeout = true;
 							li.remove();
