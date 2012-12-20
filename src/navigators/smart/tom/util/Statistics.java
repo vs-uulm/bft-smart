@@ -3,10 +3,7 @@ package navigators.smart.tom.util;
 import java.io.*;
 import java.net.Inet4Address;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -178,7 +175,7 @@ public class Statistics {
 			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges STReqsSent STReqsReceived" + headerExtension);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
-		NumberFormat nf = NumberFormat.getNumberInstance();
+		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
 		String serverstats = param 
 				+ " " + nf.format(crtt.getMean())
 				+ " " + nf.format(rtt.getMean())
@@ -343,7 +340,7 @@ public class Statistics {
 	}
 
 	public static String formatStats(SummaryStatistics stats) {
-		NumberFormat nf = NumberFormat.getNumberInstance();
+		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
 		StringBuilder s = new StringBuilder();
 		s.append(nf.format(stats.getMean()))
 				.append(" ")
