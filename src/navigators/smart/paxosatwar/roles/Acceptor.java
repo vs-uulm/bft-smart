@@ -474,10 +474,10 @@ public class Acceptor {
 		}
 		//System.out.println(round);
 
-		if (!round.getExecution().isDecided() && !round.isFrozen() && !round.isRemoved()) {
-			Statistics.stats.timeout();
-			doFreeze(round);
-			computeFreeze(round);
+		if (!round.getExecution().isDecided()  /*isFrozen() && !round.isRemoved()*/) {
+			checkFreezeMsg(round);
+//			doFreeze(round);
+//			computeFreeze(round);
 		}
 
 		execution.lock.unlock();
@@ -494,19 +494,30 @@ public class Acceptor {
 			log.finer("received freeze from " + sender + " for " + round.getNumber() + " of consensus " + round.getExecution().getId());
 		}
 		round.addFreeze(sender);
-		if (round.countFreeze() > manager.quorumF && !round.isFrozen()) {
-			doFreeze(round);
+		if (round.countFreeze() > manager.quorumF) {
+			if (!round.isFrozen()){
+				doFreeze(round);
+			}
+			checkFreezeMsg(round);
 		}
 		computeFreeze(round);
 	}
-
+	
+	private void checkFreezeMsg(Round round) {
+		if (!round.isTimeout()) {
+			Statistics.stats.timeout();
+			round.setTimeout();
+			communication.send(manager.getAcceptors(),
+					factory.createFreeze(round.getExecution().getId(), round.getNumber()));
+		}
+	}
+	
 	private void doFreeze(Round round) {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("freezing round " + round.getNumber() + " of execution " + round.getExecution().getId());
 		}
 		round.freeze();
-		communication.send(manager.getOtherAcceptors(),
-				factory.createFreeze(round.getExecution().getId(), round.getNumber()));
+		
 	}
 
 	/**
@@ -529,7 +540,7 @@ public class Acceptor {
 			Execution exec = round.getExecution();
 			Round nextRound = exec.getRound(round.getNumber() + 1, false);
 
-			if (nextRound == null) { //If the next ro
+			if (nextRound == null) { //If the next round does not yet exist
 				//create the next round
 				nextRound = exec.getRound(round.getNumber() + 1);
 				//define the leader for the next round: (previous_leader + 1) % N

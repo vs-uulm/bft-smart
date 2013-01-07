@@ -44,6 +44,7 @@ public class Round {
     private boolean frozen = false; // is this round frozen?
     private boolean collected = false; // indicates if a collect message for this round was already sent
     private long timeout; // duration of the timeout
+	private boolean isTimeout = false; // Was a timeout sent for this round?
     private boolean alreadyRemoved = false; // indicates if this round was removed from its execution
 
     public byte[] propValue = null; // proposed value
@@ -305,7 +306,7 @@ public class Round {
      */
     public void freeze() {
         frozen = true;
-        addFreeze(me);
+//        addFreeze(me);
     }
 
     /**
@@ -372,6 +373,21 @@ public class Round {
         }
         return 0;
     }
+	
+	/**
+	 * Indicates wheter a timeout was already sent for this round
+	 * @return True if a timeout was sent False otherwise
+	 */
+	public boolean isTimeout(){
+		return isTimeout;
+	}
+	
+	/**
+	 * Sets a flag that a timeout was sent for this round
+	 */
+	public void setTimeout(){
+		isTimeout = true;
+	}
 
     /*************************** DEBUG METHODS *******************************/
     /**
