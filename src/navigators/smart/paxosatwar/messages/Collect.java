@@ -1,5 +1,6 @@
 package navigators.smart.paxosatwar.messages;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class Collect extends PaxosMessage {
@@ -38,7 +39,7 @@ public class Collect extends PaxosMessage {
     
     // Implemented method of the Externalizable interface
     @Override
-    public void serialise(ByteBuffer out)  {
+    public void serialise(ByteBuffer out) {
         super.serialise(out);
         proof.serialise(out);
     }

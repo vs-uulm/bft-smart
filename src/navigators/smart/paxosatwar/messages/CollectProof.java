@@ -90,7 +90,7 @@ public final class CollectProof {
 		
 	}
 
-    public void serialise(ByteBuffer out) throws IOException {
+    public void serialise(ByteBuffer out) {
         if(serialisedForm == null){
 			serialisedForm = getBytes();
         } 
@@ -113,7 +113,7 @@ public final class CollectProof {
 				+ 4; // newleader
 	}
 
-    public byte[] getBytes() throws IOException {
+    public byte[] getBytes() {
         if(serialisedForm == null){
         	ByteBuffer buf = ByteBuffer.allocate(getProofsSize());
            //serialise without signature

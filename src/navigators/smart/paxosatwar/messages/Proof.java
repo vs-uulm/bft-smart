@@ -18,6 +18,7 @@
 
 package navigators.smart.paxosatwar.messages;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import navigators.smart.tom.util.SerialisationHelper;
@@ -82,7 +83,7 @@ public final class Proof {
             	 ret += proofs[i].getMsgSize();
              }
          }
-        ret += nextPropose.length;
+        ret += (nextPropose != null) ? nextPropose.length : 0;
 		return ret;
 	}
     
