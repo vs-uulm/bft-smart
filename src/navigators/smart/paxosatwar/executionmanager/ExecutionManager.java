@@ -246,7 +246,9 @@ public final class ExecutionManager{
 			Long lastConsId = requesthandler.getLastExec();
 
 
-			if(consId <= lastConsId){	// Old message -> discard
+			// Old message -> discard. Do not discard messages for the last consensus as it
+			// might still freeze.
+			if(consId < lastConsId){	
 				return false;
 			}
 
@@ -263,7 +265,7 @@ public final class ExecutionManager{
 					// Check revival bounds -> not idle and lastmsg == -1 (revived indicator) and msgid >= revivalHighmark
 					(!(requesthandler.isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark))
 					// Msg is within the low and high marks (or the is replica synchronizing)
-					&& (consId.longValue() > lastConsId.longValue() && (consId.longValue() < (lastConsId.longValue() + paxosHighMark))))) { 
+					&& (consId.longValue() >= lastConsId.longValue() && (consId.longValue() < (lastConsId.longValue() + paxosHighMark))))) { 
 
 				//just an optimization to avoid calling the lock in normal case
 				if(stopped) {

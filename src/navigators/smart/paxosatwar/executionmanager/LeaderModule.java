@@ -118,7 +118,7 @@ public class LeaderModule {
             List<ConsInfo> before = leaderInfos.get(Long.valueOf(c.longValue() - 1));
 
             if (before != null && before.size() > 0) {
-                //the leader for this round will be the leader of
+                //the leader for this round will be the leader of the last round of the last successful round
                 ConsInfo ci = before.get(before.size() - 1);
                 list.add(new ConsInfo(r, ci.leaderId));
                 return ci.leaderId;
@@ -127,7 +127,7 @@ public class LeaderModule {
             ConsInfo info = findInfo(list, r);
             if (info != null) {
                 return info.leaderId;
-            }
+			}
         }
         return null;
     }

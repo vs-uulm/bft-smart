@@ -141,6 +141,9 @@ public class Acceptor {
 					break;
 				case MessageFactory.FREEZE:
 					freezeReceived(round, msg.getSender());
+					break;
+				default:
+					log.severe("Unknowm Messagetype received: "+msg);
 			}
 		} finally {
 			execution.lock.unlock();
@@ -545,7 +548,7 @@ public class Acceptor {
 				nextRound = exec.getRound(round.getNumber() + 1);
 				//define the leader for the next round: (previous_leader + 1) % N
 				Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
-				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber() + 1, newLeader);
+				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("new leader for the next round of consensus is " + newLeader);
 				}

@@ -18,6 +18,8 @@
 
 package navigators.smart.paxosatwar.roles;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.paxosatwar.executionmanager.Execution;
 import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
@@ -27,7 +29,6 @@ import navigators.smart.paxosatwar.messages.Collect;
 import navigators.smart.paxosatwar.messages.CollectProof;
 import navigators.smart.paxosatwar.messages.MessageFactory;
 import navigators.smart.paxosatwar.messages.Proof;
-import navigators.smart.tom.util.Logger;
 import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 
@@ -36,6 +37,8 @@ import navigators.smart.tom.util.TOMConfiguration;
  * This class represents the proposer role in the paxos protocol.
  **/
 public class Proposer {
+	
+	public static final Logger log = Logger.getLogger(Proposer.class.getCanonicalName());
 
     private ExecutionManager manager = null; // Execution manager of consensus's executions
     private MessageFactory factory; // Factory for PaW messages
@@ -86,7 +89,9 @@ public class Proposer {
     public void deliver(Collect msg) {
         if (manager.checkLimits(msg)) {
             collectReceived(msg);
-        }
+        } else {
+			log.log(Level.FINE,"Discarding collect: ", msg);
+		}
     }
 
     /**
@@ -95,9 +100,9 @@ public class Proposer {
      * @param msg the collectReceived message
      */
     private void collectReceived(Collect msg) {
-        if(Logger.debug)
-            Logger.println("(Proposer.collectReceived) COLLECT for "+
-                         msg.getNumber()+","+msg.getRound()+" received.");
+        if (log.isLoggable(Level.FINER)) {
+			log.log(Level.FINER, "COLLECT for {0},{1} received.", new Object[]{msg.getNumber(), msg.getRound()});
+		}
 
         Execution execution = manager.getExecution(msg.getNumber());
         execution.lock.lock();
@@ -112,9 +117,10 @@ public class Proposer {
 //                e.printStackTrace(System.out);
 //            }
 
-            if(Logger.debug)
-                Logger.println("(Proposer.collectReceived) signed COLLECT for "+
-                         msg.getNumber()+","+msg.getRound()+" received.");
+            if (log.isLoggable(Level.FINEST)) {
+               log.log(Level.FINEST, " signed COLLECT for {0},{1} received.", 
+					   new Object[]{msg.getNumber(), msg.getRound()});
+			}
             
             if ((cp.getProofs(true) != null) &&
                     // the received proof (that the round was frozen) should be valid
@@ -124,9 +130,10 @@ public class Proposer {
 
                 Integer nextRoundNumber = Integer.valueOf(msg.getRound().intValue() + 1);
 
-                if(Logger.debug)
-                    Logger.println("(Proposer.collectReceived) valid COLLECT for starting "+
-                         execution.getId()+","+nextRoundNumber+" received.");
+                if (log.isLoggable(Level.FINEST)) {
+                    log.log(Level.FINEST, "Valid COLLECT for starting {0},{1} received.", 
+							new Object[]{execution.getId(), nextRoundNumber});
+				}
 
                 Round round = execution.getRound(nextRoundNumber);
                 
@@ -135,9 +142,10 @@ public class Proposer {
                 if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
 					//Count view changes
 					Statistics.stats.viewChange();
-                    if(Logger.debug)
-                        Logger.println("(Proposer.collectReceived) proposing for "+
-                            execution.getId()+","+nextRoundNumber);
+                    if (log.isLoggable(Level.FINEST)) {
+                        log.log(Level.FINEST, "Proposing for {0},{1}", 
+								new Object[]{execution.getId(), nextRoundNumber});
+					}
 
                     byte[] inProp = verifier.getGoodValue(round.proofs, true);
                     byte[] nextProp = verifier.getGoodValue(round.proofs, false);

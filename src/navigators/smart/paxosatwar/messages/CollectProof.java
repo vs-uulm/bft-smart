@@ -63,17 +63,11 @@ public final class CollectProof {
      * @return
      */
     public FreezeProof getProofs(boolean in){
-
         if(in){
-
             return this.proofIn;
-
         }else{
-
             return this.proofNext;
-
         }
-
     }
     
     /**
@@ -87,40 +81,61 @@ public final class CollectProof {
     }
 
     @SuppressWarnings("boxing")
-    public CollectProof (ByteBuffer in) {
-        proofIn = new FreezeProof(in);
-        proofNext = new FreezeProof(in);
-        newLeader = in.getInt();
-        signature = SerialisationHelper.readByteArray(in);
-    }
+   public CollectProof(ByteBuffer in) {
+		
+		proofIn = (in.get() == 1) ? new FreezeProof(in) : null;
+		proofNext = (in.get() == 1) ? new FreezeProof(in) : null;
+		newLeader = in.getInt();
+		signature = SerialisationHelper.readByteArray(in);
+		
+	}
 
-    public void serialise(ByteBuffer out){
+    public void serialise(ByteBuffer out) throws IOException {
         if(serialisedForm == null){
-            proofIn.serialise(out);
-            proofNext.serialise(out);
-            out.putInt(newLeader.intValue());
-        } else {
-            SerialisationHelper.writeByteArray(serialisedForm, out);
-        }
-        SerialisationHelper.writeByteArray(signature, out);
+			serialisedForm = getBytes();
+        } 
+       out.put(serialisedForm);
+       SerialisationHelper.writeByteArray(signature, out);
     }
     
+	
+	
     public int getMsgSize(){
-    	return proofIn.getMsgSize()+proofNext.getMsgSize()+ 8 + signature.length;
+		//2 for the indicators if proofin and proofnext exist
+    	return getProofsSize() + 4 + signature.length;
     }
+	
+	
+	private int getProofsSize(){
+		return 2 // presence indicator bytes
+				+ (proofIn != null ? proofIn.getMsgSize() : 0)
+				+ (proofNext != null ? proofNext.getMsgSize():0)
+				+ 4; // newleader
+	}
 
     public byte[] getBytes() throws IOException {
         if(serialisedForm == null){
-        	ByteBuffer buf = ByteBuffer.allocate(proofIn.getMsgSize()+proofNext.getMsgSize()+4);
-            //serialise without signature
-            proofIn.serialise(buf);
-            proofNext.serialise(buf);
+        	ByteBuffer buf = ByteBuffer.allocate(getProofsSize());
+           //serialise without signature
+           if(proofIn != null){
+				buf.put((byte)1);
+				proofIn.serialise(buf);
+			} else {
+				buf.put((byte)0);
+			}
+			if(proofNext != null) {
+				buf.put((byte)1);
+				proofNext.serialise(buf);
+			} else {
+				buf.put((byte)0);
+			}
+				
             buf.putInt(newLeader.intValue());
             serialisedForm = buf.array();
         }
         return serialisedForm;
     }
-
+	
     public void setSignature(byte[] sign) {
         signature = sign;
     }
