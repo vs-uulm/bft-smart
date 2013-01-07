@@ -49,13 +49,13 @@ public final class Proof {
 
     public Proof(ByteBuffer in){
         proofs = new CollectProof[in.getInt()];
-        for (int i = 0; i < proofs.length; i++) {
+		for(;;) {
             int pos = in.getInt();
             if(pos < 0){
                 break;  //reached end
             }
             proofs[pos] = new CollectProof(in);
-        }
+		} 
         nextPropose = SerialisationHelper.readByteArray(in);
     }
 
