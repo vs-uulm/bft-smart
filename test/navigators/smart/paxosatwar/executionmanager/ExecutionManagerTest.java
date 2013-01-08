@@ -219,8 +219,8 @@ public class ExecutionManagerTest {
 		assertFalse(mng.checkLimits(msg));
 		assertFalse(mng.checkLimits(weak));
 		exec = mng.getExecution(1l);
-		verify(acceptor).processMessage(msg);
-		verify(acceptor).processMessage(weak);
+//		verify(acceptor).processMessage(msg);
+//		verify(acceptor).processMessage(weak);
 		assertEquals(exec, mng.removeExecution(exec.getId()));
 	}
 
@@ -228,17 +228,14 @@ public class ExecutionManagerTest {
 	public void testDecided() {
 		mng.getExecution(0l);
 		mng.executionFinished(new Consensus<Object>(0l));
-		verify(handlr).setLastExec(0l);
-		verify(acceptor).executeAcceptedPendent(1l);
+		verify(handlr).executionFinished(0l);
 
 		//verify with removal of stable consensus
 		mng.getExecution(0l);
 		mng.executionFinished(new Consensus<Object>(3l));
-		verify(handlr,times(2)).setIdle(); //verify  both resets of inExec
-		verify(handlr).setLastExec(3l);
+		verify(handlr).executionFinished(3l);
 		verify(lm).removeStableConsenusInfo(0l);
 		assertNull(mng.removeExecution(0l));
-		verify(acceptor).executeAcceptedPendent(4l);
 	}
 
 	@Test
@@ -252,8 +249,7 @@ public class ExecutionManagerTest {
 		TransferableState state = new TransferableState(0l,0,0,10l,null,null,null,null);
 		mng.getExecution(5l);
 		mng.deliverState(state);
-		verify(handlr).setLastExec(10l);
-		verify(handlr).setIdle();
+		verify(handlr).executionFinished(10l);
 		assertNull(mng.removeExecution(5l));
 		assertFalse(mng.thereArePendentMessages(1l));
 	}
