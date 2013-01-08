@@ -140,6 +140,15 @@ public class LeaderModule {
     public Integer getLeader(Long c) {
         return getLeader(c, ROUND_ZERO);
     }
+	
+	/**
+     * Retrieves the replica ID of the leader for the specified consensus's execution ID and last round number
+     * @param c consensus's execution ID
+     * @return The replica ID of the leader
+     */
+    public Integer getLeader(Execution exec) {
+        return getLeader(exec.getId(), exec.getCurrentRound());
+    }
 
     /**
      * Removes a consensus that is established as being stable

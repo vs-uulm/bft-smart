@@ -20,8 +20,8 @@ package navigators.smart.paxosatwar.executionmanager;
 
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
-
 import navigators.smart.consensus.MeasuringConsensus;
+import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
 
 /**
@@ -39,6 +39,7 @@ public class Execution {
     private boolean decided; // Is this execution decided?
     private long initialTimeout; // Initial timeout for rounds
     private Integer decisionRound = Integer.valueOf(-1); // round at which a desision was made
+	private Integer currentRound = ROUND_ZERO; //Currently active round
 
     public ReentrantLock lock = new ReentrantLock(); //this execution lock (called by other classes)
 
@@ -152,6 +153,20 @@ public class Execution {
         roundsLock.unlock();
         return r;
     }
+	
+	/**
+	 * The currently processed round
+	 */
+	public Integer getCurrentRound (){
+		return currentRound;
+	}
+	
+	/**
+	 * The currently processed round
+	 */
+	public void nextRound (){
+		currentRound = currentRound + 1;
+	}
 
     /**
      * Informs wether or not the execution is decided

@@ -541,6 +541,7 @@ public class Acceptor {
 			round.getTimeoutTask().cancel(false);
 
 			Execution exec = round.getExecution();
+			exec.nextRound();	//Set active round to next round
 			Round nextRound = exec.getRound(round.getNumber() + 1, false);
 
 			if (nextRound == null) { //If the next round does not yet exist

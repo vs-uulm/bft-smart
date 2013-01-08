@@ -7,25 +7,13 @@ package navigators.smart.paxosatwar.requesthandler;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.SignedObject;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import navigators.smart.communication.ServerCommunicationSystem;
-import navigators.smart.consensus.Consensus;
-import navigators.smart.paxosatwar.executionmanager.Execution;
-import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
-import navigators.smart.paxosatwar.executionmanager.LeaderModule;
-import navigators.smart.paxosatwar.executionmanager.ProofVerifier;
-import navigators.smart.paxosatwar.executionmanager.Round;
+import navigators.smart.paxosatwar.executionmanager.*;
 import navigators.smart.paxosatwar.requesthandler.timer.RTInfo;
 import navigators.smart.tom.core.TOMLayer;
 import navigators.smart.tom.core.messages.TOMMessage;
@@ -64,16 +52,12 @@ public class RequestHandler extends Thread {
 	 */
 	private ReentrantLock leaderLock = new ReentrantLock();
 	private Condition iAmLeader = leaderLock.newCondition();
-	private ReentrantLock messagesLock = new ReentrantLock();
-	private Condition haveMessages = messagesLock.newCondition();
-	private ReentrantLock proposeLock = new ReentrantLock();
-	private Condition canPropose = proposeLock.newCondition();
 
 	/*
 	 * flag that indicates that the lader changed between the last propose and this propose. This flag is changed on updateLeader (to true) and
 	 * decided (to false) and used in run.
 	 */
-	private boolean leaderChanged = true;
+	private boolean leaderChanged = false;
 	private final TOMLayer tomlayer;
 	private final ServerCommunicationSystem communication;
 
@@ -122,22 +106,14 @@ public class RequestHandler extends Thread {
 			log.finest("Modifying state from " + this.inExecution + " to " + inEx);
 		}
 
-		proposeLock.lock();
+		leaderLock.lock();
 		this.inExecution = inEx;
 		if (inEx.equals(IDLE) && !tomlayer.isRetrievingState()) { //code of joao for state transfer
-			canPropose.signalAll();
+			iAmLeader.signalAll();
 		}
-		proposeLock.unlock();
+		leaderLock.unlock();
 	}
 
-	/**
-	 * This method blocks until the PaW algorithm is finished
-	 */
-	public void waitForPaxosToFinish() {
-		proposeLock.lock();
-		canPropose.awaitUninterruptibly();
-		proposeLock.unlock();
-	}
 
 	/**
 	 * Gets the ID of the consensus currently beign executed
@@ -170,83 +146,56 @@ public class RequestHandler extends Thread {
 		if (log.isLoggable(Level.INFO)) {
 			log.info("Running."); // TODO: isto n podia passar para fora do ciclo?
 		}
+
 		while (true) {
 			// blocks until this replica learns to be the leader for the current round of the current consensus
-			leaderLock.lock();
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("Next leader for eid=" + (getNextExec()) + ": " + lm.getLeader(getNextExec()));
-			}
-			if (!lm.getLeader(getNextExec()).equals(conf.getProcessId())) {
-				iAmLeader.awaitUninterruptibly();
-			}
-			leaderLock.unlock();
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("I'm the leader.");
-			}
-
-			// blocks until there are requests to be processed/ordered
-			messagesLock.lock();
-			if (!tomlayer.clientsManager.hasPendingRequests()) {
-				haveMessages.awaitUninterruptibly();
-			}
-			messagesLock.unlock();
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("There are messages to be ordered.");
-			}
-
-			// blocks until the current consensus finishes
-			proposeLock.lock();
-			if (!isIdle() && !leaderChanged) { //there is some consensus running and the leader not changed
+			try {
+				leaderLock.lock();
 				if (log.isLoggable(Level.FINER)) {
-					log.finer("Waiting that consensus " + inExecution + " terminates.");
+					log.finer("Next leader for eid=" + (getNextExec()) + ": " + lm.getLeader(getNextExec()));
 				}
-				canPropose.awaitUninterruptibly();
-			}
-			proposeLock.unlock();
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("I can try to propose.");
-			}
-			if ((lm.getLeader(getNextExec()).equals(conf.getProcessId())) && //I'm the leader
-					(tomlayer.clientsManager.hasPendingRequests()) && //there are messages to be ordered TODO this is double checking?
-					(isIdle() || leaderChanged)) { //there is no consensus in execution
+				
+				while (!canPropose()){
+					iAmLeader.awaitUninterruptibly();	
+				}
 
-				leaderChanged = false;
-
+				if (log.isLoggable(Level.FINER)) {
+					log.finer("I can propose.");
+				}
+	
 				// Sets the current execution
 				setInExec(nextExecution);
 
 				//getExecution and if its not created create it
 				//TODO make this better
 				execManager.getExecution(inExecution);
-
 				execManager.getProposer().startExecution(inExecution, tomlayer.createPropose());
-
-				/*
-				 * if (counter>=BENCHMARK_PERIOD/2) st.store(System.nanoTime()-start);
-				 *
-				 * counter++;
-				 */
-			} else {
-				/*
-				 * System.out.println("I should be the leader, there should be messages to order and no consensus running:");
-				 * System.out.println(">>leader: " + lm.getLeader(getLastExec()+1,0)); System.out.println(">>consenso em exec?: " + getInExec());
-				 */
+				
+				leaderChanged = false;
+			} finally {
+				leaderLock.unlock();
 			}
-			/*
-			 * if (st.getCount()==BENCHMARK_PERIOD/2){ System.out.println("---------------------------------------------");
-			 * System.out.println("CREATE_PROPOSE total delay: Average time for "+BENCHMARK_PERIOD/2+" executions (-10%) = "+st.getAverage(true)/1000+
-			 * " us "); System.out.println("CREATE_PROPOSE total delay: Standard desviation for "+BENCHMARK_PERIOD/2+" executions (-10%) =
-			 * "+st.getDP(true)/1000 + " us "); System.out.println("CREATE_PROPOSE total delay: Average time for "+BENCHMARK_PERIOD/2+" executions
-			 * (all samples) = "+st.getAverage(false)/1000+ " us "); System.out.println("CREATE_PROPOSE total delay: Standard desviation for
-			 * "+BENCHMARK_PERIOD/2+" executions (all samples) = "+st.getDP(false)/1000 + " us "); System.out.println("CREATE_PROPOSE total delay:
-			 * Maximum time for "+BENCHMARK_PERIOD/2+" executions (-10%) = "+st.getMax(true)/1000+ " us "); System.out.println("CREATE_PROPOSE total
-			 * delay: Maximum time for "+BENCHMARK_PERIOD/2+" executions (all samples) = "+st.getMax(false)/1000+ " us ");
-			 * System.out.println("---------------------------------------------");
-			 *
-			 * st = new Storage(BENCHMARK_PERIOD/2); counter=0; }
-			 */
 		}
 	}
+	
+	/**
+	 * Must be called within leaderlock! Returns if this replica is leader and can propose.
+	 * @return True if eligible to propose, false if not.
+	 */
+	private boolean canPropose(){
+		boolean leader, ready;
+		//Check if i'm the leader
+		leader = lm.getLeader(execManager.getExecution(nextExecution)).equals(conf.getProcessId());
+			//there are messages to be ordered and no consensus is in execution 
+		ready = tomlayer.clientsManager.hasPendingRequests() && isIdle();
+
+		if (log.isLoggable(Level.FINER)) {
+			log.log(Level.FINER,"Requesthandler checking: leader: {0}, ready: {1}, changed:{2}",new Object[]{leader,ready,leaderChanged});
+		} 
+		return leader && (ready || leaderChanged);
+	}
+	
+	
 
 	public Long getNextExec() {
 		return nextExecution;
@@ -350,10 +299,10 @@ public class RequestHandler extends Thread {
 	 * @param timeout Timeout number
 	 */
 	private void updateLeader(Integer reqId, Long start, Integer newLeader) {
-		lm.addLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
-		leaderChanged = true;
 
 		leaderLock.lock(); // Signal the TOMlayer thread, if this replica is the leader
+		lm.addLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
+		leaderChanged = true;
 		if (lm.getLeader(getNextExec()).equals(conf.getProcessId())) {
 			iAmLeader.signal();
 		}
@@ -608,17 +557,17 @@ public class RequestHandler extends Thread {
 			log.finest("Setting Requesthandler to idle after " + this.inExecution);
 		}
 
-		proposeLock.lock();
+		leaderLock.lock();
 		this.inExecution = IDLE;
 		//ot.addUpdate();
-		canPropose.signalAll();
-		proposeLock.unlock();
+		iAmLeader.signalAll();
+		leaderLock.unlock();
 	}
 
 	public void notifyNewRequest() {
-		messagesLock.lock();
-		haveMessages.signal();
-		messagesLock.unlock();
+		leaderLock.lock();
+		iAmLeader.signalAll();
+		leaderLock.unlock();
 	}
 
 	public boolean isIdle() {
