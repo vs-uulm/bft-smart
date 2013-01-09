@@ -125,26 +125,34 @@ public class Acceptor {
 			execution.lock.lock();
 
 			Round round = execution.getRound(msg.getRound());
+			
+			if(!round.isFrozen()){
 
-			switch (msg.getPaxosType()) {
-				case MessageFactory.PROPOSE:
-					proposeReceived(round, (Propose) msg);
-					break;
-				case MessageFactory.WEAK:
-					weakAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
-					break;
-				case MessageFactory.STRONG:
-					strongAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
-					break;
-				case MessageFactory.DECIDE:
-					decideReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
-					break;
-				case MessageFactory.FREEZE:
-					freezeReceived(round, msg.getSender());
-					break;
-				default:
-					log.severe("Unknowm Messagetype received: "+msg);
+				switch (msg.getPaxosType()) {
+					case MessageFactory.PROPOSE:
+						proposeReceived(round, (Propose) msg);
+						break;
+					case MessageFactory.WEAK:
+						weakAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
+						break;
+					case MessageFactory.STRONG:
+						strongAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
+						break;
+					case MessageFactory.DECIDE:
+						decideReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
+						break;
+					case MessageFactory.FREEZE:
+						//Handled below in all cases
+						break;
+					default:
+						log.severe("Unknowm Messagetype received: "+msg);
+				}
 			}
+			//Handle freeze in all cases
+			if (msg.getPaxosType() == MessageFactory.FREEZE) {
+				freezeReceived(round, msg.getSender());
+			}
+			
 		} finally {
 			execution.lock.unlock();
 		}
@@ -280,6 +288,8 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("executing propose for " + eid + "," + round.getNumber());
 		}
+		
+		scheduleTimeout(round);
 
 		if (round.propValue == null) {
 			round.propValue = value;
@@ -337,11 +347,17 @@ public class Acceptor {
 	 */
 	private void computeWeak(final Long eid, final Round round, final byte[] valuehash) {
 
-		int weakAccepted = round.countWeak(valuehash);
+		int weakAccepted = round.countWeak();
 
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("I have " + weakAccepted
 					+ " weaks for " + eid + "," + round.getNumber());
+		}
+		
+		//Schedule timeout if not yet scheduled when one correct replica indicates
+		//the existance of this round
+		if(weakAccepted > manager.quorumF){
+			scheduleTimeout(round);
 		}
 
 		// Can I go straight to decided state?
@@ -403,12 +419,15 @@ public class Acceptor {
 	 * @param value Value sent in the message
 	 */
 	private void computeStrong(Long eid, Round round, byte[] value) {
+		
+		int strongAccepted = round.countStrong();
+		
 		if (log.isLoggable(Level.FINER)) {
-			log.finer("I have " + round.countStrong(value)
+			log.finer("I have " + strongAccepted
 					+ " strongs for " + eid + "," + round.getNumber());
 		}
 
-		if (round.countStrong(value) > manager.quorum2F && !round.getExecution().isDecided()) {
+		if (strongAccepted > manager.quorum2F && !round.getExecution().isDecided()) {
 
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Deciding " + eid + " with strongs");
@@ -432,7 +451,7 @@ public class Acceptor {
 		}
 		round.setDecide(sender, value);
 
-		if (round.countDecide(value) > manager.quorumF && !round.getExecution().isDecided()) {
+		if (round.countDecide() > manager.quorumF && !round.getExecution().isDecided()) {
 			if (log.isLoggable(Level.FINER)) {
 				log.finer("Deciding " + eid);
 			}
@@ -445,17 +464,21 @@ public class Acceptor {
 	}
 
 	/**
-	 * Schedules a timeout for a given round. It is called by an Execution when a new round is created.
+	 * Schedules a timeout for a given round. It is called by an Execution when a new round is confirmably
+	 * created. This means when a propose arrives, when f+1 weaks or strongs arrive or a round is frozen by
+	 * 2f+1 freeze messages.
 	 *
 	 * @param round Round to be associated with the timeout
 	 */
-	public void scheduleTimeout(Round round) {
+	private void scheduleTimeout(Round round) {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("scheduling timeout of " + round.getTimeout() + " ms for round " + round.getNumber() + " of consensus " + round.getExecution().getId());
 		}
-		TimeoutTask task = new TimeoutTask(this, round);
-		ScheduledFuture<?> future = timer.schedule(task, round.getTimeout(), TimeUnit.MILLISECONDS);
-		round.setTimeoutTask(future);
+		if(round.getTimeoutTask() == null) {
+			TimeoutTask task = new TimeoutTask(this, round);
+			ScheduledFuture<?> future = timer.schedule(task, round.getTimeout(), TimeUnit.MILLISECONDS);
+			round.setTimeoutTask(future);
+		}
 		//purge timer every 100 timeouts
 		if (round.getExecution().getId().longValue() % 100 == 0) {
 			timer.purge();
@@ -477,10 +500,10 @@ public class Acceptor {
 		}
 		//System.out.println(round);
 
-		if (!round.getExecution().isDecided()  /*isFrozen() && !round.isRemoved()*/) {
+		if (!round.getExecution().isDecided() && !round.isRemoved()/*isFrozen()*/) {
+			// Send freeze msg to all acceptors including me
 			checkFreezeMsg(round);
-//			doFreeze(round);
-//			computeFreeze(round);
+			doFreeze(round);
 		}
 
 		execution.lock.unlock();
@@ -535,18 +558,19 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("received " + round.countFreeze() + " freezes for round " + round.getNumber());
 		}
-		//if there is more than 2f+1 timeouts
-		if (round.countFreeze() > manager.quorum2F && !round.isCollected()) {
+		//if there is more than f+1 timeouts
+		if (round.countFreeze() > manager.quorumF && !round.isCollected()) {
 			round.collect();
 			round.getTimeoutTask().cancel(false);
 
 			Execution exec = round.getExecution();
 			exec.nextRound();	//Set active round to next round
-			Round nextRound = exec.getRound(round.getNumber() + 1, false);
+			Round nextRound = exec.getRound(round.getNumber() + 1,false);
 
 			if (nextRound == null) { //If the next round does not yet exist
 				//create the next round
 				nextRound = exec.getRound(round.getNumber() + 1);
+				scheduleTimeout(nextRound);
 				//define the leader for the next round: (previous_leader + 1) % N
 				Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
 				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
@@ -595,8 +619,8 @@ public class Acceptor {
 	 * @return A freez proof
 	 */
 	private FreezeProof createProof(Long eid, Round r) {
-		return new FreezeProof(me, eid, r.getNumber(), r.getWeak(me.intValue()),
-				r.getStrong(me.intValue()), r.getDecide(me.intValue()));
+		return new FreezeProof(me, eid, r.getNumber(), r.propValue, r.getWeak(me.intValue()) != null,
+				r.getStrong(me.intValue())!= null, r.getDecide(me.intValue())!= null);
 	}
 
 	/**
@@ -614,9 +638,7 @@ public class Acceptor {
 
 		leaderModule.decided(round.getExecution().getId(), leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
 		round.getTimeoutTask().cancel(false);
-		round.getExecution().decided(round /*
-				 * , value
-				 */);
+		round.getExecution().decided(round);
 	}
 
 	/**

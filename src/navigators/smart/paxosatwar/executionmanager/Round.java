@@ -37,6 +37,10 @@ public class Round {
     private Integer me; // Process ID
     private boolean[] weakSetted;
     private boolean[] strongSetted;
+	//Counters for weaks, strongs and decides
+	private int weaks = 0;
+	private int strongs = 0;
+	private int decides = 0;
     private byte[][] weak; // weakling accepted values from other processes
     private byte[][] strong; // strongly accepted values from other processes
     private byte[][] decide; // values decided by other processes
@@ -76,7 +80,7 @@ public class Round {
         Arrays.fill(weakSetted, false);
         Arrays.fill(strongSetted, false);
 
-        if (number.intValue() == 0) {
+//        if (number.intValue() == 0) {
             this.weak = new byte[n][];
             this.strong = new byte[n][];
             this.decide = new byte[n][];
@@ -84,17 +88,16 @@ public class Round {
             Arrays.fill( weak, null);
             Arrays.fill( strong, null);
             Arrays.fill( decide, null);
-        } else {
-            Round previousRound = execution.getRound(number - 1);
-
-            this.weak = previousRound.getWeak();
-            this.strong = previousRound.getStrong();
-            this.decide = previousRound.getDecide();
-        }
+//        } else {
+//            Round previousRound = execution.getRound(number - 1);
+//
+//            this.weak = previousRound.getWeak();
+//            this.strong = previousRound.getStrong();
+//            this.decide = previousRound.getDecide();
+//        }
 
         //define the timeout for this round
         this.timeout = (int) Math.pow(2, number) * timeout;
-        manager.getAcceptor().scheduleTimeout(this);
     }
 
     /**
@@ -217,9 +220,11 @@ public class Round {
      * @param value The value weakly accepted from the specified replica
      */
     public void setWeak(int acceptor, byte[] value) { // TODO: Condicao de corrida?
-        if (!weakSetted[acceptor] && !isFrozen()) { //it can only be setted once
+		// TODO remove the second check if frozen and throw away all messages except freezes when frozen
+        if (!weakSetted[acceptor] && Arrays.equals(value, propValueHash) && !isFrozen()) { //it can only be setted once
             weak[acceptor] = value;
             weakSetted[acceptor] = true;
+			weaks++;
         }
     }
 
@@ -246,9 +251,10 @@ public class Round {
      * @param value The value strongly accepted from the specified replica
      */
     public void setStrong(int acceptor, byte[] value) { // TODO: condicao de corrida?
-        if (!strongSetted[acceptor] && !isFrozen()) { //it can only be setted once
+        if (!strongSetted[acceptor] && Arrays.equals(value, propValueHash) && !isFrozen()) { //it can only be setted once
             strong[acceptor] = value;
             strongSetted[acceptor] = true;
+			strongs++;
         }
     }
 
@@ -275,7 +281,10 @@ public class Round {
      * @param value The value decided by the specified replica
      */
     public void setDecide(int acceptor, byte[] value) {
-        decide[acceptor] = value;
+		if(Arrays.equals(value, propValueHash) && !isFrozen() ) {
+			decide[acceptor] = value;
+			decides++;
+		}
     }
 
     /**
@@ -328,51 +337,62 @@ public class Round {
         return freeze.size();
     }
 
-    /**
-     * Retrives the ammount of replicas from which this process weakly accepted a specified value
-     * @param value The value in question
-     * @return Ammount of replicas from which this process weakly accepted the specified value
-     */
-    public int countWeak(byte[] value) {
-        return count(weakSetted,weak, value);
-    }
+	public int countWeak(){
+		return weaks;
+	}
+	
+	public int countStrong(){
+		return strongs;
+	}
+	
+	public int countDecide(){
+		return decides;
+	}
+//    /**
+//     * Retrives the ammount of replicas from which this process weakly accepted a specified value
+//     * @param value The value in question
+//     * @return Ammount of replicas from which this process weakly accepted the specified value
+//     */
+//    public int countWeak(byte[] value) {
+//        return count(weakSetted,weak, value);
+//    }
 
     /**
      * Retrives the ammount of replicas from which this process strongly accepted a specified value
      * @param value The value in question
      * @return Ammount of replicas from which this process strongly accepted the specified value
      */
-    public int countStrong(byte[] value) {
-        return count(strongSetted,strong, value);
-    }
+//    public int countStrong(byte[] value) {
+//        return count(strongSetted,strong, value);
+//    }
 
     /**
      * Retrives the ammount of replicas that decided a specified value
      * @param value The value in question
      * @return Ammount of replicas that decided the specified value
      */
-    public int countDecide(byte[] value) {
-        return count(null,decide, value);
-    }
+//    public int countDecide(byte[] value) {
+//        return count(null,decide, value);
+//    }
 
-    /**
-     * Counts how many times 'value' occurs in 'array'
-     * @param array Array where to count
-     * @param value Value to count
-     * @return Ammount of times that 'value' was find in 'array'
-     */
-    private int count(boolean[] arraySetted,byte[][] array, byte[] value) {
-        if (value != null) {
-            int counter = 0;
-            for (int i = 0; i < array.length; i++) {
-                if (arraySetted != null && arraySetted[i] && Arrays.equals(value, array[i])) {
-                    counter++;
-                }
-            }
-            return counter;
-        }
-        return 0;
-    }
+//    /**
+//     * Counts how many times 'value' occurs in 'array'
+//     * @param array Array where to count
+//     * @param value Value to count
+//     * @return Ammount of times that 'value' was find in 'array'
+//     */
+//    private int count(boolean[] arraySetted,byte[][] array, byte[] value) {
+//        if (value != null) {
+//            int counter = 0;
+//            for (int i = 0; i < array.length; i++) {
+//                if (arraySetted != null && arraySetted[i] && Arrays.equals(value, array[i])) {
+//                    counter++;
+//                }
+//            }
+//            return counter;
+//        }
+//        return 0;
+//    }
 	
 	/**
 	 * Indicates wheter a timeout was already sent for this round

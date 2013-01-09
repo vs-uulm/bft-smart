@@ -309,7 +309,7 @@ public class ProofVerifier {
             byte[] w = null;
 
             if (proofs[i] != null && proofs[i].getProofs(in) != null) {
-                w = proofs[i].getProofs(in).getWeak();
+                w = proofs[i].getProofs(in).getValue();
             }
 
             if (w != null) {
@@ -317,13 +317,19 @@ public class ProofVerifier {
                 int countS = 0;
 
                 for (int j = 0; j < proofs.length; j++) {
-                    if (proofs[j] != null && proofs[j].getProofs(in) != null) {
-                        if (Arrays.equals(w, proofs[j].getProofs(in).getWeak())) {
-                            countW++;
-                        }
-                        if (Arrays.equals(w, proofs[j].getProofs(in).getStrong())) {
-                            countS++;
-                        }
+					
+                    if (proofs[j] != null) {
+						FreezeProof current = proofs[j].getProofs(in);
+						if(current != null){
+							if (Arrays.equals(w, current.getValue())) {
+								if(current.isWeak()){
+									countW++;
+								}
+								if(current.isStrong()){
+									countS++;
+								}
+							}
+						}
                     }
                 }
 
@@ -348,8 +354,8 @@ public class ProofVerifier {
 
         for (int i = 0; i < proofs.length; i++) {
             byte[] w = null;
-            if (proofs[i] != null && proofs[i].getProofs(in) != null) {
-                w = proofs[i].getProofs(in).getWeak();
+            if (proofs[i] != null && proofs[i].getProofs(in) != null && proofs[i].getProofs(in).isWeak()) {
+                w = proofs[i].getProofs(in).getValue();
             }
 
             if (w != null) {
@@ -357,10 +363,14 @@ public class ProofVerifier {
 
                 for (int j = 0; j < proofs.length; j++) {
 
-                    if (proofs[j] != null && proofs[j].getProofs(in) != null &&
-                            Arrays.equals(w, proofs[j].getProofs(in).getWeak())) {
-                        count++;
-                    }
+                    if (proofs[j] != null){
+						FreezeProof current = proofs[j].getProofs(in);
+						//The other proof is also weakly accepted and the values are equal
+						if (current != null && current.isWeak()
+								&& Arrays.equals(w, current.getValue())) {
+							count++;
+						}
+					}
                 }
 
                 if (count > quorumF && !acc.contains(w)) {

@@ -83,7 +83,8 @@ public class Execution {
     }
 
     /**
-     * Gets a round associated with this execution
+     * Gets a round associated with this execution and creates it if
+	 * not yet existant
      * @param number The number of the round
      * @return The round
      */

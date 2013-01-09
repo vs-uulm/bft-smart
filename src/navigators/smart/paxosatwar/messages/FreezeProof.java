@@ -31,13 +31,13 @@ import navigators.smart.tom.util.SerialisationHelper;
  */
 public final class FreezeProof {
 
-    private Integer pid; // Replica ID
-    private Long eid; // Consensus's execution ID
-    private Integer round; // Round number
-
-    private byte[] weak; // weakly accepted value
-    private byte[] strong; // strongly accepted value
-    private byte[] decide; // decided value
+    private final Integer pid; // Replica ID
+    private final Long eid; // Consensus's execution ID
+    private final Integer round; // Round number
+	private final byte[] value; //The value that was proposed to this replica
+    private final boolean weak; // weakly accepted value
+    private final boolean strong; // strongly accepted value
+    private final boolean decide; // decided value
 
     /**
      * Creates a new instance of FreezeProof
@@ -49,12 +49,12 @@ public final class FreezeProof {
      * @param decide Decided value
      */
     public FreezeProof(Integer pid, Long eid, Integer round,
-            byte[] weak, byte[] strong, byte[] decide) {
+            byte[] value, boolean weak, boolean strong, boolean decide) {
 
         this.pid = pid;
         this.eid = eid;
         this.round = round;
-
+		this.value = value;
         this.weak = weak;
         this.strong = strong;
         this.decide = decide;
@@ -89,32 +89,39 @@ public final class FreezeProof {
         return round;
 
     }
+	
+	/**
+	 * Retrieves the proposed value that was received by this replica in this round
+	 */
+	public byte[] getValue() {
+		return value;
+	}
 
     /**
-     * Retrieves the weakly accepted value
-     * @return Weakly accepted value
+     * Was this value accepted weakly
+     * @return True if weakly accepted
      */
-    public byte[] getWeak() {
+    public boolean isWeak() {
 
         return weak;
 
     }
 
     /**
-     * Retrieves the strongly accepted value
-     * @return Strongly accepted value
+     * Was this value accepted strongly
+     * @return True if strongly accepted
      */
-    public byte[] getStrong() {
+    public boolean isStrong() {
 
         return strong;
 
     }
     
     /**
-     * Retrieves the decided value
-     * @return Decided value
+     * Was this value decided
+     * @return True if decided
      */
-    public byte[] getDecide() {
+    public boolean isDecide() {
 
         return decide;
 
@@ -125,12 +132,8 @@ public final class FreezeProof {
     @Override
     public String toString() {
 
-        return "W="+str(weak)+" S="+str(strong)+" D="+str(decide);
+        return "W="+weak+" S="+strong+" D="+decide;
 
-    }
-
-    private final String str(byte[] obj) {
-        return (obj == null)?"*":new String(obj);
     }
 
     @SuppressWarnings("boxing")
@@ -138,9 +141,10 @@ public final class FreezeProof {
         pid = in.getInt();
         eid = in.getLong();
         round = in.getInt();
-        weak = SerialisationHelper.readByteArray(in);
-        strong = SerialisationHelper.readByteArray(in);
-        decide = SerialisationHelper.readByteArray(in);
+		value = SerialisationHelper.readByteArray(in);
+        weak = in.get() == 1;
+        strong = in.get() == 1;
+        decide = in.get() == 1;
     }
 
     @SuppressWarnings("boxing")
@@ -148,59 +152,73 @@ public final class FreezeProof {
         out.putInt(pid);
         out.putLong(eid);
         out.putInt(round);
-        SerialisationHelper.writeByteArray(weak, out);
-        SerialisationHelper.writeByteArray(strong, out);
-        SerialisationHelper.writeByteArray(decide, out);
+		SerialisationHelper.writeByteArray(value, out);
+        out.put(weak ? (byte) 1 : 0);
+		out.put(strong ? (byte) 1 : 0);
+		out.put(decide ? (byte) 1 : 0);
     }
     
     public int getMsgSize(){
 		//5*integer (2 fields 3 arrays), 1* long, 3 arrays
-    	return 28 + (weak != null ? weak.length : 0)
-				+ (strong != null ? strong.length : 0)
-				+ (decide != null ? decide.length : 0);
+    	return 21 + (value != null ? value.length : 0);
+//				+ (weak != null ? weak.length : 0)
+//				+ (strong != null ? strong.length : 0)
+//				+ (decide != null ? decide.length : 0);
     }
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
+
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + Arrays.hashCode(decide);
-		result = prime * result + eid.hashCode();
-		result = prime * result + pid.hashCode();
-		result = prime * result + round.hashCode();
-		result = prime * result + Arrays.hashCode(strong);
-		result = prime * result + Arrays.hashCode(weak);
-		return result;
+		int hash = 7;
+		hash = 59 * hash + (this.pid != null ? this.pid.hashCode() : 0);
+		hash = 59 * hash + (this.eid != null ? this.eid.hashCode() : 0);
+		hash = 59 * hash + (this.round != null ? this.round.hashCode() : 0);
+		hash = 59 * hash + Arrays.hashCode(this.value);
+		hash = 59 * hash + (this.weak ? 1 : 0);
+		hash = 59 * hash + (this.strong ? 1 : 0);
+		hash = 59 * hash + (this.decide ? 1 : 0);
+		return hash;
 	}
+	
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
+		if (obj == null) {
 			return false;
-		if (!(obj instanceof FreezeProof))
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		FreezeProof other = (FreezeProof) obj;
-		if (!Arrays.equals(decide, other.decide))
+		}
+		final FreezeProof other = (FreezeProof) obj;
+		if (this.pid != other.pid && (this.pid == null || !this.pid.equals(other.pid))) {
 			return false;
-		if (!eid.equals(other.eid))
+		}
+		if (this.eid != other.eid && (this.eid == null || !this.eid.equals(other.eid))) {
 			return false;
-		if (!pid.equals(other.pid))
+		}
+		if (this.round != other.round && (this.round == null || !this.round.equals(other.round))) {
 			return false;
-		if (!round.equals(other.round))
+		}
+		if (!Arrays.equals(this.value, other.value)) {
 			return false;
-		if (!Arrays.equals(strong, other.strong))
+		}
+		if (this.weak != other.weak) {
 			return false;
-		if (!Arrays.equals(weak, other.weak))
+		}
+		if (this.strong != other.strong) {
 			return false;
+		}
+		if (this.decide != other.decide) {
+			return false;
+		}
 		return true;
 	}
+	
 }
 
