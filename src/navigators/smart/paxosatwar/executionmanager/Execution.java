@@ -158,8 +158,8 @@ public class Execution {
 	/**
 	 * The currently processed round
 	 */
-	public Integer getCurrentRound (){
-		return currentRound;
+	public Round getCurrentRound(){
+		return rounds.get(currentRound);
 	}
 	
 	/**
@@ -187,7 +187,7 @@ public class Execution {
      * @param value The decided value
      * @param round The round at which a decision was made
      */
-    @SuppressWarnings({"unchecked", "unchecked"})
+    @SuppressWarnings({"unchecked"})
 	public void decided(Round round/*, byte[] value*/) {
         if (!decided) {
             decided = true;

@@ -159,8 +159,8 @@ public final class FreezeProof {
     }
     
     public int getMsgSize(){
-		//5*integer (2 fields 3 arrays), 1* long, 3 arrays
-    	return 21 + (value != null ? value.length : 0);
+		//3*integer (2 fields 1 arrays), 1* long, 1 arrays, 3 bytes
+    	return 23 + (value != null ? value.length : 0);
 //				+ (weak != null ? weak.length : 0)
 //				+ (strong != null ? strong.length : 0)
 //				+ (decide != null ? decide.length : 0);

@@ -126,31 +126,24 @@ public class Acceptor {
 
 			Round round = execution.getRound(msg.getRound());
 			
-			if(!round.isFrozen()){
-
-				switch (msg.getPaxosType()) {
-					case MessageFactory.PROPOSE:
-						proposeReceived(round, (Propose) msg);
-						break;
-					case MessageFactory.WEAK:
-						weakAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
-						break;
-					case MessageFactory.STRONG:
-						strongAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
-						break;
-					case MessageFactory.DECIDE:
-						decideReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
-						break;
-					case MessageFactory.FREEZE:
-						//Handled below in all cases
-						break;
-					default:
-						log.severe("Unknowm Messagetype received: "+msg);
-				}
-			}
-			//Handle freeze in all cases
-			if (msg.getPaxosType() == MessageFactory.FREEZE) {
-				freezeReceived(round, msg.getSender());
+			switch (msg.getPaxosType()) {
+				case MessageFactory.PROPOSE:
+					proposeReceived(round, (Propose) msg);
+					break;
+				case MessageFactory.WEAK:
+					weakAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
+					break;
+				case MessageFactory.STRONG:
+					strongAcceptReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
+					break;
+				case MessageFactory.DECIDE:
+					decideReceived(round, msg.getSender(), ((VoteMessage) msg).getValue());
+					break;
+				case MessageFactory.FREEZE:
+					freezeReceived(round, msg.getSender());
+					break;
+				default:
+					log.severe("Unknowm Messagetype received: "+msg);
 			}
 			
 		} finally {
@@ -307,13 +300,16 @@ public class Acceptor {
 			if (deserialised != null) {
 				round.getExecution().getConsensus().setDeserialisedDecision(deserialised);
 
-				if (log.isLoggable(Level.FINER)) {
-					log.finer("sending weak for " + eid);
-				}
+				//Only send msg when not frozen
+				if (!round.isFrozen()) {
+					if (log.isLoggable(Level.FINER)) {
+						log.finer("sending weak for " + eid);
+					}
 
-				round.setWeak(me.intValue(), round.propValueHash);		//set myself as weak acceptor
-				communication.send(manager.getOtherAcceptors(),
-						factory.createWeak(eid, round.getNumber(), round.propValueHash));
+					round.setWeak(me.intValue(), round.propValueHash);		//set myself as weak acceptor
+					communication.send(manager.getOtherAcceptors(),
+							factory.createWeak(eid, round.getNumber(), round.propValueHash));
+				}
 				computeWeak(eid, round, round.propValueHash);		//compute weak if i just sent a weak
 
 			}
@@ -370,12 +366,11 @@ public class Acceptor {
 
 		// shall I send a STRONG message?
 		if (weakAccepted > manager.quorumStrong) {
-			if (!round.isStrongSetted(me.intValue())) {
+			if (!(round.isStrongSetted(me.intValue())||round.isFrozen())) {
 				round.setStrong(me, valuehash);
 				sendStrong(eid, round, valuehash);
 				computeStrong(eid, round, valuehash);
 			}
-
 		}
 	}
 
@@ -474,7 +469,7 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("scheduling timeout of " + round.getTimeout() + " ms for round " + round.getNumber() + " of consensus " + round.getExecution().getId());
 		}
-		if(round.getTimeoutTask() == null) {
+		if(round.getTimeoutTask() == null && !round.isFrozen()) {
 			TimeoutTask task = new TimeoutTask(this, round);
 			ScheduledFuture<?> future = timer.schedule(task, round.getTimeout(), TimeUnit.MILLISECONDS);
 			round.setTimeoutTask(future);

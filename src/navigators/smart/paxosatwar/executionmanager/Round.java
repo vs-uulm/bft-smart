@@ -221,7 +221,7 @@ public class Round {
      */
     public void setWeak(int acceptor, byte[] value) { // TODO: Condicao de corrida?
 		// TODO remove the second check if frozen and throw away all messages except freezes when frozen
-        if (!weakSetted[acceptor] && Arrays.equals(value, propValueHash) && !isFrozen()) { //it can only be setted once
+        if (!weakSetted[acceptor] && Arrays.equals(value, propValueHash)) { //it can only be setted once
             weak[acceptor] = value;
             weakSetted[acceptor] = true;
 			weaks++;
