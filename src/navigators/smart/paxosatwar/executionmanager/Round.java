@@ -251,7 +251,7 @@ public class Round {
      * @param value The value strongly accepted from the specified replica
      */
     public void setStrong(int acceptor, byte[] value) { // TODO: condicao de corrida?
-        if (!strongSetted[acceptor] && Arrays.equals(value, propValueHash) && !isFrozen()) { //it can only be setted once
+        if (!strongSetted[acceptor] && Arrays.equals(value, propValueHash)) { //it can only be setted once
             strong[acceptor] = value;
             strongSetted[acceptor] = true;
 			strongs++;
