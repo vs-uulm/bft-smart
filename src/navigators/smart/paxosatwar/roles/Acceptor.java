@@ -39,7 +39,8 @@ import navigators.smart.tom.util.TOMConfiguration;
  */
 @SuppressWarnings("LoggerStringConcat")
 public class Acceptor {
-
+	
+	public static final Logger msclog = Logger.getLogger("MSCLogger");
 	private static final Logger log = Logger.getLogger(Acceptor.class.getCanonicalName());
 	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(5); // scheduler for timeouts
 	private Integer me; // This replica ID
@@ -164,6 +165,9 @@ public class Acceptor {
 
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("PROPOSE for " + round.getNumber() + "," + round.getExecution().getId() + " received from " + sender);
+		}
+		if (msclog.isLoggable(Level.INFO)){
+			log.info(msg.getSender()+" --> "+conf.getN());
 		}
 
 		// If message's round is 0, and the sender is the leader for the message's round,
@@ -308,6 +312,12 @@ public class Acceptor {
 					}
 
 					round.setWeak(me.intValue(), hash);		//set myself as weak acceptor
+					if (Acceptor.msclog.isLoggable(Level.INFO)) {
+						Integer[] acc = manager.getOtherAcceptors();
+						for (int i = 0; i < acc.length; i++) {
+							log.info(conf.getN() + " >-- " + acc[i] + " W"+eid);
+						}
+					}
 					communication.send(manager.getOtherAcceptors(),
 							factory.createWeak(eid, round.getNumber(), hash));
 				}
@@ -384,6 +394,12 @@ public class Acceptor {
 	private void sendStrong(final Long eid, final Round round, final byte[] valuehash) {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("Sending STRONG for " + eid);
+		}
+		if (Acceptor.msclog.isLoggable(Level.INFO)) {
+			Integer[] acc = manager.getOtherAcceptors();
+			for (int i = 0; i < acc.length; i++) {
+				log.info(conf.getN() + " >-- " + acc[i] + " S" + eid);
+			}
 		}
 		communication.send(manager.getOtherAcceptors(),
 				factory.createStrong(eid, round.getNumber(), valuehash));
@@ -529,6 +545,12 @@ public class Acceptor {
 		if (!round.isTimeout()) {
 			Statistics.stats.timeout();
 			round.setTimeout();
+			if (Acceptor.msclog.isLoggable(Level.INFO)) {
+				Integer[] acc = manager.getAcceptors();
+				for (int i = 0; i < acc.length; i++) {
+					log.info(conf.getN() + " >-- " + acc[i] + " W"+round.getExecution().getId());
+				}
+			}
 			communication.send(manager.getAcceptors(),
 					factory.createFreeze(round.getExecution().getId(), round.getNumber()));
 		}

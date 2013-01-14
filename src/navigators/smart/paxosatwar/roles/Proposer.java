@@ -77,6 +77,12 @@ public class Proposer {
      * @param value Value to be proposed
      */
     public void startExecution(Long eid, byte[] value) {
+		if (Acceptor.msclog.isLoggable(Level.INFO)){
+			Integer[] acc = manager.getOtherAcceptors();
+			for (int i = 0; i < acc.length; i++) {
+				log.info(conf.getN()+" >-- "+acc[i]+ " P"+eid);
+			}
+		}
         communication.send(manager.getAcceptors(),
                 factory.createPropose(eid, Round.ROUND_ZERO, value, null));
     }
