@@ -466,10 +466,10 @@ public class Acceptor {
 	 * @param round Round to be associated with the timeout
 	 */
 	private void scheduleTimeout(Round round) {
-		if (log.isLoggable(Level.FINER)) {
-			log.finer("scheduling timeout of " + round.getTimeout() + " ms for round " + round.getNumber() + " of consensus " + round.getExecution().getId());
-		}
 		if(round.getTimeoutTask() == null && !round.isFrozen()) {
+			if (log.isLoggable(Level.FINER)) {
+				log.finer("scheduling timeout of " + round.getTimeout() + " ms for round " + round.getNumber() + " of consensus " + round.getExecution().getId());
+			}
 			TimeoutTask task = new TimeoutTask(this, round);
 			ScheduledFuture<?> future = timer.schedule(task, round.getTimeout(), TimeUnit.MILLISECONDS);
 			round.setTimeoutTask(future);
