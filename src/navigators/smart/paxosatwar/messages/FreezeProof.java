@@ -20,7 +20,6 @@ package navigators.smart.paxosatwar.messages;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-
 import navigators.smart.tom.util.SerialisationHelper;
 
 /**

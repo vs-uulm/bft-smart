@@ -156,10 +156,10 @@ public class Execution {
     }
 	
 	/**
-	 * The currently processed round
+	 * The number of the currently processed round
 	 */
-	public Round getCurrentRound(){
-		return rounds.get(currentRound);
+	public Integer getCurrentRoundNumber(){
+		return currentRound;
 	}
 	
 	/**
@@ -193,8 +193,8 @@ public class Execution {
             decided = true;
             decisionRound = round.getNumber();
         }
-        if(round.propValue != null){
-            consensus.decided(round.propValue,decisionRound);
+        if(round.getPropValue() != null){
+            consensus.decided(round.getPropValue(),decisionRound);
             
             manager.getTOMLayer().decided(consensus);
         }

@@ -51,9 +51,8 @@ public class Round {
 	private boolean isTimeout = false; // Was a timeout sent for this round?
     private boolean alreadyRemoved = false; // indicates if this round was removed from its execution
 
-    public byte[] propValue = null; // proposed value
-//    public Object deserializedPropValue = null; //utility var
-    public byte[] propValueHash = null; // proposed value hash
+    private byte[] propValue = null; // proposed value
+    private byte[] propValueHash = null; // proposed value hash
     public CollectProof[] proofs; // proof from other processes
     
     /**
@@ -99,6 +98,36 @@ public class Round {
         //define the timeout for this round
         this.timeout = (int) Math.pow(2, number) * timeout;
     }
+	
+	/**
+	 * Sets the value to be decided upon in this round. Also 
+	 * counts the already processed weaks if matching this
+	 * proposed value
+	 * @param propValue The proposed value
+	 * @param propValueHash The hash of the proposed value
+	 */
+	public void setpropValue(byte[] propValue, byte[] propValueHash){
+		this.propValue = propValue;
+		this.propValueHash = propValueHash;
+		weaks = count(weakSetted,weak,propValue);
+		strongs = count(strongSetted,strong,propValue);
+	}
+	
+	/**
+	 * 
+	 * @return The proposed value if set, null otherwise
+	 */
+	public byte[] getPropValue(){
+		return propValue;
+	}
+	
+	/**
+	 * 
+	 * @return The hash of the proposed value, null otherwise
+	 */
+	public byte[] getPropValueHash() {
+		return propValueHash;
+	}
 
     /**
      * Set this round as removed from its execution
@@ -219,12 +248,15 @@ public class Round {
      * @param acceptor The replica ID
      * @param value The value weakly accepted from the specified replica
      */
-    public void setWeak(int acceptor, byte[] value) { // TODO: Condicao de corrida?
-		// TODO remove the second check if frozen and throw away all messages except freezes when frozen
-        if (!weakSetted[acceptor] && Arrays.equals(value, propValueHash)) { //it can only be setted once
+    public void setWeak(int acceptor, byte[] value) { 
+		//it can only be setted once and only if it fits the proposed value if yet received
+        if (!weakSetted[acceptor] && ( propValueHash == null  || Arrays.equals(value, propValueHash))) { 
             weak[acceptor] = value;
             weakSetted[acceptor] = true;
-			weaks++;
+			// Increase count only when we have received a valid propose for this round
+			if(propValueHash != null){
+				weaks++;
+			}
         }
     }
 
@@ -250,11 +282,14 @@ public class Round {
      * @param acceptor The replica ID
      * @param value The value strongly accepted from the specified replica
      */
-    public void setStrong(int acceptor, byte[] value) { // TODO: condicao de corrida?
-        if (!strongSetted[acceptor] && Arrays.equals(value, propValueHash)) { //it can only be setted once
+    public void setStrong(int acceptor, byte[] value) { 
+		//it can only be setted once and only if it fits the proposed value if yet received, otherwise count later
+        if (!strongSetted[acceptor] && ( propValueHash == null  || Arrays.equals(value, propValueHash))) { 
             strong[acceptor] = value;
             strongSetted[acceptor] = true;
-			strongs++;
+			if(propValueHash != null){
+				strongs++;
+			}
         }
     }
 
@@ -375,24 +410,24 @@ public class Round {
 //        return count(null,decide, value);
 //    }
 
-//    /**
-//     * Counts how many times 'value' occurs in 'array'
-//     * @param array Array where to count
-//     * @param value Value to count
-//     * @return Ammount of times that 'value' was find in 'array'
-//     */
-//    private int count(boolean[] arraySetted,byte[][] array, byte[] value) {
-//        if (value != null) {
-//            int counter = 0;
-//            for (int i = 0; i < array.length; i++) {
-//                if (arraySetted != null && arraySetted[i] && Arrays.equals(value, array[i])) {
-//                    counter++;
-//                }
-//            }
-//            return counter;
-//        }
-//        return 0;
-//    }
+    /**
+     * Counts how many times 'value' occurs in 'array'
+     * @param array Array where to count
+     * @param value Value to count
+     * @return Ammount of times that 'value' was find in 'array'
+     */
+    private int count(boolean[] arraySetted,byte[][] array, byte[] value) {
+        if (value != null) {
+            int counter = 0;
+            for (int i = 0; i < array.length; i++) {
+                if (arraySetted != null && arraySetted[i] && Arrays.equals(value, array[i])) {
+                    counter++;
+                }
+            }
+            return counter;
+        }
+        return 0;
+    }
 	
 	/**
 	 * Indicates wheter a timeout was already sent for this round

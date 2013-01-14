@@ -185,7 +185,8 @@ public class RequestHandler extends Thread {
 	private boolean canPropose(){
 		boolean leader, ready;
 		//Check if i'm the leader
-		leader = lm.getLeader(execManager.getExecution(nextExecution)).equals(conf.getProcessId());
+		Integer nextLeader = lm.getLeader(execManager.getExecution(nextExecution));
+		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
 			//there are messages to be ordered and no consensus is in execution 
 		ready = tomlayer.clientsManager.hasPendingRequests() && isIdle();
 

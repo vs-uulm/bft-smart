@@ -147,7 +147,7 @@ public class LeaderModule {
      * @return The replica ID of the leader
      */
     public Integer getLeader(Execution exec) {
-        return getLeader(exec.getId(), exec.getCurrentRound().getNumber());
+        return getLeader(exec.getId(), exec.getCurrentRoundNumber());
     }
 
     /**

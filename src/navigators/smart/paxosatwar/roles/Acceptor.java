@@ -284,9 +284,9 @@ public class Acceptor {
 		
 		scheduleTimeout(round);
 
-		if (round.propValue == null) {
-			round.propValue = value;
-			round.propValueHash = tomlayer.computeHash(value);
+		if (round.getPropValue() == null) {
+			byte[] hash = tomlayer.computeHash(value);
+			round.setpropValue(value, hash);
 			
 			if(round.getExecution().isDecided()){
 				round.getExecution().decided(round);
@@ -306,11 +306,11 @@ public class Acceptor {
 						log.finer("sending weak for " + eid);
 					}
 
-					round.setWeak(me.intValue(), round.propValueHash);		//set myself as weak acceptor
+					round.setWeak(me.intValue(), hash);		//set myself as weak acceptor
 					communication.send(manager.getOtherAcceptors(),
-							factory.createWeak(eid, round.getNumber(), round.propValueHash));
+							factory.createWeak(eid, round.getNumber(), hash));
 				}
-				computeWeak(eid, round, round.propValueHash);		//compute weak if i just sent a weak
+				computeWeak(eid, round, hash);		//compute weak if i just sent a weak
 
 			}
 		}
@@ -614,7 +614,7 @@ public class Acceptor {
 	 * @return A freez proof
 	 */
 	private FreezeProof createProof(Long eid, Round r) {
-		return new FreezeProof(me, eid, r.getNumber(), r.propValue, r.getWeak(me.intValue()) != null,
+		return new FreezeProof(me, eid, r.getNumber(), r.getPropValue(), r.getWeak(me.intValue()) != null,
 				r.getStrong(me.intValue())!= null, r.getDecide(me.intValue())!= null);
 	}
 
@@ -628,7 +628,7 @@ public class Acceptor {
 		if (conf.isDecideMessagesEnabled()) {
 			round.setDecide(me.intValue(), value);
 			communication.send(manager.getOtherAcceptors(),
-					factory.createDecide(eid, round.getNumber(), round.propValue));
+					factory.createDecide(eid, round.getNumber(), round.getPropValueHash()));
 		}
 
 		leaderModule.decided(round.getExecution().getId(), leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
