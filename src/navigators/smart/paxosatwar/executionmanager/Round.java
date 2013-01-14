@@ -44,6 +44,7 @@ public class Round {
     private byte[][] weak; // weakling accepted values from other processes
     private byte[][] strong; // strongly accepted values from other processes
     private byte[][] decide; // values decided by other processes
+	private boolean decided = false; // Is this round decided
     private Collection<Integer> freeze = null; // processes where this round was freezed
     private boolean frozen = false; // is this round frozen?
     private boolean collected = false; // indicates if a collect message for this round was already sent
@@ -514,6 +515,14 @@ public class Round {
 		if (!number.equals(other.number))
 			return false;
 		return true;
+	}
+	
+	public boolean isDecided(){
+		return decided;
+	}
+	
+	public void decided(){
+		decided = true;
 	}
 
 }

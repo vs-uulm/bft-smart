@@ -36,7 +36,7 @@ public class Execution {
     private HashMap<Integer,Round> rounds = new HashMap<Integer,Round>(2);
     private ReentrantLock roundsLock = new ReentrantLock(); // Lock for concurrency control
 
-    private boolean decided; // Is this execution decided?
+//    private boolean decided; // Is this execution decided?
     private long initialTimeout; // Initial timeout for rounds
     private Integer decisionRound = Integer.valueOf(-1); // round at which a desision was made
 	private Integer currentRound = ROUND_ZERO; //Currently active round
@@ -175,7 +175,7 @@ public class Execution {
      * @return True if it is decided, false otherwise
      */
     public boolean isDecided() {
-        return decided;
+        return decisionRound != -1;
     }
 
     /**
@@ -189,8 +189,7 @@ public class Execution {
      */
     @SuppressWarnings({"unchecked"})
 	public void decided(Round round/*, byte[] value*/) {
-        if (!decided) {
-            decided = true;
+        if (decisionRound == -1) {
             decisionRound = round.getNumber();
         }
         if(round.getPropValue() != null){

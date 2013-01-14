@@ -288,9 +288,10 @@ public class Acceptor {
 			byte[] hash = tomlayer.computeHash(value);
 			round.setpropValue(value, hash);
 			
-			if(round.getExecution().isDecided()){
-				round.getExecution().decided(round);
-			}
+			//TODO Check if this was needed.
+//			if(round.getExecution().getDecisionRound().equals(round)){
+//				round.getExecution().decided(round);
+//			}
 
 			//start this execution if it is not already running
 			if (eid.intValue() == requesthandler.getLastExec().intValue() + 1) {
@@ -357,7 +358,7 @@ public class Acceptor {
 		}
 
 		// Can I go straight to decided state?
-		if (weakAccepted > manager.quorumFastDecide && !round.getExecution().isDecided()) {
+		if (weakAccepted > manager.quorumFastDecide && !round.isDecided()) {
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Deciding " + eid + " with weaks");
 			}
@@ -422,7 +423,7 @@ public class Acceptor {
 					+ " strongs for " + eid + "," + round.getNumber());
 		}
 
-		if (strongAccepted > manager.quorum2F && !round.getExecution().isDecided()) {
+		if (strongAccepted > manager.quorum2F && !round.isDecided()) {
 
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Deciding " + eid + " with strongs");
@@ -446,14 +447,14 @@ public class Acceptor {
 		}
 		round.setDecide(sender, value);
 
-		if (round.countDecide() > manager.quorumF && !round.getExecution().isDecided()) {
+		if (round.countDecide() > manager.quorumF && !round.isDecided()) {
 			if (log.isLoggable(Level.FINER)) {
 				log.finer("Deciding " + eid);
 			}
 			decide(eid, round, value);
-		} else if (round.getExecution().isDecided()) {
+		} else if (round.isDecided()) {
 			if (log.isLoggable(Level.FINER)) {
-				log.finer("consensus " + eid + " already decided.");
+				log.finer("consensus " + eid + "round "+round.getNumber()+" already decided.");
 			}
 		}
 	}
@@ -495,7 +496,7 @@ public class Acceptor {
 		}
 		//System.out.println(round);
 
-		if (!round.getExecution().isDecided() && !round.isRemoved()/*isFrozen()*/) {
+		if (!round.isDecided() && !round.isRemoved()/*isFrozen()*/) {
 			// Send freeze msg to all acceptors including me
 			checkFreezeMsg(round);
 			doFreeze(round);
@@ -633,6 +634,7 @@ public class Acceptor {
 
 		leaderModule.decided(round.getExecution().getId(), leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
 		round.getTimeoutTask().cancel(false);
+		round.decided();
 		round.getExecution().decided(round);
 	}
 

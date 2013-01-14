@@ -445,7 +445,8 @@ public final class ExecutionManager{
 						if (execution.isDecided()) {
 							if(log.isLoggable(Level.FINER))
 								log.finer(" execution " + eid + " decided.");
-							break;
+							//break; //Should not break here if freezes occurred
+							//TODO round checking could be useful but is probably not possible
 						}
 					}
 					if(log.isLoggable(Level.FINER))
