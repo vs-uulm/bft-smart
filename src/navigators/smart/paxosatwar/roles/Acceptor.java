@@ -37,7 +37,7 @@ import navigators.smart.tom.util.TOMConfiguration;
  *
  * @author Alysson Bessani
  */
-@SuppressWarnings("LoggerStringConcat")
+@SuppressWarnings({"LoggerStringConcat", "ClassWithMultipleLoggers"})
 public class Acceptor {
 	
 	public static final Logger msclog = Logger.getLogger("MSCLogger");
@@ -166,8 +166,8 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("PROPOSE for " + round.getNumber() + "," + round.getExecution().getId() + " received from " + sender);
 		}
-		if (msclog.isLoggable(Level.INFO)){
-			log.info(msg.getSender()+" --> "+conf.getN());
+		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
+			msclog.log(Level.INFO,"{0} --> {1} P{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
 
 		// If message's round is 0, and the sender is the leader for the message's round,
@@ -315,7 +315,7 @@ public class Acceptor {
 					if (Acceptor.msclog.isLoggable(Level.INFO)) {
 						Integer[] acc = manager.getOtherAcceptors();
 						for (int i = 0; i < acc.length; i++) {
-							log.info(conf.getN() + " >-- " + acc[i] + " W"+eid);
+							msclog.log(Level.INFO,"{0} >-- {1} W{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,round.getNumber()});
 						}
 					}
 					communication.send(manager.getOtherAcceptors(),
@@ -339,6 +339,9 @@ public class Acceptor {
 		Long eid = round.getExecution().getId();
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("WEAK from " + sender + " for consensus " + eid);
+		}
+		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
+			msclog.log(Level.INFO,"{0} --> {1} W{2}-{3}", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
 		}
 		round.setWeak(sender, value);
 		computeWeak(eid, round, value);
@@ -398,7 +401,7 @@ public class Acceptor {
 		if (Acceptor.msclog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
 			for (int i = 0; i < acc.length; i++) {
-				log.info(conf.getN() + " >-- " + acc[i] + " S" + eid);
+				msclog.log(Level.INFO,"{0} >-- {1} S{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,round.getNumber()});
 			}
 		}
 		communication.send(manager.getOtherAcceptors(),
@@ -418,6 +421,9 @@ public class Acceptor {
 		Long eid = round.getExecution().getId();
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("STRONG from " + sender + " for consensus " + eid);
+		}
+		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
+			msclog.log(Level.INFO,"{0} --> {1} S{2}-{3}", new Object[] { sender,conf.getProcessId(),eid,round.getNumber()});
 		}
 		round.setStrong(sender, value);
 		computeStrong(eid, round, value);
@@ -510,7 +516,6 @@ public class Acceptor {
 		if (log.isLoggable(Level.INFO)) {
 			log.info("TIMEOUT for round " + round.getNumber() + " of consensus " + execution.getId());
 		}
-		//System.out.println(round);
 
 		if (!round.isDecided() && !round.isRemoved()/*isFrozen()*/) {
 			// Send freeze msg to all acceptors including me
@@ -531,6 +536,9 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("received freeze from " + sender + " for " + round.getNumber() + " of consensus " + round.getExecution().getId());
 		}
+		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()){
+			msclog.log(Level.INFO,"{0} --> {1} F{2}-{3}", new Object[] {sender,conf.getProcessId(), round.getExecution().getId(),round.getNumber()});
+		}
 		round.addFreeze(sender);
 		if (round.countFreeze() > manager.quorumF) {
 			if (!round.isFrozen()){
@@ -546,9 +554,9 @@ public class Acceptor {
 			Statistics.stats.timeout();
 			round.setTimeout();
 			if (Acceptor.msclog.isLoggable(Level.INFO)) {
-				Integer[] acc = manager.getAcceptors();
+				Integer[] acc = manager.getOtherAcceptors();
 				for (int i = 0; i < acc.length; i++) {
-					log.info(conf.getN() + " >-- " + acc[i] + " W"+round.getExecution().getId());
+					msclog.log(Level.INFO,"{0} >-- {1} F{2}-{3}", new Object[] {conf.getProcessId(), acc[i],round.getExecution().getId(),round.getNumber()});
 				}
 			}
 			communication.send(manager.getAcceptors(),
@@ -579,7 +587,9 @@ public class Acceptor {
 		//if there is more than f+1 timeouts
 		if (round.countFreeze() > manager.quorumF && !round.isCollected()) {
 			round.collect();
-			round.getTimeoutTask().cancel(false);
+			if (round.getTimeoutTask() != null){
+				round.getTimeoutTask().cancel(false);
+			}
 
 			Execution exec = round.getExecution();
 			exec.nextRound();	//Set active round to next round
@@ -619,6 +629,7 @@ public class Acceptor {
 				} else {
 					CollectProof clProof = new CollectProof(createProof(exec.getId(), round), null, newLeader);
 					verifier.sign(clProof);
+					msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
 					communication.send(new Integer[]{newLeader}, factory.createCollect(exec.getId(), round.getNumber(), clProof));
 				}
 			} else {
@@ -648,6 +659,10 @@ public class Acceptor {
 	 * @param value The decided value (got from WEAK or STRONG messages)
 	 */
 	private void decide(Long eid, Round round, byte[] value) {
+		if(msclog.isLoggable(Level.INFO)){
+			msclog.log(Level.INFO, "{0} note: {1}-{2} decided", new Object[]{me,eid,round.getNumber()});
+		}
+		
 		if (conf.isDecideMessagesEnabled()) {
 			round.setDecide(me.intValue(), value);
 			communication.send(manager.getOtherAcceptors(),

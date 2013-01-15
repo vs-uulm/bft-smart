@@ -31,6 +31,7 @@ import navigators.smart.paxosatwar.messages.MessageFactory;
 import navigators.smart.paxosatwar.messages.Proof;
 import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
+import static navigators.smart.paxosatwar.roles.Acceptor.msclog;
 
 
 /**
@@ -77,10 +78,11 @@ public class Proposer {
      * @param value Value to be proposed
      */
     public void startExecution(Long eid, byte[] value) {
-		if (Acceptor.msclog.isLoggable(Level.INFO)){
+		if (msclog.isLoggable(Level.INFO)){
 			Integer[] acc = manager.getOtherAcceptors();
+			msclog.log(Level.INFO,"#Starting {0}-{1}",new Object[]{eid,0});
 			for (int i = 0; i < acc.length; i++) {
-				log.info(conf.getN()+" >-- "+acc[i]+ " P"+eid);
+				msclog.log(Level.INFO,"{0} >-- {1} P{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,0});
 			}
 		}
         communication.send(manager.getAcceptors(),
@@ -109,8 +111,11 @@ public class Proposer {
         if (log.isLoggable(Level.FINER)) {
 			log.log(Level.FINER, "COLLECT for {0},{1} received.", new Object[]{msg.getNumber(), msg.getRound()});
 		}
-
+		
         Execution execution = manager.getExecution(msg.getNumber());
+		
+		msclog.log(Level.INFO,"{0} --> {1} C{2}-{3}", new Object[] {msg.getSender(),conf.getProcessId(),execution.getId(),msg.getRound()});
+		
         execution.lock.lock();
 
         CollectProof cp =  msg.getProof();
@@ -157,6 +162,13 @@ public class Proposer {
                     byte[] nextProp = verifier.getGoodValue(round.proofs, false);
 
                     manager.getRequestHandler().imAmTheLeader();
+					
+					if (msclog.isLoggable(Level.INFO)){
+						Integer[] acc = manager.getOtherAcceptors();
+						for (int i = 0; i < acc.length; i++) {
+							msclog.log(Level.INFO,"{0} >-- {1} P{2}-{3}", new Object[] {conf.getProcessId(), acc[i],execution.getId(),nextRoundNumber});
+						}
+					}
 
                     communication.send(manager.getAcceptors(),
                             factory.createPropose(execution.getId(), nextRoundNumber,

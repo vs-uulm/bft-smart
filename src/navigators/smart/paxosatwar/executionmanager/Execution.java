@@ -20,6 +20,8 @@ package navigators.smart.paxosatwar.executionmanager;
 
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import navigators.smart.consensus.MeasuringConsensus;
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
@@ -28,6 +30,8 @@ import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
  * This class stands for an execution of a consensus
  */
 public class Execution {
+	
+	public static final Logger log = Logger.getLogger(Execution.class.getCanonicalName());
 
     private ExecutionManager manager; // Execution manager for this execution
 
@@ -103,6 +107,7 @@ public class Execution {
 
         Round round = rounds.get(number);
         if(round == null && create){
+			log.log(Level.FINER,"Creating round {0} for Execution {1}",new Object[]{number,consensus.getId()});
             round = new Round(this, number, initialTimeout);
             rounds.put(number, round);
         }
