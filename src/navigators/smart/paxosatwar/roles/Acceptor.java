@@ -602,6 +602,9 @@ public class Acceptor {
 				//define the leader for the next round: (previous_leader + 1) % N
 				Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
 				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
+				
+				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",new Object[]{me,newLeader,exec.getId(),nextRound.getNumber()});
+				
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("new leader for the next round of consensus is " + newLeader);
 				}
