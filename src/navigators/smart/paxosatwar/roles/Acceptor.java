@@ -126,7 +126,9 @@ public class Acceptor {
 			execution.lock.lock();
 
 			Round round = execution.getRound(msg.getRound());
-			
+
+			// Messages must also be processed when the round is frozen, otherwise we would need decide messages to prevent single frozen
+			// replicas from beeing blocked
 			switch (msg.getPaxosType()) {
 				case MessageFactory.PROPOSE:
 					proposeReceived(round, (Propose) msg);
@@ -144,9 +146,9 @@ public class Acceptor {
 					freezeReceived(round, msg.getSender());
 					break;
 				default:
-					log.severe("Unknowm Messagetype received: "+msg);
+					log.severe("Unknowm Messagetype received: " + msg);
 			}
-			
+
 		} finally {
 			execution.lock.unlock();
 		}
@@ -609,32 +611,25 @@ public class Acceptor {
 					log.finer("new leader for the next round of consensus is " + newLeader);
 				}
 
-				if (exec.isDecided()) { //Does this process already decided a value?
-					//Even if I already decided, I should move to the next round to prevent
-					//process that not decided yet from blocking
+				FreezeProof thisroundproof = createProof(exec.getId(), round);
+				FreezeProof lastroundproof = null;
+				//Does this process already decided a value?
+				//Even if I already decided, I should move to the next round to prevent
+				//process that not decided yet from blocking
+				if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
 
-					Round decisionRound = exec.getDecisionRound();
-
-					//If the decision was reached on a previous round
-					if (round.getNumber() > decisionRound.getNumber()) {
-						Execution nextExec = manager.getExecution(exec.getId() + 1);
-						Round last = nextExec.getLastRound();
-						last.freeze();
-
-						CollectProof clProof = new CollectProof(createProof(exec.getId(), round),
-								createProof(exec.getId() + 1l, last), newLeader);
-
-						verifier.sign(clProof);
-
-						communication.send(new Integer[]{newLeader},
-								factory.createCollect(exec.getId(), round.getNumber(), clProof));
-					}
-				} else {
-					CollectProof clProof = new CollectProof(createProof(exec.getId(), round), null, newLeader);
-					verifier.sign(clProof);
-					msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
-					communication.send(new Integer[]{newLeader}, factory.createCollect(exec.getId(), round.getNumber(), clProof));
+					Execution nextExec = manager.getExecution(exec.getId() + 1);
+					Round last = nextExec.getLastRound();
+					lastroundproof = createProof(exec.getId() + 1l, last);
 				}
+				
+				CollectProof clProof = new CollectProof(thisroundproof,
+						lastroundproof, newLeader);
+
+				verifier.sign(clProof);
+				msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
+				communication.send(new Integer[]{newLeader},
+						factory.createCollect(exec.getId(), round.getNumber(), clProof));
 			} else {
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("I'm already executing round " + round.getNumber() + 1);
