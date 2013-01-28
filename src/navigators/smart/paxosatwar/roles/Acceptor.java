@@ -570,6 +570,9 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("freezing round " + round.getNumber() + " of execution " + round.getExecution().getId());
 		}
+		
+		msclog.log(Level.INFO, "{0} note: freezing Round: {1}, {2}-{3}",new Object[]{me,round.getExecution().getId(),round.getNumber()});
+		
 		round.freeze();
 		
 	}
@@ -595,46 +598,52 @@ public class Acceptor {
 
 			Execution exec = round.getExecution();
 			exec.nextRound();	//Set active round to next round
-			Round nextRound = exec.getRound(round.getNumber() + 1,false);
+			Round nextRound = exec.getRound(round.getNumber() + 1);
 
-			if (nextRound == null) { //If the next round does not yet exist
-				//create the next round
-				nextRound = exec.getRound(round.getNumber() + 1);
-				scheduleTimeout(nextRound);
-				//define the leader for the next round: (previous_leader + 1) % N
-				Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
+//			if (nextRound == null) { //If the next round does not yet exist
+//				//create the next round
+//				nextRound = exec.getRound(round.getNumber() + 1);
+//			}
+			// schedule TO if not scheduled yet
+			scheduleTimeout(nextRound);
+			
+			Integer currentLeader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
+			//define the leader for the next round: (previous_leader + 1) % N
+			Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
+			if(currentLeader != newLeader){
 				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
-				
 				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",new Object[]{me,newLeader,exec.getId(),nextRound.getNumber()});
-				
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("new leader for the next round of consensus is " + newLeader);
 				}
-
-				FreezeProof thisroundproof = createProof(exec.getId(), round);
-				FreezeProof lastroundproof = null;
-				//Does this process already decided a value?
-				//Even if I already decided, I should move to the next round to prevent
-				//process that not decided yet from blocking
-				if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
-
-					Execution nextExec = manager.getExecution(exec.getId() + 1);
-					Round last = nextExec.getLastRound();
-					lastroundproof = createProof(exec.getId() + 1l, last);
-				}
-				
-				CollectProof clProof = new CollectProof(thisroundproof,
-						lastroundproof, newLeader);
-
-				verifier.sign(clProof);
-				msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
-				communication.send(new Integer[]{newLeader},
-						factory.createCollect(exec.getId(), round.getNumber(), clProof));
-			} else {
-				if (log.isLoggable(Level.FINER)) {
-					log.finer("I'm already executing round " + round.getNumber() + 1);
-				}
 			}
+
+
+
+			FreezeProof thisroundproof = createProof(exec.getId(), round);
+			FreezeProof lastroundproof = null;
+			//Does this process already decided a value?
+			//Even if I already decided, I should move to the next round to prevent
+			//process that not decided yet from blocking
+			if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
+
+				Execution nextExec = manager.getExecution(exec.getId() + 1);
+				Round last = nextExec.getLastRound();
+				lastroundproof = createProof(exec.getId() + 1l, last);
+			}
+
+			CollectProof clProof = new CollectProof(thisroundproof,
+					lastroundproof, newLeader);
+
+			verifier.sign(clProof);
+			msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
+			communication.send(new Integer[]{newLeader},
+					factory.createCollect(exec.getId(), round.getNumber(), clProof));
+//			} else {
+//				if (log.isLoggable(Level.FINER)) {
+//					log.finer("I'm already executing round " + round.getNumber() + 1);
+//				}
+//			}
 		}
 	}
 
