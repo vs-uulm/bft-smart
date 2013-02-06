@@ -32,6 +32,7 @@ import navigators.smart.paxosatwar.messages.Proof;
 import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 import static navigators.smart.paxosatwar.roles.Acceptor.msclog;
+import static navigators.smart.paxosatwar.roles.Acceptor.msctlog;
 
 
 /**
@@ -115,6 +116,7 @@ public class Proposer {
         Execution execution = manager.getExecution(msg.getNumber());
 		
 		msclog.log(Level.INFO,"{0} --> {1} C{2}-{3}", new Object[] {msg.getSender(),conf.getProcessId(),execution.getId(),msg.getRound()});
+		msclog.log(Level.INFO,"mr| -i C{0}-{1}| p{1}| 4| C{2}-{3}", new Object[] {msg.getSender(),conf.getProcessId(),execution.getId(),msg.getRound()});
 		
         execution.lock.lock();
 
@@ -167,6 +169,12 @@ public class Proposer {
 						Integer[] acc = manager.getOtherAcceptors();
 						for (int i = 0; i < acc.length; i++) {
 							msclog.log(Level.INFO,"{0} >-- {1} P{2}-{3}", new Object[] {conf.getProcessId(), acc[i],execution.getId(),nextRoundNumber});
+						}
+					}
+					if (msctlog.isLoggable(Level.INFO)){
+						Integer[] acc = manager.getOtherAcceptors();
+						for (int i = 0; i < acc.length; i++) {
+							msctlog.log(Level.INFO,"ms| -i P{0}-{1}| p{0}| 0| P{2}-{3}|", new Object[] {conf.getProcessId(), acc[i],execution.getId(),nextRoundNumber});
 						}
 					}
 

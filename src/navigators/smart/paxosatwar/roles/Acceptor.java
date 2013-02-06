@@ -41,6 +41,7 @@ import navigators.smart.tom.util.TOMConfiguration;
 public class Acceptor {
 	
 	public static final Logger msclog = Logger.getLogger("MSCLogger");
+	public static final Logger msctlog = Logger.getLogger("MSCTracer");
 	private static final Logger log = Logger.getLogger(Acceptor.class.getCanonicalName());
 	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(5); // scheduler for timeouts
 	private Integer me; // This replica ID
@@ -168,8 +169,9 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("PROPOSE for " + round.getNumber() + "," + round.getExecution().getId() + " received from " + sender);
 		}
-		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
+		if ( sender != conf.getProcessId()){
 			msclog.log(Level.INFO,"{0} --> {1} P{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
+			msctlog.log(Level.INFO,"mr| -i P{0}-{1}| p{1}| 0| P{2}-{3}|", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
 
 		// If message's round is 0, and the sender is the leader for the message's round,
@@ -320,6 +322,14 @@ public class Acceptor {
 							msclog.log(Level.INFO,"{0} >-- {1} W{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,round.getNumber()});
 						}
 					}
+					if (Acceptor.msctlog.isLoggable(Level.INFO)) {
+						Integer[] acc = manager.getOtherAcceptors();
+						for (int i = 0; i < acc.length; i++) {
+							msctlog.log(Level.INFO,"ms| -i W{0}-{1}| p{0}| 1| W{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
+						}
+					}
+					
+					
 					communication.send(manager.getOtherAcceptors(),
 							factory.createWeak(eid, round.getNumber(), hash));
 				}
@@ -344,6 +354,9 @@ public class Acceptor {
 		}
 		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
 			msclog.log(Level.INFO,"{0} --> {1} W{2}-{3}", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
+		}
+		if (msctlog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
+			msctlog.log(Level.INFO,"mr| -i W{0}-{1}| p{1}| 1| W{2}-{3}|", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
 		}
 		round.setWeak(sender, value);
 		computeWeak(eid, round, value);
@@ -400,10 +413,16 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("Sending STRONG for " + eid);
 		}
-		if (Acceptor.msclog.isLoggable(Level.INFO)) {
+		if (msclog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
 			for (int i = 0; i < acc.length; i++) {
 				msclog.log(Level.INFO,"{0} >-- {1} S{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,round.getNumber()});
+			}
+		}
+		if (msctlog.isLoggable(Level.INFO)) {
+			Integer[] acc = manager.getOtherAcceptors();
+			for (int i = 0; i < acc.length; i++) {
+				msctlog.log(Level.INFO,"ms| -i S{0}-{1}| p{0}| 2| S{2}-{3}|", new Object[] {conf.getProcessId(), acc[i], eid,round.getNumber()});
 			}
 		}
 		communication.send(manager.getOtherAcceptors(),
@@ -426,6 +445,9 @@ public class Acceptor {
 		}
 		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
 			msclog.log(Level.INFO,"{0} --> {1} S{2}-{3}", new Object[] { sender,conf.getProcessId(),eid,round.getNumber()});
+		}
+		if (msctlog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
+			msctlog.log(Level.INFO,"mr| -i S{0}-{1}| p{1}| 2| S{2}-{3}|", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
 		}
 		round.setStrong(sender, value);
 		computeStrong(eid, round, value);
@@ -541,6 +563,9 @@ public class Acceptor {
 		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()){
 			msclog.log(Level.INFO,"{0} --> {1} F{2}-{3}", new Object[] {sender,conf.getProcessId(), round.getExecution().getId(),round.getNumber()});
 		}
+		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()){
+			msctlog.log(Level.INFO,"mr| -i F{0}-{1}| p{1}| 3| F{2}-{3}|", new Object[] {sender,conf.getProcessId(), round.getExecution().getId(),round.getNumber()});
+		}
 		round.addFreeze(sender);
 		if (round.countFreeze() > manager.quorumF) {
 			if (!round.isFrozen()){
@@ -555,10 +580,16 @@ public class Acceptor {
 		if (!round.isTimeout()) {
 			Statistics.stats.timeout();
 			round.setTimeout();
-			if (Acceptor.msclog.isLoggable(Level.INFO)) {
+			if (msclog.isLoggable(Level.INFO)) {
 				Integer[] acc = manager.getOtherAcceptors();
 				for (int i = 0; i < acc.length; i++) {
 					msclog.log(Level.INFO,"{0} >-- {1} F{2}-{3}", new Object[] {conf.getProcessId(), acc[i],round.getExecution().getId(),round.getNumber()});
+				}
+			}
+			if (msctlog.isLoggable(Level.INFO)) {
+				Integer[] acc = manager.getOtherAcceptors();
+				for (int i = 0; i < acc.length; i++) {
+					msctlog.log(Level.INFO,"ms| -i F{0}-{1}| p{0}| 3| F{2}-{3}|", new Object[] {conf.getProcessId(), acc[i],round.getExecution().getId(),round.getNumber()});
 				}
 			}
 			communication.send(manager.getAcceptors(),
@@ -571,7 +602,8 @@ public class Acceptor {
 			log.finer("freezing round " + round.getNumber() + " of execution " + round.getExecution().getId());
 		}
 		
-		msclog.log(Level.INFO, "{0} note: freezing Round: {1}, {2}-{3}",new Object[]{me,round.getExecution().getId(),round.getNumber()});
+		msclog.log(Level.INFO, "{0} note: freezing Round: {1}-{2}",new Object[]{me,round.getExecution().getId(),round.getNumber()});
+		msctlog.log(Level.INFO, "ps| p{0}| freezing Round: {1}-{2}|",new Object[]{me,round.getExecution().getId(),round.getNumber()});
 		
 		round.freeze();
 		
@@ -613,6 +645,7 @@ public class Acceptor {
 			if(currentLeader != newLeader){
 				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
 				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",new Object[]{me,newLeader,exec.getId(),nextRound.getNumber()});
+				msclog.log(Level.INFO, "ps| p{0}| New leader:{1}  {2}-{3}|",new Object[]{me,newLeader,exec.getId(),nextRound.getNumber()});
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("new leader for the next round of consensus is " + newLeader);
 				}
@@ -626,7 +659,6 @@ public class Acceptor {
 			//Even if I already decided, I should move to the next round to prevent
 			//process that not decided yet from blocking
 			if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
-
 				Execution nextExec = manager.getExecution(exec.getId() + 1);
 				Round last = nextExec.getLastRound();
 				lastroundproof = createProof(exec.getId() + 1l, last);
@@ -637,6 +669,7 @@ public class Acceptor {
 
 			verifier.sign(clProof);
 			msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
+			msctlog.log(Level.INFO,"ms| -i C{0}-{1}| p{0}| 4| C{2}-{3}|", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
 			communication.send(new Integer[]{newLeader},
 					factory.createCollect(exec.getId(), round.getNumber(), clProof));
 //			} else {
@@ -669,6 +702,8 @@ public class Acceptor {
 		if(msclog.isLoggable(Level.INFO)){
 			msclog.log(Level.INFO, "{0} note: {1}-{2} decided", new Object[]{me,eid,round.getNumber()});
 		}
+		
+		msctlog.log(Level.INFO, "ps| p{0}| Deciding Round {1}-{2}|",new Object[]{me,round.getExecution().getId(),round.getNumber()});
 		
 		if (conf.isDecideMessagesEnabled()) {
 			round.setDecide(me.intValue(), value);
