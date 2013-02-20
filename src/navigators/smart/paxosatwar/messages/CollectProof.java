@@ -18,10 +18,10 @@
 
 package navigators.smart.paxosatwar.messages;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-
+import java.util.LinkedList;
+import java.util.List;
 import navigators.smart.tom.util.SerialisationHelper;
 
 /**
@@ -31,10 +31,7 @@ import navigators.smart.tom.util.SerialisationHelper;
 public final class CollectProof {
 
     // Proofs to freezed consensus
-    private final FreezeProof proofIn;
-
-    // Proofs to next consensus, if have next - after the freezed one
-    private final FreezeProof proofNext;
+    private final List<FreezeProof> proofIn;
 
     // The new leader id
     private final Integer newLeader;
@@ -49,25 +46,19 @@ public final class CollectProof {
      * @param proofNext Proofs to next consensus, if have next - after the freezed one
      * @param newLeader The new leader id
      */
-    public CollectProof(FreezeProof proofIn, FreezeProof proofNext, Integer newLeader) {
+    public CollectProof(List<FreezeProof> proofIn, Integer newLeader) {
 
         this.proofIn = proofIn;
-        this.proofNext = proofNext;
         this.newLeader = newLeader;
 
     }
     
     /**
      * Retrieves the proof
-     * @param in True for the proof of the freezed consensus, false for the proof of the next consensus
-     * @return
+     * @return The list of proofs
      */
-    public FreezeProof getProofs(boolean in){
-        if(in){
-            return this.proofIn;
-        }else{
-            return this.proofNext;
-        }
+    public List<FreezeProof> getProofs(){
+		return this.proofIn;
     }
     
     /**
@@ -83,8 +74,11 @@ public final class CollectProof {
     @SuppressWarnings("boxing")
    public CollectProof(ByteBuffer in) {
 		
-		proofIn = (in.get() == 1) ? new FreezeProof(in) : null;
-		proofNext = (in.get() == 1) ? new FreezeProof(in) : null;
+		int size = in.getInt();
+		proofIn = new LinkedList<FreezeProof>();
+		for(int i = 0;i<size;i++){
+			proofIn.add(new FreezeProof(in));
+		}
 		newLeader = in.getInt();
 		signature = SerialisationHelper.readByteArray(in);
 		
@@ -101,34 +95,31 @@ public final class CollectProof {
 	
 	
     public int getMsgSize(){
-		//2 for the indicators if proofin and proofnext exist
+		// the size of all proofs + 4 for the size of th signature + the signature length
     	return getProofsSize() + 4 + signature.length;
     }
 	
 	
 	private int getProofsSize(){
-		return 2 // presence indicator bytes
-				+ (proofIn != null ? proofIn.getMsgSize() : 0)
-				+ (proofNext != null ? proofNext.getMsgSize():0)
-				+ 4; // newleader
+		int size = 0;
+		for(FreezeProof p:proofIn){
+			size += p.getMsgSize();
+		}
+		return size	
+				+ 4 // newleader
+				+ 4; //Number of proofs
 	}
 
     public byte[] getBytes() {
         if(serialisedForm == null){
         	ByteBuffer buf = ByteBuffer.allocate(getProofsSize());
            //serialise without signature
-           if(proofIn != null){
-				buf.put((byte)1);
-				proofIn.serialise(buf);
-			} else {
-				buf.put((byte)0);
+          
+			buf.putInt(proofIn.size());
+			for(FreezeProof p:proofIn){
+				p.serialise(buf);
 			}
-			if(proofNext != null) {
-				buf.put((byte)1);
-				proofNext.serialise(buf);
-			} else {
-				buf.put((byte)0);
-			}
+			
 				
             buf.putInt(newLeader.intValue());
             serialisedForm = buf.array();
@@ -153,7 +144,6 @@ public final class CollectProof {
 		int result = 1;
 		result = prime * result + newLeader.hashCode();
 		result = prime * result + ((proofIn == null) ? 0 : proofIn.hashCode());
-		result = prime * result + ((proofNext == null) ? 0 : proofNext.hashCode());
 		result = prime * result + Arrays.hashCode(serialisedForm);
 		result = prime * result + Arrays.hashCode(signature);
 		return result;
@@ -177,11 +167,6 @@ public final class CollectProof {
 			if (other.proofIn != null)
 				return false;
 		} else if (!proofIn.equals(other.proofIn))
-			return false;
-		if (proofNext == null) {
-			if (other.proofNext != null)
-				return false;
-		} else if (!proofNext.equals(other.proofNext))
 			return false;
 		if (!Arrays.equals(serialisedForm, other.serialisedForm))
 			return false;

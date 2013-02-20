@@ -16,6 +16,8 @@
 package navigators.smart.paxosatwar.roles;
 
 import java.security.SignedObject;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -651,21 +653,22 @@ public class Acceptor {
 				}
 			}
 
-
-
-			FreezeProof thisroundproof = createProof(exec.getId(), round);
-			FreezeProof lastroundproof = null;
-			//Does this process already decided a value?
-			//Even if I already decided, I should move to the next round to prevent
-			//process that not decided yet from blocking
-			if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
-				Execution nextExec = manager.getExecution(exec.getId() + 1);
-				Round last = nextExec.getLastRound();
-				lastroundproof = createProof(exec.getId() + 1l, last);
+			List<FreezeProof> proofs = new LinkedList<FreezeProof>();
+			for(Round r : exec.getRounds()){
+				proofs.add(createProof(exec.getId(), round));
 			}
+			
+//			TODO Remove this commented code
+//			//Does this process already decided a value?
+//			//Even if I already decided, I should move to the next round to prevent
+//			//process that not decided yet from blocking
+//			if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
+//				Execution nextExec = manager.getExecution(exec.getId() + 1);
+//				Round last = nextExec.getLastRound();
+//				lastroundproof = createProof(exec.getId() + 1l, last);
+//			}
 
-			CollectProof clProof = new CollectProof(thisroundproof,
-					lastroundproof, newLeader);
+			CollectProof clProof = new CollectProof(proofs, newLeader);
 
 			verifier.sign(clProof);
 			msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
