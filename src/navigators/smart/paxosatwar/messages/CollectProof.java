@@ -31,7 +31,7 @@ import navigators.smart.tom.util.SerialisationHelper;
 public final class CollectProof {
 
     // Proofs to freezed consensus
-    private final List<FreezeProof> proofIn;
+    private final LinkedList<FreezeProof> proofIn;
 
     // The new leader id
     private final Integer newLeader;
@@ -46,8 +46,10 @@ public final class CollectProof {
      * @param proofNext Proofs to next consensus, if have next - after the freezed one
      * @param newLeader The new leader id
      */
-    public CollectProof(List<FreezeProof> proofIn, Integer newLeader) {
-
+    public CollectProof(LinkedList<FreezeProof> proofIn, Integer newLeader) {
+		if(proofIn == null){
+			throw new NullPointerException("Null freezeprooflist not allowed");
+		}
         this.proofIn = proofIn;
         this.newLeader = newLeader;
 
@@ -57,7 +59,7 @@ public final class CollectProof {
      * Retrieves the proof
      * @return The list of proofs
      */
-    public List<FreezeProof> getProofs(){
+    public LinkedList<FreezeProof> getProofs(){
 		return this.proofIn;
     }
     

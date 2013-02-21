@@ -194,7 +194,7 @@ public class Acceptor {
 					leaderModule.addLeaderInfo(eid, msg.getRound(), sender);
 
 					// Is the proposed value good according to the PaW algorithm?
-					if (value != null && (verifier.good(value, collected, true))) {
+					if (value != null && (verifier.good(value, collected, msg.getRound()))) {
 						executePropose(round, value);
 					} else if (checkAndDiscardConsensus(eid, collected, true)) {
 						leaderModule.addLeaderInfo(eid, 0, sender);
