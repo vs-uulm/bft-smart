@@ -242,7 +242,7 @@ public final class ExecutionManager{
 		try{
 			// This lock is required to block the addition of messages during ooc processing
 			outOfContextLock.lock();
-			Long consId = msg.getNumber();
+			Long consId = msg.getEid();
 			Long lastConsId = requesthandler.getLastExec();
 
 
@@ -296,7 +296,7 @@ public final class ExecutionManager{
 				}
 			} else if ((requesthandler.isIdle() && lastConsId.longValue() == -1 
 					&& consId.longValue() >= (lastConsId.longValue() + revivalHighMark))			// Replica is revived and idle TODO this is an unclear case
-					|| (consId.longValue() >= (lastConsId.longValue() + paxosHighMark))) {			// Message is beyond highmark
+					|| (consId.longValue()> 0 && consId.longValue() >= (lastConsId.longValue() + paxosHighMark))) {			// Message is beyond highmark
 				if (log.isLoggable(Level.FINE)) {
 					log.fine(msg + " is beyond the paxos highmark, adding it to ooc set and checking if state transfer is needed");
 				}
@@ -470,12 +470,12 @@ public final class ExecutionManager{
         /******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
 
 		if (m.getPaxosType() == MessageFactory.PROPOSE) {
-			outOfContextProposes.put(m.getNumber(), (Propose) m);
+			outOfContextProposes.put(m.getEid(), (Propose) m);
 		} else {
-			List<PaxosMessage> messages = outOfContext.get(m.getNumber());
+			List<PaxosMessage> messages = outOfContext.get(m.getEid());
 			if (messages == null) {
 				messages = new LinkedList<PaxosMessage>();
-				outOfContext.put(m.getNumber(), messages);
+				outOfContext.put(m.getEid(), messages);
 			}
 			messages.add(m);
 

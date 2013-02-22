@@ -27,9 +27,6 @@ import java.util.Map;
 
 /**
  * This is the super-class for all other kinds of messages created by JBP
- * TODO: Apenas sao criados objectos de sub-classes desta. Porque na otornar esta class abstract?
- * TODO: Esta classe nao se enquadra melhor no package de comunicacao?
- * 
  */
 
 public abstract class SystemMessage {

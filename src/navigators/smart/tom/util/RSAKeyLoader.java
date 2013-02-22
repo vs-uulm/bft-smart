@@ -87,7 +87,7 @@ public class RSAKeyLoader {
 
     /**
      * Loads the private key of this process
-     * TODO select private key from config file ...
+     * TODO select private key from property in config file ...
      * @return the PrivateKey loaded from config/keys/publickey<conf.getProcessId()>
      * @throws Exception problems reading or parsing the key
      */

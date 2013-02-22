@@ -373,7 +373,7 @@ public class ServerConnection {
 
 								if (sm.getSender() == remoteId) {
 									if (!inQueue.offer(sm)) {
-										navigators.smart.tom.util.Logger.println("(ReceiverThread.run) in queue full (message from " + remoteId + " discarded).");
+										log.severe("Inqueue full (message from " + remoteId + " discarded).");
 									}
 								}
 							} else {

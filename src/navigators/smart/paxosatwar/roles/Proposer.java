@@ -109,84 +109,90 @@ public class Proposer {
      * @param msg the collectReceived message
      */
     private void collectReceived(Collect msg) {
-        if (log.isLoggable(Level.FINER)) {
-			log.log(Level.FINER, "COLLECT for {0},{1} received.", new Object[]{msg.getNumber(), msg.getRound()});
-		}
-		
-        Execution execution = manager.getExecution(msg.getNumber());
-		
-		msclog.log(Level.INFO,"{0} --> {1} C{2}-{3}", new Object[] {msg.getSender(),conf.getProcessId(),execution.getId(),msg.getRound()});
-		msclog.log(Level.INFO,"mr| -i C{0}-{1}| p{1}| 4| C{2}-{3}", new Object[] {msg.getSender(),conf.getProcessId(),execution.getId(),msg.getRound()});
-		
-        execution.lock.lock();
-
+        Execution execution = manager.getExecution(msg.getEid());
         CollectProof cp =  msg.getProof();
-
-        if (cp != null && verifier.validSignature(cp, msg.getSender().intValue())) {
-//            CollectProof cp = null;
-//            try {
-//                cp = (CollectProof) proof.getObject();
-//            } catch (Exception e) {
-//                e.printStackTrace(System.out);
-//            }
-
-            if (log.isLoggable(Level.FINEST)) {
-               log.log(Level.FINEST, " signed COLLECT for {0},{1} received.", 
-					   new Object[]{msg.getNumber(), msg.getRound()});
-			}
-            
-            if ((cp.getProofs(true) != null) &&
-                    // the received proof (that the round was frozen) should be valid
-                    verifier.validProof(execution.getId(), msg.getRound(), cp.getProofs(true)) &&
-                    // this replica is the current leader
-                    (cp.getLeader() == conf.getProcessId())) {
-
-                Integer nextRoundNumber = Integer.valueOf(msg.getRound().intValue() + 1);
-
-                if (log.isLoggable(Level.FINEST)) {
-                    log.log(Level.FINEST, "Valid COLLECT for starting {0},{1} received.", 
-							new Object[]{execution.getId(), nextRoundNumber});
+        
+		// Logging outputs for logfile and message sequence chart logs
+		if (log.isLoggable(Level.FINER)) {
+			log.log(Level.FINER, "COLLECT for {0},{1} received.", 
+					new Object[]{msg.getEid(), msg.getRound()});
+		}
+		msclog.log(Level.INFO, "{0} --> {1} C{2}-{3}",
+				new Object[]{msg.getSender(), conf.getProcessId(),
+					execution.getId(), msg.getRound()});
+		msctlog.log(Level.INFO, "mr| -i C{0}-{1}| p{1}| 4| C{2}-{3}",
+				new Object[]{msg.getSender(), conf.getProcessId(),
+					execution.getId(), msg.getRound()});
+		
+		try {
+			execution.lock.lock();
+			if (cp != null && verifier.validSignature(cp, msg.getSender().intValue())) {
+				if (log.isLoggable(Level.FINEST)) {
+					log.log(Level.FINEST, " signed COLLECT for {0},{1} received.",
+							new Object[]{msg.getEid(), msg.getRound()});
 				}
+				if ((cp.getProofs() != null)
+						&& verifier.validCollectProof(execution.getId(),
+						msg.getRound(), cp.getProofs())					// proofs are valid
+						&& (cp.getLeader() == conf.getProcessId())) {	// this is current leader
+					Integer nextRoundNumber = msg.getRound() + 1;
 
-                Round round = execution.getRound(nextRoundNumber);
-                
-                round.setCollectProof(msg.getSender().intValue(),cp);
-
-                if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
-					//Count view changes
-					Statistics.stats.viewChange();
-                    if (log.isLoggable(Level.FINEST)) {
-                        log.log(Level.FINEST, "Proposing for {0},{1}", 
+					if (log.isLoggable(Level.FINEST)) {
+						log.log(Level.FINEST, "Valid COLLECT for starting {0},{1} received.",
 								new Object[]{execution.getId(), nextRoundNumber});
 					}
+					Round round = execution.getRound(nextRoundNumber);
+					round.setCollectProof(msg.getSender(), cp);
 
-                    byte[] inProp = verifier.getGoodValue(round.proofs, true);
-                    byte[] nextProp = verifier.getGoodValue(round.proofs, false);
-
-                    manager.getRequestHandler().imAmTheLeader();
-					
-					if (msclog.isLoggable(Level.INFO)){
-						Integer[] acc = manager.getOtherAcceptors();
-						for (int i = 0; i < acc.length; i++) {
-							msclog.log(Level.INFO,"{0} >-- {1} P{2}-{3}", new Object[] {conf.getProcessId(), acc[i],execution.getId(),nextRoundNumber});
-						}
+					if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
+						createPropose(execution, round);
 					}
-					if (msctlog.isLoggable(Level.INFO)){
-						Integer[] acc = manager.getOtherAcceptors();
-						for (int i = 0; i < acc.length; i++) {
-							msctlog.log(Level.INFO,"ms| -i P{0}-{1}| p{0}| 0| P{2}-{3}|", new Object[] {conf.getProcessId(), acc[i],execution.getId(),nextRoundNumber});
-						}
-					}
-
-                    communication.send(manager.getAcceptors(),
-                            factory.createPropose(execution.getId(), nextRoundNumber,
-                            inProp, new Proof(round.proofs, nextProp)));
-                }
-            }
-        }
-
-        execution.lock.unlock();
+				}
+			}
+		} finally {
+			execution.lock.unlock();
+		}
     }
+	
+	/**
+	 * Creates a Propose with the given proofs and a good value.
+	 * @param execution The current execution
+	 * @param round The new round where to propose
+	 */
+	private void createPropose(Execution execution, Round round) {
+		byte[] inProp = verifier.getGoodValue(round.proofs, round.getNumber()-1);
+		manager.getRequestHandler().imAmTheLeader();
+
+		//Count view changes in statistics
+		Statistics.stats.viewChange();
+		if (log.isLoggable(Level.FINEST)) {
+			log.log(Level.FINEST, "Proposing for {0},{1}",
+					new Object[]{execution.getId(), round.getNumber()});
+		}
+
+		//Log Propose to message sequence chart logfiles
+		if (msclog.isLoggable(Level.INFO)) {
+			Integer[] acc = manager.getOtherAcceptors();
+			for (int i = 0; i < acc.length; i++) {
+				msclog.log(Level.INFO, "{0} >-- {1} P{2}-{3}",
+						new Object[]{conf.getProcessId(), acc[i],
+							execution.getId(), round.getNumber()});
+			}
+		}
+		if (msctlog.isLoggable(Level.INFO)) {
+			Integer[] acc = manager.getOtherAcceptors();
+			for (int i = 0; i < acc.length; i++) {
+				msctlog.log(Level.INFO, "ms| -i P{0}-{1}| p{0}| 0| P{2}-{3}|",
+						new Object[]{conf.getProcessId(), acc[i],
+							execution.getId(), round.getNumber()});
+			}
+		}
+
+		//Send propose
+		communication.send(manager.getAcceptors(),
+				factory.createPropose(execution.getId(), round.getNumber(),
+				inProp, new Proof(round.proofs)));
+	}
 
     /* Not used in JBP, but can be usefull for systems in which there are processes
     that are only proposers

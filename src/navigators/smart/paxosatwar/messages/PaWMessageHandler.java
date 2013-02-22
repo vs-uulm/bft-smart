@@ -4,6 +4,8 @@ import static navigators.smart.paxosatwar.messages.MessageFactory.COLLECT;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import navigators.smart.communication.MessageHandler;
 import navigators.smart.paxosatwar.requesthandler.RequestHandler;
@@ -12,7 +14,6 @@ import navigators.smart.paxosatwar.roles.Proposer;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.core.messages.SystemMessage.Type;
 import navigators.smart.tom.core.timer.messages.RTMessage;
-import navigators.smart.tom.util.Logger;
 
 
 /**
@@ -21,6 +22,7 @@ import navigators.smart.tom.util.Logger;
  */
 public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
     
+	public static final Logger log = Logger.getLogger(PaWMessageHandler.class.getCanonicalName());
     
     private Proposer proposer;
     private Acceptor acceptor;
@@ -55,7 +57,9 @@ public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
             RTMessage rtMsg = (RTMessage) sm;
             //Logger.println("(TOMMessageHandler.processData) RT_MSG received: "+rtMsg);
             reqhandler.deliverTimeoutRequest(rtMsg);
-        }
+        } else {
+			log.log(Level.SEVERE, "Unknown message received {0}", sm);
+		}
     }
 
 	public SystemMessage deserialise(Type type, ByteBuffer buf, Object result) throws ClassNotFoundException, IOException {
@@ -65,7 +69,7 @@ public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
 			case RT_MSG:
 				return new RTMessage(buf);
             default:
-                Logger.println("Received msg for unknown msg type");
+                log.severe("Received msg for unknown msg type");
                 return null;
         }
     }

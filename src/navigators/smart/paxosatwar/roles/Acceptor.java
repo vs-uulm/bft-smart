@@ -1,17 +1,22 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and
+ * the authors indicated in the
  *
  * @author tags
  *
  * This file is part of SMaRt.
  *
- * SMaRt is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * SMaRt is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
 package navigators.smart.paxosatwar.roles;
 
@@ -34,14 +39,15 @@ import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 
 /**
- * This class represents the acceptor role in the paxos protocol. This class work together with the TOMulticastLayer class in order to supply a atomic
+ * This class represents the acceptor role in the paxos protocol. This class
+ * work together with the TOMulticastLayer class in order to supply a atomic
  * multicast service.
  *
  * @author Alysson Bessani
  */
 @SuppressWarnings({"LoggerStringConcat", "ClassWithMultipleLoggers"})
 public class Acceptor {
-	
+
 	public static final Logger msclog = Logger.getLogger("MSCLogger");
 	public static final Logger msctlog = Logger.getLogger("MSCTracer");
 	private static final Logger log = Logger.getLogger(Acceptor.class.getCanonicalName());
@@ -105,7 +111,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called by communication layer to delivery paxos messages. This method only verifies if the message can be executed and calls process message
+	 * Called by communication layer to delivery paxos messages. This method
+	 * only verifies if the message can be executed and calls process message
 	 * (storing it on an out of context message buffer if this is not the case)
 	 *
 	 * @param msg Paxos messages delivered by the comunication layer
@@ -113,17 +120,20 @@ public class Acceptor {
 	public final void deliver(PaxosMessage msg) {
 		if (manager.checkLimits(msg)) {
 			processMessage(msg);
+		} else {
+			log.log(Level.WARNING,"Message {0} failed checkLimits",msg);
 		}
 	}
 
 	/**
-	 * Called when a paxos message is received or when a out of context message must be processed. It processes the received messsage acording to its
+	 * Called when a paxos message is received or when a out of context message
+	 * must be processed. It processes the received messsage acording to its
 	 * type
 	 *
 	 * @param msg The message to be processed
 	 */
 	public void processMessage(PaxosMessage msg) {
-		Execution execution = manager.getExecution(msg.getNumber());
+		Execution execution = manager.getExecution(msg.getEid());
 
 		try {
 			execution.lock.lock();
@@ -158,7 +168,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called when a PROPOSE message is received or when processing a formerly out of context propose which is know belongs to the current execution.
+	 * Called when a PROPOSE message is received or when processing a formerly
+	 * out of context propose which is know belongs to the current execution.
 	 *
 	 * @param msg The PROPOSE message to by processed
 	 */
@@ -167,95 +178,112 @@ public class Acceptor {
 		byte[] value = msg.getValue();
 		Integer sender = msg.getSender();
 		Long eid = round.getExecution().getId();
-
-		if (log.isLoggable(Level.FINER)) {
-			log.finer("PROPOSE for " + round.getNumber() + "," + round.getExecution().getId() + " received from " + sender);
-		}
-		if ( sender != conf.getProcessId()){
-			msclog.log(Level.INFO,"{0} --> {1} P{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
-			msctlog.log(Level.INFO,"mr| -i P{0}-{1}| p{1}| 0| P{2}-{3}|", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
-		}
-
-		// If message's round is 0, and the sender is the leader for the message's round,
-		// execute the propose
 		Integer leader = leaderModule.getLeader(eid, msg.getRound());
+
+		// Log reception
+		if (log.isLoggable(Level.FINER)) {
+			log.finer("PROPOSE for " + round.getNumber() + "," 
+					+ round.getExecution().getId() + " received from " + sender);
+		}
+		if (sender != conf.getProcessId()) {
+			msclog.log(Level.INFO, "{0} --> {1} P{2}-{3}", new Object[]{sender, 
+				conf.getProcessId(), eid, round.getNumber()});
+			msctlog.log(Level.INFO, "mr| -i P{0}-{1}| p{1}| 0| P{2}-{3}|",
+					new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
+		}
+
+		// Proposals in round 0 are always valid and admissible
 		// TODO why is the leader here null sometimes when a state transfer occurred
-		if (msg.getRound().equals(ROUND_ZERO) && leader != null && leader.equals(sender)) {
+		if (msg.getRound().equals(ROUND_ZERO) && leader != null 
+				&& leader.equals(sender)) {
+			log.log(Level.FINE,"Processing propose for {0}-{1} normally",new Object[]{eid,round.getNumber()});
 			executePropose(round, value);
 		} else {
-			Proof proof = msg.getProof();
-			if (proof != null) {
+			log.log(Level.FINE,"Checking propose for {0}-{1} for goodness",new Object[]{eid,round.getNumber()});
+			checkPropose(round, msg);
+		}
+	}
 
-				// Get valid proofs
-				CollectProof[] collected = verifier.checkValid(eid, msg.getRound() - 1, proof.getProofs());
+	private void checkPropose(Round round, Propose msg) {
+		Proof proof = msg.getProof();
+		Long eid = round.getExecution().getId();
 
-				if (verifier.isTheLeader(sender, collected)) { // Is the replica that sent this message the leader?
+		if (proof != null) {
 
-					leaderModule.addLeaderInfo(eid, msg.getRound(), sender);
+			// Get valid proofs
+			CollectProof[] collected = verifier.checkValid(eid, msg.getRound() - 1, proof.getProofs());
 
-					// Is the proposed value good according to the PaW algorithm?
-					if (value != null && (verifier.good(value, collected, msg.getRound()))) {
-						executePropose(round, value);
-					} else if (checkAndDiscardConsensus(eid, collected, true)) {
-						leaderModule.addLeaderInfo(eid, 0, sender);
-					}
+			// check if proposer is valid leader
+			if (verifier.isTheLeader(msg.getSender(), collected)) {
+				leaderModule.addLeaderInfo(eid, msg.getRound(), msg.getSender());
 
-					//Is there a next value to be proposed, and is it good
-					//according to the PaW algorithm
-					if (proof.getNextPropose() != null && verifier.good(proof.getNextPropose(), collected, false)) {
-						Integer nextRoundNumber = verifier.getNextExecRound(collected);
-						if (requesthandler.getInExec().equals(eid + 1)) { // Is this message from the previous execution?
-							Execution nextExecution = manager.getExecution(eid + 1);
-							nextExecution.removeRounds(nextRoundNumber - 1);
-
-							executePropose(nextExecution.getRound(nextRoundNumber), value);
-						} else {
-							nextProp = new AcceptedPropose(eid + 1, round.getNumber(), value, proof);
-						}
-					} else {
-						if (checkAndDiscardConsensus(eid + 1, collected, false)) {
-							leaderModule.addLeaderInfo(eid + 1, 0, sender);
-						}
-					}
+				// Is the proposed value good according to the PaW algorithm?
+				if (msg.getValue() != null && (verifier.good(msg.getValue(), collected, msg.getRound()))) {
+					executePropose(round, msg.getValue());
 				}
+				
+//				else if (checkAndDiscardConsensus(eid, collected, msg.getRound())) {
+//					leaderModule.addLeaderInfo(eid, 0, msg.getSender());
+//				}
+
+//				TODO Why did they handle the next round here ??
+//				//Is there a next value to be proposed, and is it good
+//				//according to the PaW algorithm
+//				if (proof.getNextPropose() != null && verifier.good(proof.getNextPropose(), collected, false)) {
+//					Integer nextRoundNumber = verifier.getNextExecRound(collected);
+//					if (requesthandler.getInExec().equals(eid + 1)) { // Is this message from the previous execution?
+//						Execution nextExecution = manager.getExecution(eid + 1);
+//						nextExecution.removeRounds(nextRoundNumber - 1);
+//
+//						executePropose(nextExecution.getRound(nextRoundNumber), msg.getValue());
+//					} else {
+//						nextProp = new AcceptedPropose(eid + 1, round.getNumber(), value, proof);
+//					}
+//				} else {
+//					if (checkAndDiscardConsensus(eid + 1, collected, false)) {
+//						leaderModule.addLeaderInfo(eid + 1, 0, msg.getSender());
+//					}
+//				}
 			}
 		}
 	}
 
-	/**
-	 * Discards information related to a consensus
-	 *
-	 * @param eid Consensus execution ID
-	 * @param proof
-	 * @param in
-	 * @return true if the leader have to be changed and false otherwise
-	 */
-	@SuppressWarnings("boxing")
-	private boolean checkAndDiscardConsensus(Long eid, CollectProof[] proof, boolean in) {
-		if (requesthandler.getLastExec() < eid) {
-			if (verifier.getGoodValue(proof, in) == null) {
-				//br.ufsc.das.util.//Logger.println("Descartando o consenso "+eid);
-				if (requesthandler.isInExec(eid)) {
-					requesthandler.setIdle();
-				}
-				Execution exec = manager.removeExecution(eid);
-				if (exec != null) {
-					exec.removeRounds(-1);//cancela os timeouts dos rounds
-				}
-				if (requesthandler.getNextExec().equals(eid)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
+//	/**
+//	 * Discards information related to a consensus
+//	 * TODO Remove this
+//	 * @param eid Consensus execution ID
+//	 * @param proof
+//	 * @param in
+//	 * @return true if the leader have to be changed and false otherwise
+//	 */
+//	@SuppressWarnings("boxing")
+//	private boolean checkAndDiscardConsensus(Long eid, CollectProof[] proof, Integer round) {
+//		if (requesthandler.getLastExec() < eid) {
+//			if (verifier.getGoodValue(proof,round) == null) {
+//				//br.ufsc.das.util.//Logger.println("Descartando o consenso "+eid);
+//				if (requesthandler.isInExec(eid)) {
+//					requesthandler.setIdle();
+//				}
+//				Execution exec = manager.removeExecution(eid);
+//				if (exec != null) {
+//					
+//					exec.removeRoundsandCancelTO(-1);//cancela os timeouts dos rounds
+//				}
+//				if (requesthandler.getNextExec().equals(eid)) {
+//					return true;
+//				}
+//			}
+//		}
+//
+//		return false;
+//	}
 
 	/**
 	 * Called by the delivery thread. Executes the next accepted propose.
 	 *
 	 * @param eid Consensus's execution ID
-	 * @return True if there is a next value to be proposed and it belongs to the specified execution, false otherwise
+	 * @return True if there is a next value to be proposed and it belongs to
+	 * the specified execution, false otherwise
 	 */
 	public boolean executeAcceptedPendent(Long eid) {
 		if (nextProp != null && nextProp.eid.equals(eid)) {
@@ -291,13 +319,13 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("executing propose for " + eid + "," + round.getNumber());
 		}
-		
+
 		scheduleTimeout(round);
 
 		if (round.getPropValue() == null) {
 			byte[] hash = tomlayer.computeHash(value);
 			round.setpropValue(value, hash);
-			
+
 			//TODO Check if this was needed.
 //			if(round.getExecution().getDecisionRound().equals(round)){
 //				round.getExecution().decided(round);
@@ -321,17 +349,17 @@ public class Acceptor {
 					if (Acceptor.msclog.isLoggable(Level.INFO)) {
 						Integer[] acc = manager.getOtherAcceptors();
 						for (int i = 0; i < acc.length; i++) {
-							msclog.log(Level.INFO,"{0} >-- {1} W{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,round.getNumber()});
+							msclog.log(Level.INFO, "{0} >-- {1} W{2}-{3}", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
 						}
 					}
 					if (Acceptor.msctlog.isLoggable(Level.INFO)) {
 						Integer[] acc = manager.getOtherAcceptors();
 						for (int i = 0; i < acc.length; i++) {
-							msctlog.log(Level.INFO,"ms| -i W{0}-{1}| p{0}| 1| W{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
+							msctlog.log(Level.INFO, "ms| -i W{0}-{1}| p{0}| 1| W{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
 						}
 					}
-					
-					
+
+
 					communication.send(manager.getOtherAcceptors(),
 							factory.createWeak(eid, round.getNumber(), hash));
 				}
@@ -354,19 +382,20 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("WEAK from " + sender + " for consensus " + eid);
 		}
-		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
-			msclog.log(Level.INFO,"{0} --> {1} W{2}-{3}", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
+		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
+			msclog.log(Level.INFO, "{0} --> {1} W{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
-		if (msctlog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
-			msctlog.log(Level.INFO,"mr| -i W{0}-{1}| p{1}| 1| W{2}-{3}|", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
+		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
+			msctlog.log(Level.INFO, "mr| -i W{0}-{1}| p{1}| 1| W{2}-{3}|", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
 		round.setWeak(sender, value);
 		computeWeak(eid, round, value);
 	}
 
 	/**
-	 * Computes weakly accepted values according to the standard PaW specification (sends STRONG/DECIDE messages, according to the number of weakly
-	 * accepted values received).
+	 * Computes weakly accepted values according to the standard PaW
+	 * specification (sends STRONG/DECIDE messages, according to the number of
+	 * weakly accepted values received).
 	 *
 	 * @param eid Execution ID of the received message
 	 * @param round Round of the receives message
@@ -380,10 +409,10 @@ public class Acceptor {
 			log.finer("I have " + weakAccepted
 					+ " weaks for " + eid + "," + round.getNumber());
 		}
-		
+
 		//Schedule timeout if not yet scheduled when one correct replica indicates
 		//the existance of this round
-		if(weakAccepted > manager.quorumF){
+		if (weakAccepted > manager.quorumF) {
 			scheduleTimeout(round);
 		}
 
@@ -397,7 +426,7 @@ public class Acceptor {
 
 		// shall I send a STRONG message?
 		if (weakAccepted > manager.quorumStrong) {
-			if (!(round.isStrongSetted(me.intValue())||round.isFrozen())) {
+			if (!(round.isStrongSetted(me.intValue()) || round.isFrozen())) {
 				round.setStrong(me, valuehash);
 				sendStrong(eid, round, valuehash);
 				computeStrong(eid, round, valuehash);
@@ -406,7 +435,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Sends a strong message. Depending on the setup of the replica, the sending is delayed to suppress unnecessary strong messages.
+	 * Sends a strong message. Depending on the setup of the replica, the
+	 * sending is delayed to suppress unnecessary strong messages.
 	 *
 	 * @param eid The current execution id
 	 * @param round The current round
@@ -418,13 +448,13 @@ public class Acceptor {
 		if (msclog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
 			for (int i = 0; i < acc.length; i++) {
-				msclog.log(Level.INFO,"{0} >-- {1} S{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,round.getNumber()});
+				msclog.log(Level.INFO, "{0} >-- {1} S{2}-{3}", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
 			}
 		}
 		if (msctlog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
 			for (int i = 0; i < acc.length; i++) {
-				msctlog.log(Level.INFO,"ms| -i S{0}-{1}| p{0}| 2| S{2}-{3}|", new Object[] {conf.getProcessId(), acc[i], eid,round.getNumber()});
+				msctlog.log(Level.INFO, "ms| -i S{0}-{1}| p{0}| 2| S{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
 			}
 		}
 		communication.send(manager.getOtherAcceptors(),
@@ -445,27 +475,28 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("STRONG from " + sender + " for consensus " + eid);
 		}
-		if (msclog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
-			msclog.log(Level.INFO,"{0} --> {1} S{2}-{3}", new Object[] { sender,conf.getProcessId(),eid,round.getNumber()});
+		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
+			msclog.log(Level.INFO, "{0} --> {1} S{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
-		if (msctlog.isLoggable(Level.INFO)&& sender != conf.getProcessId()){
-			msctlog.log(Level.INFO,"mr| -i S{0}-{1}| p{1}| 2| S{2}-{3}|", new Object[] {sender,conf.getProcessId(), eid,round.getNumber()});
+		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
+			msctlog.log(Level.INFO, "mr| -i S{0}-{1}| p{1}| 2| S{2}-{3}|", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
 		round.setStrong(sender, value);
 		computeStrong(eid, round, value);
 	}
 
 	/**
-	 * Computes strongly accepted values according to the standard PaW specification (sends DECIDE messages, according to the number of strongly
+	 * Computes strongly accepted values according to the standard PaW
+	 * specification (sends DECIDE messages, according to the number of strongly
 	 * accepted values received)
 	 *
 	 * @param round Round of the receives message
 	 * @param value Value sent in the message
 	 */
 	private void computeStrong(Long eid, Round round, byte[] value) {
-		
+
 		int strongAccepted = round.countStrong();
-		
+
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("I have " + strongAccepted
 					+ " strongs for " + eid + "," + round.getNumber());
@@ -481,7 +512,8 @@ public class Acceptor {
 	}
 
 	/**
-	 * Called when a DECIDE message is received. Computes decided values according to the standard PaW specification
+	 * Called when a DECIDE message is received. Computes decided values
+	 * according to the standard PaW specification
 	 *
 	 * @param round Round of the receives message
 	 * @param sender Replica that sent the message
@@ -502,20 +534,21 @@ public class Acceptor {
 			decide(eid, round, value);
 		} else if (round.isDecided()) {
 			if (log.isLoggable(Level.FINER)) {
-				log.finer("consensus " + eid + "round "+round.getNumber()+" already decided.");
+				log.finer("consensus " + eid + "round " + round.getNumber() + " already decided.");
 			}
 		}
 	}
 
 	/**
-	 * Schedules a timeout for a given round. It is called by an Execution when a new round is confirmably
-	 * created. This means when a propose arrives, when f+1 weaks or strongs arrive or a round is frozen by
-	 * 2f+1 freeze messages.
+	 * Schedules a timeout for a given round. It is called by an Execution when
+	 * a new round is confirmably created. This means when a propose arrives,
+	 * when f+1 weaks or strongs arrive or a round is frozen by 2f+1 freeze
+	 * messages.
 	 *
 	 * @param round Round to be associated with the timeout
 	 */
 	private void scheduleTimeout(Round round) {
-		if(round.getTimeoutTask() == null && !round.isFrozen()) {
+		if (round.getTimeoutTask() == null && !round.isFrozen()) {
 			if (log.isLoggable(Level.FINER)) {
 				log.finer("scheduling timeout of " + round.getTimeout() + " ms for round " + round.getNumber() + " of consensus " + round.getExecution().getId());
 			}
@@ -530,8 +563,9 @@ public class Acceptor {
 	}
 
 	/**
-	 * This mehod is called by timertasks associated with rounds. It will locally freeze a round, given that is not already frozen, its not decided,
-	 * and is not removed from its execution
+	 * This mehod is called by timertasks associated with rounds. It will
+	 * locally freeze a round, given that is not already frozen, its not
+	 * decided, and is not removed from its execution
 	 *
 	 * @param round
 	 */
@@ -543,7 +577,9 @@ public class Acceptor {
 			log.info("TIMEOUT for round " + round.getNumber() + " of consensus " + execution.getId());
 		}
 
-		if (!round.isDecided() && !round.isRemoved()/*isFrozen()*/) {
+		if (!round.isDecided() && !round.isRemoved()/*
+				 * isFrozen()
+				 */) {
 			// Send freeze msg to all acceptors including me
 			checkFreezeMsg(round);
 			doFreeze(round);
@@ -562,22 +598,22 @@ public class Acceptor {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("received freeze from " + sender + " for " + round.getNumber() + " of consensus " + round.getExecution().getId());
 		}
-		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()){
-			msclog.log(Level.INFO,"{0} --> {1} F{2}-{3}", new Object[] {sender,conf.getProcessId(), round.getExecution().getId(),round.getNumber()});
+		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
+			msclog.log(Level.INFO, "{0} --> {1} F{2}-{3}", new Object[]{sender, conf.getProcessId(), round.getExecution().getId(), round.getNumber()});
 		}
-		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()){
-			msctlog.log(Level.INFO,"mr| -i F{0}-{1}| p{1}| 3| F{2}-{3}|", new Object[] {sender,conf.getProcessId(), round.getExecution().getId(),round.getNumber()});
+		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
+			msctlog.log(Level.INFO, "mr| -i F{0}-{1}| p{1}| 3| F{2}-{3}|", new Object[]{sender, conf.getProcessId(), round.getExecution().getId(), round.getNumber()});
 		}
 		round.addFreeze(sender);
 		if (round.countFreeze() > manager.quorumF) {
-			if (!round.isFrozen()){
+			if (!round.isFrozen()) {
 				doFreeze(round);
 			}
 			checkFreezeMsg(round);
 		}
 		computeFreeze(round);
 	}
-	
+
 	private void checkFreezeMsg(Round round) {
 		if (!round.isTimeout()) {
 			Statistics.stats.timeout();
@@ -585,34 +621,35 @@ public class Acceptor {
 			if (msclog.isLoggable(Level.INFO)) {
 				Integer[] acc = manager.getOtherAcceptors();
 				for (int i = 0; i < acc.length; i++) {
-					msclog.log(Level.INFO,"{0} >-- {1} F{2}-{3}", new Object[] {conf.getProcessId(), acc[i],round.getExecution().getId(),round.getNumber()});
+					msclog.log(Level.INFO, "{0} >-- {1} F{2}-{3}", new Object[]{conf.getProcessId(), acc[i], round.getExecution().getId(), round.getNumber()});
 				}
 			}
 			if (msctlog.isLoggable(Level.INFO)) {
 				Integer[] acc = manager.getOtherAcceptors();
 				for (int i = 0; i < acc.length; i++) {
-					msctlog.log(Level.INFO,"ms| -i F{0}-{1}| p{0}| 3| F{2}-{3}|", new Object[] {conf.getProcessId(), acc[i],round.getExecution().getId(),round.getNumber()});
+					msctlog.log(Level.INFO, "ms| -i F{0}-{1}| p{0}| 3| F{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], round.getExecution().getId(), round.getNumber()});
 				}
 			}
 			communication.send(manager.getAcceptors(),
 					factory.createFreeze(round.getExecution().getId(), round.getNumber()));
 		}
 	}
-	
+
 	private void doFreeze(Round round) {
 		if (log.isLoggable(Level.FINER)) {
 			log.finer("freezing round " + round.getNumber() + " of execution " + round.getExecution().getId());
 		}
-		
-		msclog.log(Level.INFO, "{0} note: freezing Round: {1}-{2}",new Object[]{me,round.getExecution().getId(),round.getNumber()});
-		msctlog.log(Level.INFO, "ps| p{0}| freezing Round: {1}-{2}|",new Object[]{me,round.getExecution().getId(),round.getNumber()});
-		
+
+		msclog.log(Level.INFO, "{0} note: freezing Round: {1}-{2}", new Object[]{me, round.getExecution().getId(), round.getNumber()});
+		msctlog.log(Level.INFO, "ps| p{0}| freezing Round: {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
+
 		round.freeze();
-		
+
 	}
 
 	/**
-	 * Invoked when a timeout for a round is triggered, or when a FREEZE message is received. Computes wether or not to locally freeze this round
+	 * Invoked when a timeout for a round is triggered, or when a FREEZE message
+	 * is received. Computes wether or not to locally freeze this round
 	 * according to the standard PaW specification
 	 *
 	 * @param round Round of the receives message
@@ -625,61 +662,49 @@ public class Acceptor {
 		}
 		//if there is more than f+1 timeouts
 		if (round.countFreeze() > manager.quorumF && !round.isCollected()) {
+			Execution exec = round.getExecution();
+			Round nextRound = exec.getRound(round.getNumber() + 1);
+			
 			round.collect();
-			if (round.getTimeoutTask() != null){
+			if (round.getTimeoutTask() != null) {
 				round.getTimeoutTask().cancel(false);
 			}
 
-			Execution exec = round.getExecution();
 			exec.nextRound();	//Set active round to next round
-			Round nextRound = exec.getRound(round.getNumber() + 1);
 
-//			if (nextRound == null) { //If the next round does not yet exist
-//				//create the next round
-//				nextRound = exec.getRound(round.getNumber() + 1);
-//			}
 			// schedule TO if not scheduled yet
 			scheduleTimeout(nextRound);
-			
 			Integer currentLeader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
+			
 			//define the leader for the next round: (previous_leader + 1) % N
 			Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
-			if(currentLeader != newLeader){
+			if (currentLeader != newLeader) {
 				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
-				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",new Object[]{me,newLeader,exec.getId(),nextRound.getNumber()});
-				msclog.log(Level.INFO, "ps| p{0}| New leader:{1}  {2}-{3}|",new Object[]{me,newLeader,exec.getId(),nextRound.getNumber()});
+				
+				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}", 
+						new Object[]{me, newLeader, exec.getId(), nextRound.getNumber()});
+				msclog.log(Level.INFO, "ps| p{0}| New leader:{1}  {2}-{3}|",
+						new Object[]{me, newLeader, exec.getId(), nextRound.getNumber()});
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("new leader for the next round of consensus is " + newLeader);
 				}
 			}
 
-			List<FreezeProof> proofs = new LinkedList<FreezeProof>();
-			for(Round r : exec.getRounds()){
-				proofs.add(createProof(exec.getId(), round));
+			//Create signed W_s and S_s for all rounds up to this one in order to send them to the new proposer.
+			LinkedList<FreezeProof> proofs = new LinkedList<FreezeProof>();
+			for (Round r : exec.getRounds()) {
+				if(r.getNumber()<nextRound.getNumber()) {	// add only smaller rounds
+					proofs.add(createProof(exec.getId(), round));
+				}
 			}
-			
-//			TODO Remove this commented code
-//			//Does this process already decided a value?
-//			//Even if I already decided, I should move to the next round to prevent
-//			//process that not decided yet from blocking
-//			if (exec.isDecided() && round.getNumber() > exec.getDecisionRound().getNumber()) {
-//				Execution nextExec = manager.getExecution(exec.getId() + 1);
-//				Round last = nextExec.getLastRound();
-//				lastroundproof = createProof(exec.getId() + 1l, last);
-//			}
 
 			CollectProof clProof = new CollectProof(proofs, newLeader);
 
 			verifier.sign(clProof);
-			msclog.log(Level.INFO,"{0} >-- {1} C{2}-{3}", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
-			msctlog.log(Level.INFO,"ms| -i C{0}-{1}| p{0}| 4| C{2}-{3}|", new Object[] {conf.getProcessId(),newLeader,exec.getId(),round.getNumber()});
+			msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), newLeader, exec.getId(), round.getNumber()});
+			msctlog.log(Level.INFO, "ms| -i C{0}-{1}| p{0}| 4| C{2}-{3}|", new Object[]{conf.getProcessId(), newLeader, exec.getId(), round.getNumber()});
 			communication.send(new Integer[]{newLeader},
 					factory.createCollect(exec.getId(), round.getNumber(), clProof));
-//			} else {
-//				if (log.isLoggable(Level.FINER)) {
-//					log.finer("I'm already executing round " + round.getNumber() + 1);
-//				}
-//			}
 		}
 	}
 
@@ -692,7 +717,7 @@ public class Acceptor {
 	 */
 	private FreezeProof createProof(Long eid, Round r) {
 		return new FreezeProof(me, eid, r.getNumber(), r.getPropValue(), r.getWeak(me.intValue()) != null,
-				r.getStrong(me.intValue())!= null, r.getDecide(me.intValue())!= null);
+				r.getStrong(me.intValue()) != null, r.getDecide(me.intValue()) != null);
 	}
 
 	/**
@@ -702,12 +727,12 @@ public class Acceptor {
 	 * @param value The decided value (got from WEAK or STRONG messages)
 	 */
 	private void decide(Long eid, Round round, byte[] value) {
-		if(msclog.isLoggable(Level.INFO)){
-			msclog.log(Level.INFO, "{0} note: {1}-{2} decided", new Object[]{me,eid,round.getNumber()});
+		if (msclog.isLoggable(Level.INFO)) {
+			msclog.log(Level.INFO, "{0} note: {1}-{2} decided", new Object[]{me, eid, round.getNumber()});
 		}
-		
-		msctlog.log(Level.INFO, "ps| p{0}| Deciding Round {1}-{2}|",new Object[]{me,round.getExecution().getId(),round.getNumber()});
-		
+
+		msctlog.log(Level.INFO, "ps| p{0}| Deciding Round {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
+
 		if (conf.isDecideMessagesEnabled()) {
 			round.setDecide(me.intValue(), value);
 			communication.send(manager.getOtherAcceptors(),

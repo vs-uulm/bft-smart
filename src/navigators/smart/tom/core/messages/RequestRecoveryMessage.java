@@ -31,8 +31,7 @@ import navigators.smart.tom.util.TOMUtil;
  */
 public class RequestRecoveryMessage extends SystemMessage {
 
-    //TODO: Nao faz mais sentido chamar a isto "type" ?
-    private int id; // Message type (RR_REQUEST, RR_REPLY, RR_DELIVERED)
+    private int type; // Message type (RR_REQUEST, RR_REPLY, RR_DELIVERED)
     private Integer consId; // Consensus's ID to which the request recover refers to
     private byte[] hash; // Hash of the request being recovered
     private TOMMessage msg; // TOM message containing the request being recovered
@@ -44,7 +43,7 @@ public class RequestRecoveryMessage extends SystemMessage {
     public RequestRecoveryMessage(ByteBuffer in) throws IOException, ClassNotFoundException {
         super(Type.RR_MSG,in);
         consId = in.getInt();
-        id = in.getInt();
+        type = in.getInt();
         hash = SerialisationHelper.readByteArray(in);
 
         msg = new TOMMessage(in);
@@ -58,7 +57,7 @@ public class RequestRecoveryMessage extends SystemMessage {
     public RequestRecoveryMessage(byte[] hash, Integer from) {
         super(Type.RR_MSG,from);
         this.hash = hash;
-        this.id = TOMUtil.RR_REQUEST;
+        this.type = TOMUtil.RR_REQUEST;
     }
 
     /**
@@ -69,7 +68,7 @@ public class RequestRecoveryMessage extends SystemMessage {
     public RequestRecoveryMessage(TOMMessage msg, Integer from) {
         super(Type.RR_MSG,from);
         this.msg = msg;
-        this.id = TOMUtil.RR_REPLY;
+        this.type = TOMUtil.RR_REPLY;
     }
 
     /**
@@ -81,7 +80,7 @@ public class RequestRecoveryMessage extends SystemMessage {
     public RequestRecoveryMessage(byte[] hash, Integer from, Integer consId) {
         super(Type.RR_MSG,from);
         this.hash = hash;
-        this.id = TOMUtil.RR_DELIVERED;
+        this.type = TOMUtil.RR_DELIVERED;
         this.consId = consId;
     }
 
@@ -97,8 +96,8 @@ public class RequestRecoveryMessage extends SystemMessage {
      * Retrieves the message type (RR_REQUEST, RR_REPLY, RR_DELIVERED)
      * @return The message type (RR_REQUEST, RR_REPLY, RR_DELIVERED)
      */
-    public int getId() {
-        return this.id;
+    public int getType() {
+        return this.type;
     }
 
     /**
@@ -124,7 +123,7 @@ public class RequestRecoveryMessage extends SystemMessage {
 
         super.serialise(out);
         out.putInt(consId.intValue());
-        out.putInt(id);
+        out.putInt(type);
 
         SerialisationHelper.writeByteArray(hash, out);
 
@@ -135,7 +134,7 @@ public class RequestRecoveryMessage extends SystemMessage {
 
     @Override
     public String toString() {
-        return "consId=" + getConsId() + ", type=" + getId() + ", from=" + getSender();
+        return "consId=" + getConsId() + ", type=" + getType() + ", from=" + getSender();
     }
 
 	/* (non-Javadoc)

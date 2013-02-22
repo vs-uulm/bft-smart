@@ -16,15 +16,7 @@
 package navigators.smart.statemanagment;
 
 import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -32,14 +24,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * TODO: Não sei se esta classe sera usada. Para já, deixo ficar
- *
- * @author Joao Sousa
+ * Handles the transfer and creation of the application state in case of state
+ * transfers beeing requested.
+ * 
+ * @author Joao Sousa, Christian Spann
  */
 public class StateManager {
 
 	private static final Logger log = Logger.getLogger(StateManager.class.getCanonicalName());
-	public static final Long NOT_WAITING = Long.valueOf(-1l);
+	public static final Long NOT_WAITING = Long.valueOf(-2l);
 	private StateLog statelog;
 	private SenderEids senderEids = null;
 	private SenderStates senderStates = null;
@@ -67,7 +60,7 @@ public class StateManager {
 		this.replica = 0;
 		this.state = null;
 		this.lastEid = -1l;
-		this.waitingEid = -1l;
+		this.waitingEid = NOT_WAITING;
 		this.md = md;
 	}
 

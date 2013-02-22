@@ -18,10 +18,7 @@
 
 package navigators.smart.paxosatwar.messages;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import navigators.smart.tom.util.SerialisationHelper;
 
 /**
  *
@@ -33,18 +30,16 @@ import navigators.smart.tom.util.SerialisationHelper;
 public final class Proof {
 
     private CollectProof[] proofs; // Signed proofs
-    private byte[] nextPropose; // next value to be proposed
+//    private byte[] nextPropose; // next value to be proposed
  
     /**
      * Creates a new instance of Proof
      * @param proofs Signed proofs
      * @param nextPropose Next value to be proposed
      */
-    public Proof(CollectProof[] proofs, byte[] nextPropose) {
-
+    public Proof(CollectProof[] proofs/*, byte[] nextPropose*/) {
         this.proofs = proofs;
-        this.nextPropose = nextPropose;
-
+//        this.nextPropose = nextPropose;
     }
 
     public Proof(ByteBuffer in){
@@ -56,11 +51,13 @@ public final class Proof {
             }
             proofs[pos] = new CollectProof(in);
 		} 
-        nextPropose = SerialisationHelper.readByteArray(in);
+//        nextPropose = SerialisationHelper.readByteArray(in);
     }
 
     /**
-     * TODO this can be shrunken without tags if the length is sent 
+     * Serialises this Proof to the given ByteBuffer. The Buffer is required
+	 * to have at least @see Proof#getMsgSize() Bytes remaining.
+	 * @param out The ByteBuffer to write this object to
      */
     public void serialise(ByteBuffer out) {
         out.putInt(proofs.length);
@@ -71,32 +68,30 @@ public final class Proof {
             }
         }
         out.putInt(-1); //put end tag
-        SerialisationHelper.writeByteArray(nextPropose, out);
+//        SerialisationHelper.writeByteArray(nextPropose, out);
 
     }
     
+	/**
+	 * Returns the message size of this data structure.
+	 * It contains the number of proofs, an integer for the size of each proof, and an end Tag because
+	 * not all CollectProofs may be set and msg size can be shrunk then.
+	 * tag.
+	 * @return 
+	 */
 	public int getMsgSize() {
     	 int ret = 12;
+		 
          for (int i = 0; i < proofs.length; i++) {
              if(proofs[i]!=null){
             	 ret += 4;
             	 ret += proofs[i].getMsgSize();
              }
          }
-        ret += (nextPropose != null) ? nextPropose.length : 0;
+//        ret += (nextPropose != null) ? nextPropose.length : 0;
 		return ret;
 	}
     
-    /**
-     * Retrieves next value to be proposed
-     * @return Next value to be proposed
-     */
-    public byte[] getNextPropose(){
-
-        return this.nextPropose;
-
-    }
-
     /**
      * Retrieves the signed proofs
      * @return Signed proofs

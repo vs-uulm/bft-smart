@@ -148,10 +148,6 @@ public class PaxosAtWarService implements ConsensusService {
 		execmng.deliverState(state);
 	}
 
-//    @Override
-//    public byte[] getState(Consensus<?> cons) {
-//            return lm.getState();
-//    }
 	@Override
 	public void deliveryFinished(Consensus<?> cons) {
 		if (conf.isStateTransferEnabled()) {
@@ -167,13 +163,11 @@ public class PaxosAtWarService implements ConsensusService {
 					byte[] recvstate = tom.getState();
 					statemgr.saveState(cons.getId(), cons.getDecisionRound(), getProposer(cons), lm.getState(), recvstate, tom.computeHash(recvstate));
 
-					//TODO: possivelmente fazer mais alguma coisa
 				} else {
 					if (log.isLoggable(Level.FINER)) {
 						log.finer("Storing message batch in the state log for consensus " + cons.getId());
 					}
 					statemgr.saveBatch(cons.getDecision(), cons.getId(), cons.getDecisionRound(), getProposer(cons));
-					//TODO: possivelmente fazer mais alguma coisa
 				}
 			}
 		}

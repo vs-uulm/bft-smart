@@ -46,7 +46,6 @@ public class SMMessageTest {
 //		TransferableState expResult = null;
 //		TransferableState result = instance.getState();
 //		assertEquals(expResult, result);
-//		// TODO review the generated test code and remove the default call to fail.
 //		fail("The test case is a prototype.");
 //	}
 
@@ -60,7 +59,6 @@ public class SMMessageTest {
 //		int expResult = 0;
 //		int result = instance.getType();
 //		assertEquals(expResult, result);
-//		// TODO review the generated test code and remove the default call to fail.
 //		fail("The test case is a prototype.");
 //	}
 
@@ -74,7 +72,6 @@ public class SMMessageTest {
 //		Long expResult = null;
 //		Long result = instance.getEid();
 //		assertEquals(expResult, result);
-//		// TODO review the generated test code and remove the default call to fail.
 //		fail("The test case is a prototype.");
 //	}
 
@@ -88,7 +85,6 @@ public class SMMessageTest {
 //		int expResult = 0;
 //		int result = instance.getReplica();
 //		assertEquals(expResult, result);
-//		// TODO review the generated test code and remove the default call to fail.
 //		fail("The test case is a prototype.");
 //	}
 
@@ -118,7 +114,6 @@ public class SMMessageTest {
 //		int expResult = 0;
 //		int result = instance.getMsgSize();
 //		assertEquals(expResult, result);
-//		// TODO review the generated test code and remove the default call to fail.
 //		fail("The test case is a prototype.");
 //	}
 }

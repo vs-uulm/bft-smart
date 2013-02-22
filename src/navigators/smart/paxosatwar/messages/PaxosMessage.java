@@ -30,12 +30,12 @@ import navigators.smart.tom.core.messages.SystemMessage;
  */
 public class PaxosMessage extends SystemMessage {
 
-    private Long number; //execution ID for this message TODO: Isto n devia chamar-se 'eid'?
+    private Long eid; //execution ID for this message 
     private Integer round; // Round number to which this message belongs to
     private int paxosType; // Message type
 
     /**
-     * Creates a paxos message. Not used. TODO: Q tal meter isto como private?
+     * Creates a paxos message.
      * @param in 
      * @throws IOException
      */
@@ -43,7 +43,7 @@ public class PaxosMessage extends SystemMessage {
         super(Type.PAXOS_MSG,in);
         
         paxosType = in.getInt();
-		number = Long.valueOf(in.getLong());
+		eid = Long.valueOf(in.getLong());
 		round = Integer.valueOf(in.getInt());
 		
     }
@@ -58,7 +58,7 @@ public class PaxosMessage extends SystemMessage {
         super(SystemMessage.Type.PAXOS_MSG, from);
 
         this.paxosType = paxosType;
-        this.number = id;
+        this.eid = id;
         this.round = round;
 
     }
@@ -70,7 +70,7 @@ public class PaxosMessage extends SystemMessage {
         super.serialise(out);
 
         out.putInt(paxosType);
-		out.putLong(number.longValue());
+		out.putLong(eid.longValue());
 		out.putInt(round.intValue());
 
     }
@@ -97,9 +97,9 @@ public class PaxosMessage extends SystemMessage {
      * Returns the consensus execution ID of this message
      * @return Consensus execution ID of this message
      */
-    public Long getNumber() {
+    public Long getEid() {
 
-        return number;
+        return eid;
 
     }
 
@@ -141,7 +141,7 @@ public class PaxosMessage extends SystemMessage {
     @Override
     public String toString() {
 
-        return "type="+getPaxosVerboseType()+", number="+getNumber()+", round="+getRound()+", from="+getSender();
+        return "type="+getPaxosVerboseType()+", number="+getEid()+", round="+getRound()+", from="+getSender();
 
     }
 
@@ -152,7 +152,7 @@ public class PaxosMessage extends SystemMessage {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + (int) (number.longValue() ^ (number.longValue() >>> 32));
+		result = prime * result + (int) (eid.longValue() ^ (eid.longValue() >>> 32));
 		result = prime * result + paxosType;
 		result = prime * result + round.intValue();
 		return result;
@@ -170,7 +170,7 @@ public class PaxosMessage extends SystemMessage {
 		if (!(obj instanceof PaxosMessage))
 			return false;
 		PaxosMessage other = (PaxosMessage) obj;
-		if (!number.equals(other.number))
+		if (!eid.equals(other.eid))
 			return false;
 		if (paxosType != other.paxosType)
 			return false;

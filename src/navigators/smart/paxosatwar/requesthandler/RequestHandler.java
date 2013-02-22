@@ -256,7 +256,8 @@ public class RequestHandler extends Thread {
 	}
 
 	/**
-	 * Sends a RT-COLLECT message to other processes TODO: Se se o novo leader for este processo, nao e enviada nenhuma mensagem. Isto estara bem
+	 * Sends a RT-COLLECT message to other processes 
+	 * TODO: Se se o novo leader for este processo, nao e enviada nenhuma mensagem. Isto estara bem
 	 * feito?
 	 *
 	 * @param reqId ID of the message which triggered the timeout

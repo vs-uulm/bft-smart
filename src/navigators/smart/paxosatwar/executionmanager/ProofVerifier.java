@@ -269,9 +269,20 @@ public class ProofVerifier {
      * @param proofs Proof to be verified
      * @return True if valid, false otherwise
      */
-    public boolean validProof(Long eid, Integer round, LinkedList<FreezeProof> proofs) {
-        // TODO: nao devia ser 'proof.getRound() <= round'?
-        return (proofs != null) && (proofs.getLast().getEid().equals(eid)) && (proofs.getLast().getRound().equals(round));
+    public boolean validCollectProof(Long eid, Integer round,
+			LinkedList<FreezeProof> proofs) {
+		if (proofs == null){
+			return false;
+		}
+		for(FreezeProof p: proofs){
+			if (!p.getEid().equals(eid)){
+				return false;
+			}
+		}
+		if(!proofs.getLast().getRound().equals(round-1)){
+			return false;
+		}
+        return true;
     }
 
     /**
@@ -289,7 +300,7 @@ public class ProofVerifier {
             for (int i = 0; i < proofs.length; i++) {
                 if (proofs[i] != null
                         && validSignature(proofs[i], i)
-                        && validProof(eid, round, proofs[i].getProofs())) {
+                        && validCollectProof(eid, round, proofs[i].getProofs())) {
                         valid.add(proofs[i]);
                     }
                 }
