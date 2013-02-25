@@ -182,8 +182,8 @@ public class Acceptor {
 
 		// Log reception
 		if (log.isLoggable(Level.FINER)) {
-			log.finer("PROPOSE for " + round.getNumber() + "," 
-					+ round.getExecution().getId() + " received from " + sender);
+			log.finer("PROPOSE for " + round.getExecution().getId() + "," 
+					+ round.getNumber() + " received from " + sender);
 		}
 		if (sender != conf.getProcessId()) {
 			msclog.log(Level.INFO, "{0} --> {1} P{2}-{3}", new Object[]{sender, 
