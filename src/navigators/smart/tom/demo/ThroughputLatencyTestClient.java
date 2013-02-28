@@ -31,6 +31,7 @@ import navigators.smart.communication.client.CommunicationSystemClientSide;
 import navigators.smart.communication.client.CommunicationSystemClientSideFactory;
 import navigators.smart.tom.TOMSender;
 import navigators.smart.tom.core.messages.TOMMessage;
+import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
 
@@ -83,6 +84,9 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
         }
         max=0;
         measurementEpoch = 0;
+		
+		//init statistics
+		Statistics.init(conf);
         
         //create the communication system
         cs = CommunicationSystemClientSideFactory.getCommunicationSystemClientSide(conf);
@@ -93,6 +97,7 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
     public void run(){
         try{
             startlatch.countDown();
+			System.out.println("Waiting for other threads");
             startlatch.await();
             while (measurementEpoch < epochs) {
 //                myId += exec;
@@ -258,21 +263,28 @@ public class ThroughputLatencyTestClient extends TOMSender implements Runnable {
         }
 
         int numThreads = new Integer(args[0]);
+		System.out.println("Number of Threads: "+numThreads);
         
         if(numThreads < 1){
         	System.out.println(" You need at least one thread to run the test!");
         }
         int startId = new Integer(args[1]);
+		System.out.println("Startid: "+startId);
         int numMsgs = new Integer(args[2]);
+		System.out.println("Number of msgs: "+numMsgs);
         epochs = Integer.parseInt(args[3]);
+		System.out.println("Epochs(repetitions): "+epochs);
         int argSize = new Integer(args[4]);
+		System.out.println("Argument size: "+argSize);
         int interval = new Integer(args[5]);
+		System.out.println("Interval "+interval);
         boolean multicast = Boolean.parseBoolean(args[6]);
+		System.out.println("Multicast requests? "+multicast);
 
         Thread[] t = new Thread[numThreads];
         
         startlatch = new CountDownLatch(numThreads);
-
+		
          for (int i=0; i<numThreads; i++){
             TOMConfiguration conf1 = new TOMConfiguration(startId,"./config");
 

@@ -61,10 +61,12 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
         switch (remoteId) {
             case -2:
                 //does nothing, it's a request from the throughput client
+				System.out.println("Received throughput request");
                 break;
 
             case -1:
                 //send back totalOps
+				System.out.println("Received op count request");
                 byte[] command = new byte[12];
                 ByteBuffer buf = ByteBuffer.wrap(command);
                 buf.putInt(-1);
@@ -76,6 +78,7 @@ public class ThroughputLatencyTestServer extends TOMReceiver {
 
             default:
                 //echo msg to client
+				System.out.println("Received echo request");
                 reply = new TOMMessage(id, msg.getSequence(),
                         msg.getContent());
                 cs.send(new Integer[]{msg.getSender()}, reply);

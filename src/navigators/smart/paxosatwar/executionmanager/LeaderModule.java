@@ -111,7 +111,7 @@ public class LeaderModule {
         List<ConsInfo> list = leaderInfos.get(c);
         if (list == null) {
             //there are no information for the execution c
-            //let's see who were the leader of the next execution
+            //let's see who were the leader of the last execution
             list = new LinkedList<ConsInfo>();
             leaderInfos.put(c, list);
 

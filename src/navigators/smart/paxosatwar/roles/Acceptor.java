@@ -188,8 +188,10 @@ public class Acceptor {
 		if (sender != conf.getProcessId()) {
 			msclog.log(Level.INFO, "{0} --> {1} P{2}-{3}", new Object[]{sender, 
 				conf.getProcessId(), eid, round.getNumber()});
-			msctlog.log(Level.INFO, "mr| -i P{0}-{1}| p{1}| 0| P{2}-{3}|",
-					new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
+			String id = String.format("P%1$d-%2$d-%3$d-%4$d",sender,conf.getProcessId(),eid, round.getNumber());
+
+			msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 0| {2}|",
+					new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
 		}
 
 		// Proposals in round 0 are always valid and admissible
@@ -355,7 +357,11 @@ public class Acceptor {
 					if (Acceptor.msctlog.isLoggable(Level.INFO)) {
 						Integer[] acc = manager.getOtherAcceptors();
 						for (int i = 0; i < acc.length; i++) {
-							msctlog.log(Level.INFO, "ms| -i W{0}-{1}| p{0}| 1| W{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
+							String id = String.format("W%1$d-%2$d-%3$d-%4$d",
+									conf.getProcessId(),acc[i],eid, round.getNumber()); 
+							msctlog.log(Level.INFO, "ms| -t #time|"
+									+ " -i {1,number,integer}| 0x{0}| 1| {2}|",
+									new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
 						}
 					}
 
@@ -383,10 +389,14 @@ public class Acceptor {
 			log.finer("WEAK from " + sender + " for consensus " + eid);
 		}
 		if (msclog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
-			msclog.log(Level.INFO, "{0} --> {1} W{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
+			msclog.log(Level.INFO, "{0} --> {1} W{2}-{3}", new Object[]{sender, 
+				conf.getProcessId(), eid, round.getNumber()});
 		}
 		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
-			msctlog.log(Level.INFO, "mr| -i W{0}-{1}| p{1}| 1| W{2}-{3}|", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
+			String id = String.format("W%1$d-%2$d-%3$d-%4$d",sender, 
+					conf.getProcessId(),eid, round.getNumber());
+			msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 1| {2}|", 
+					new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
 		}
 		round.setWeak(sender, value);
 		computeWeak(eid, round, value);
@@ -454,7 +464,11 @@ public class Acceptor {
 		if (msctlog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
 			for (int i = 0; i < acc.length; i++) {
-				msctlog.log(Level.INFO, "ms| -i S{0}-{1}| p{0}| 2| S{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], eid, round.getNumber()});
+				String id = String.format("S%1$d-%2$d-%3$d-%4$d",
+						conf.getProcessId(),acc[i],eid, round.getNumber());
+				msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| "
+						+ "0x{0}| 2| {2}|", new Object[]{conf.getProcessId(),
+							Math.abs(id.hashCode()), id});
 			}
 		}
 		communication.send(manager.getOtherAcceptors(),
@@ -479,7 +493,11 @@ public class Acceptor {
 			msclog.log(Level.INFO, "{0} --> {1} S{2}-{3}", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
 		}
 		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
-			msctlog.log(Level.INFO, "mr| -i S{0}-{1}| p{1}| 2| S{2}-{3}|", new Object[]{sender, conf.getProcessId(), eid, round.getNumber()});
+			String id = String.format("S%1$d-%2$d-%3$d-%4$d",sender, 
+					conf.getProcessId(), eid, round.getNumber());
+			msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}|"
+					+ " 2| {2}|", new Object[]{Math.abs(id.hashCode()), 
+						conf.getProcessId(), id});
 		}
 		round.setStrong(sender, value);
 		computeStrong(eid, round, value);
@@ -602,7 +620,11 @@ public class Acceptor {
 			msclog.log(Level.INFO, "{0} --> {1} F{2}-{3}", new Object[]{sender, conf.getProcessId(), round.getExecution().getId(), round.getNumber()});
 		}
 		if (msctlog.isLoggable(Level.INFO) && sender != conf.getProcessId()) {
-			msctlog.log(Level.INFO, "mr| -i F{0}-{1}| p{1}| 3| F{2}-{3}|", new Object[]{sender, conf.getProcessId(), round.getExecution().getId(), round.getNumber()});
+			String id = String.format("F%1$d-%2$d-%3$d-%4$d", 
+					sender, conf.getProcessId(), round.getExecution().getId(),
+					round.getNumber());
+			msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}|"
+					+ " 3| {2}|", new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
 		}
 		round.addFreeze(sender);
 		if (round.countFreeze() > manager.quorumF) {
@@ -621,13 +643,20 @@ public class Acceptor {
 			if (msclog.isLoggable(Level.INFO)) {
 				Integer[] acc = manager.getOtherAcceptors();
 				for (int i = 0; i < acc.length; i++) {
-					msclog.log(Level.INFO, "{0} >-- {1} F{2}-{3}", new Object[]{conf.getProcessId(), acc[i], round.getExecution().getId(), round.getNumber()});
+					msclog.log(Level.INFO, "{0} >-- {1} F{2}-{3}", 
+							new Object[]{conf.getProcessId(), acc[i], 
+								round.getExecution().getId(), round.getNumber()});
 				}
 			}
 			if (msctlog.isLoggable(Level.INFO)) {
 				Integer[] acc = manager.getOtherAcceptors();
 				for (int i = 0; i < acc.length; i++) {
-					msctlog.log(Level.INFO, "ms| -i F{0}-{1}| p{0}| 3| F{2}-{3}|", new Object[]{conf.getProcessId(), acc[i], round.getExecution().getId(), round.getNumber()});
+					String id = String.format("F%1$d-%2$d-%3$d-%4$d",
+							conf.getProcessId(),acc[i], round.getExecution().getId(), 
+							round.getNumber());
+					msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}|"
+							+ " 0x{0}| 3| {2}|", new Object[]{conf.getProcessId(),
+								Math.abs(id.hashCode()), id});
 				}
 			}
 			communication.send(manager.getAcceptors(),
@@ -641,7 +670,7 @@ public class Acceptor {
 		}
 
 		msclog.log(Level.INFO, "{0} note: freezing Round: {1}-{2}", new Object[]{me, round.getExecution().getId(), round.getNumber()});
-		msctlog.log(Level.INFO, "ps| p{0}| freezing Round: {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
+		msctlog.log(Level.INFO, "ps| -t #time| 0x{0}| freezing Round: {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
 
 		round.freeze();
 
@@ -683,7 +712,7 @@ public class Acceptor {
 				
 				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}", 
 						new Object[]{me, newLeader, exec.getId(), nextRound.getNumber()});
-				msclog.log(Level.INFO, "ps| p{0}| New leader:{1}  {2}-{3}|",
+				msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
 						new Object[]{me, newLeader, exec.getId(), nextRound.getNumber()});
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("new leader for the next round of consensus is " + newLeader);
@@ -702,7 +731,10 @@ public class Acceptor {
 
 			verifier.sign(clProof);
 			msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), newLeader, exec.getId(), round.getNumber()});
-			msctlog.log(Level.INFO, "ms| -i C{0}-{1}| p{0}| 4| C{2}-{3}|", new Object[]{conf.getProcessId(), newLeader, exec.getId(), round.getNumber()});
+			String id = String.format("C%1$d-%2$d-%3$d-%4$d",conf.getProcessId(),
+					newLeader, exec.getId(), round.getNumber());
+			msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}|"
+					+ " 4| {2}|", new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
 			communication.send(new Integer[]{newLeader},
 					factory.createCollect(exec.getId(), round.getNumber(), clProof));
 		}
@@ -731,7 +763,7 @@ public class Acceptor {
 			msclog.log(Level.INFO, "{0} note: {1}-{2} decided", new Object[]{me, eid, round.getNumber()});
 		}
 
-		msctlog.log(Level.INFO, "ps| p{0}| Deciding Round {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
+		msctlog.log(Level.INFO, "ps| -t #time| 0x{0}| Deciding Round {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
 
 		if (conf.isDecideMessagesEnabled()) {
 			round.setDecide(me.intValue(), value);

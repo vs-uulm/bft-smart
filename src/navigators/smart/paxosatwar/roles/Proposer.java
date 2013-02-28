@@ -83,9 +83,24 @@ public class Proposer {
 			Integer[] acc = manager.getOtherAcceptors();
 			msclog.log(Level.INFO,"#Starting {0}-{1}",new Object[]{eid,0});
 			for (int i = 0; i < acc.length; i++) {
-				msclog.log(Level.INFO,"{0} >-- {1} P{2}-{3}", new Object[] {conf.getProcessId(), acc[i],eid,0});
+				msclog.log(Level.INFO,"{0} >-- {1} P{2}-{3}",
+						new Object[] {conf.getProcessId(), acc[i],eid,0});
 			}
 		}
+		
+		if (msctlog.isLoggable(Level.INFO)) {
+			Integer[] acc = manager.getOtherAcceptors();
+			
+			msctlog.log(Level.INFO,"taskChangedState| -t #time| 0x{0}| Proposing P{1}-{2}|",
+					new Object[]{conf.getProcessId(),eid,0});
+			for (int i = 0; i < acc.length; i++) {
+				String id = String.format("P%1$d-%2$d-%3$d-%4$d",conf.getProcessId(),
+					acc[i], eid, 0);
+				msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}| 0| {2}|",
+						new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
+			}
+		}
+		
         communication.send(manager.getAcceptors(),
                 factory.createPropose(eid, Round.ROUND_ZERO, value, null));
     }
@@ -120,9 +135,10 @@ public class Proposer {
 		msclog.log(Level.INFO, "{0} --> {1} C{2}-{3}",
 				new Object[]{msg.getSender(), conf.getProcessId(),
 					execution.getId(), msg.getRound()});
-		msctlog.log(Level.INFO, "mr| -i C{0}-{1}| p{1}| 4| C{2}-{3}",
-				new Object[]{msg.getSender(), conf.getProcessId(),
-					execution.getId(), msg.getRound()});
+		String id = String.format("C%1$d-%2$d-%3$d-%4$d",msg.getSender(), 
+				conf.getProcessId(), execution.getId(), msg.getRound());
+		msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 4| {2}|",
+				new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
 		
 		try {
 			execution.lock.lock();
@@ -173,6 +189,8 @@ public class Proposer {
 		//Log Propose to message sequence chart logfiles
 		if (msclog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
+			msctlog.log(Level.INFO,"taskChangedState| 0x{i}| Proposing P{1}-{2}|\n"
+					,new Object[]{conf.getProcessId(),execution.getId(),0});
 			for (int i = 0; i < acc.length; i++) {
 				msclog.log(Level.INFO, "{0} >-- {1} P{2}-{3}",
 						new Object[]{conf.getProcessId(), acc[i],
@@ -182,9 +200,10 @@ public class Proposer {
 		if (msctlog.isLoggable(Level.INFO)) {
 			Integer[] acc = manager.getOtherAcceptors();
 			for (int i = 0; i < acc.length; i++) {
-				msctlog.log(Level.INFO, "ms| -i P{0}-{1}| p{0}| 0| P{2}-{3}|",
-						new Object[]{conf.getProcessId(), acc[i],
-							execution.getId(), round.getNumber()});
+				String id = String.format("P%1$d-%2$d-%3$d-%4$d",
+				conf.getProcessId(), acc[i], execution.getId(), round.getNumber());
+				msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}| 0| {2}|",
+						new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
 			}
 		}
 
