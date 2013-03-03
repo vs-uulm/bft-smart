@@ -703,19 +703,19 @@ public class Acceptor {
 
 			// schedule TO if not scheduled yet
 			scheduleTimeout(nextRound);
-			Integer currentLeader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
+			Integer currentNextLader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
 			
 			//define the leader for the next round: (previous_leader + 1) % N
-			Integer newLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
-			if (currentLeader != newLeader) {
-				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newLeader);
+			Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
+			if (currentNextLader != newNextLeader) {
+				leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newNextLeader);
 				
 				msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}", 
-						new Object[]{me, newLeader, exec.getId(), nextRound.getNumber()});
+						new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
 				msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
-						new Object[]{me, newLeader, exec.getId(), nextRound.getNumber()});
+						new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
 				if (log.isLoggable(Level.FINER)) {
-					log.finer("new leader for the next round of consensus is " + newLeader);
+					log.finer("new leader for the next round of consensus is " + newNextLeader);
 				}
 			}
 
@@ -727,15 +727,15 @@ public class Acceptor {
 				}
 			}
 
-			CollectProof clProof = new CollectProof(proofs, newLeader);
+			CollectProof clProof = new CollectProof(proofs, newNextLeader);
 
 			verifier.sign(clProof);
-			msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), newLeader, exec.getId(), round.getNumber()});
+			msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), newNextLeader, exec.getId(), round.getNumber()});
 			String id = String.format("C%1$d-%2$d-%3$d-%4$d",conf.getProcessId(),
-					newLeader, exec.getId(), round.getNumber());
+					newNextLeader, exec.getId(), round.getNumber());
 			msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}|"
 					+ " 4| {2}|", new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
-			communication.send(new Integer[]{newLeader},
+			communication.send(new Integer[]{newNextLeader},
 					factory.createCollect(exec.getId(), round.getNumber(), clProof));
 		}
 	}
@@ -770,8 +770,11 @@ public class Acceptor {
 			communication.send(manager.getOtherAcceptors(),
 					factory.createDecide(eid, round.getNumber(), round.getPropValueHash()));
 		}
-
-		leaderModule.decided(round.getExecution().getId(), leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
+		//Set next leader to be the same as this round if not frozen
+		if(!round.isFrozen()){
+			leaderModule.decided(round.getExecution().getId(), 
+					leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
+		}
 		round.getTimeoutTask().cancel(false);
 		round.decided();
 		round.getExecution().decided(round);

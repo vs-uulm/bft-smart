@@ -71,11 +71,11 @@ public class RequestHandler extends Thread {
 
 	}
 
-	public void imAmTheLeader() {
-		leaderLock.lock();
-		iAmLeader.signal();
-		leaderLock.unlock();
-	}
+//	public void imAmTheLeader() {
+//		leaderLock.lock();
+//		iAmLeader.signal();
+//		leaderLock.unlock();
+//	}
 
 	/**
 	 * Sets which consensus was the last to be executed

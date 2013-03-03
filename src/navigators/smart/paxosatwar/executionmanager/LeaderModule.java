@@ -53,16 +53,16 @@ public class LeaderModule {
     }
 
     /**
-     * Adds information about a leader
-     * @param c Consensus where the replica is a leader
+     * Adds or updates information about a leader. 
+     * @param exec Consensus where the replica is a leader
      * @param r Rounds of the consensus where the replica is a leader
      * @param l ID of the leader
      */
-    public final void addLeaderInfo(Long c, Integer r, Integer l) {
-        List<ConsInfo> list = leaderInfos.get(c);
+    public final void addLeaderInfo(Long exec, Integer r, Integer l) {
+        List<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
             list = new LinkedList<ConsInfo>();
-            leaderInfos.put(c, list);
+            leaderInfos.put(exec, list);
         }
         ConsInfo ci = findInfo(list, r);
 
@@ -72,6 +72,31 @@ public class LeaderModule {
             list.add(new ConsInfo(r, l));
         }
     }
+	
+	public void freezeRound(final Long exec, final Integer r, final Integer newLeader){
+		List<ConsInfo> list = leaderInfos.get(exec);		
+		ConsInfo ci = findInfo(list, r);
+		Integer oldleader = null;
+
+        if (ci != null) {
+			oldleader = ci.leaderId;
+            ci.leaderId = newLeader;
+        } else {
+            list.add(new ConsInfo(r, newLeader));
+        }
+		
+		// Check later executions and set new leader
+		long current_exec = exec + 1;
+		
+		while((list = leaderInfos.get(current_exec++)) != null){
+			for(ConsInfo cit: list){
+				// Replace leaders of later executions if they have this current leader
+				if(cit.leaderId.equals(oldleader)){
+					cit.leaderId = newLeader;
+				}
+			}
+		}
+	}
 
     /**
      * Retrieves the tuple for the specified round, given a list of tuples
@@ -103,19 +128,19 @@ public class LeaderModule {
 
     /**
      * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number
-     * @param c consensus's execution ID
+     * @param exec consensus's execution ID
      * @param r Round number for the specified consensus
      * @return The replica ID of the leader
      */
-    public Integer getLeader(Long c, Integer r) {
-        List<ConsInfo> list = leaderInfos.get(c);
+    public Integer getLeader(Long exec, Integer r) {
+        List<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
             //there are no information for the execution c
             //let's see who were the leader of the last execution
             list = new LinkedList<ConsInfo>();
-            leaderInfos.put(c, list);
+            leaderInfos.put(exec, list);
 
-            List<ConsInfo> before = leaderInfos.get(Long.valueOf(c.longValue() - 1));
+            List<ConsInfo> before = leaderInfos.get(Long.valueOf(exec.longValue() - 1));
 
             if (before != null && before.size() > 0) {
                 //the leader for this round will be the leader of the last round of the last successful round
@@ -134,15 +159,15 @@ public class LeaderModule {
 
     /**
      * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number 0
-     * @param c consensus's execution ID
+     * @param exec consensus's execution ID
      * @return The replica ID of the leader
      */
-    public Integer getLeader(Long c) {
-        return getLeader(c, ROUND_ZERO);
+    public Integer getLeader(Long exec) {
+        return getLeader(exec, ROUND_ZERO);
     }
 	
 	/**
-     * Retrieves the replica ID of the leader for the specified consensus's execution ID and last round number
+     * Retrieves the replica ID of the leader for the specified consensus's execution ID and last(current) round number
      * @param c consensus's execution ID
      * @return The replica ID of the leader
      */

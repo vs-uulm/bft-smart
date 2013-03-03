@@ -160,9 +160,29 @@ public class Proposer {
 					Round round = execution.getRound(nextRoundNumber);
 					round.setCollectProof(msg.getSender(), cp);
 
+					log.log(Level.FINEST, "I have {0} valid Proofs.",
+							verifier.countProofs(round.proofs));
 					if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
 						createPropose(execution, round);
 					}
+				} else {
+					if(cp.getProofs() == null){
+						log.warning("No proofs provided");
+					}
+					if( !verifier.validCollectProof(execution.getId(),
+						msg.getRound(), cp.getProofs())){
+						log.warning("CollectProof invalid");
+					}
+					if(cp.getLeader() != conf.getProcessId()){
+						log.warning("I got a CollectProof for a Round where I"
+								+ "am not the leader!");
+					}
+				}
+			} else {
+				if(cp == null){
+					log.log(Level.WARNING, "Collect with no collectproof received");
+				} else {
+					log.log(Level.WARNING, "Collect with invalid signature received");
 				}
 			}
 		} finally {
@@ -177,7 +197,7 @@ public class Proposer {
 	 */
 	private void createPropose(Execution execution, Round round) {
 		byte[] inProp = verifier.getGoodValue(round.proofs, round.getNumber()-1);
-		manager.getRequestHandler().imAmTheLeader();
+//		manager.getRequestHandler().imAmTheLeader();
 
 		//Count view changes in statistics
 		Statistics.stats.viewChange();
@@ -206,6 +226,8 @@ public class Proposer {
 						new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
 			}
 		}
+		
+		log.log(Level.FINER,"Proposing value for {0}-{1}",new Object[]{execution.getId(),round.getNumber()});
 
 		//Send propose
 		communication.send(manager.getAcceptors(),

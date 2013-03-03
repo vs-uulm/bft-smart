@@ -279,7 +279,7 @@ public class ProofVerifier {
 				return false;
 			}
 		}
-		if(!proofs.getLast().getRound().equals(round-1)){
+		if(!proofs.getLast().getRound().equals(round)){
 			return false;
 		}
         return true;
@@ -376,7 +376,7 @@ public class ProofVerifier {
 							weakcount++;
 							proofs[j] = null;	// Eliminate this Proof as it was already counted
 						}
-						if (cs != null && s.equals(cs)) {
+						if (cs != null && cs.equals(s)) {
 							strongcount++;
 						}
 					}
@@ -423,8 +423,10 @@ public class ProofVerifier {
 	private int getNumberOfRounds(CollectProof[] proofs){
 		int max = 0;
 		for (int i = 0; i < proofs.length; i++) {
-			int curr_max = proofs[i].getProofs().getLast().getRound();
-			max = curr_max > max ? curr_max : max;
+			if(proofs[i] != null && proofs[i].getProofs().getLast() != null){
+				int curr_max = proofs[i].getProofs().getLast().getRound();
+				max = curr_max > max ? curr_max : max;
+			}
 		}
 		return max;
 	}
