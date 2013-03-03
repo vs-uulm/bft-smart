@@ -140,9 +140,7 @@ public class PaxosMessage extends SystemMessage {
     // Over-written method
     @Override
     public String toString() {
-
-        return "type="+getPaxosVerboseType()+", number="+getEid()+", round="+getRound()+", from="+getSender();
-
+        return "E " + getEid() + " | R " + getRound() + " | S " + getSender() + " | T " + getPaxosVerboseType();
     }
 
 	/* (non-Javadoc)

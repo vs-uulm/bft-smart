@@ -222,4 +222,8 @@ public class Execution {
 			manager.getTOMLayer().decided(consensus);
 		}
 	}
+        
+        public String toString(){
+            return consensus.getId().toString();
+        }
 }
