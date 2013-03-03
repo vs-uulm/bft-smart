@@ -185,9 +185,6 @@ public class Acceptor {
         Integer leader = leaderModule.getLeader(eid, msg.getRound());
 
         // Log reception
-        if (log.isLoggable(Level.FINER)) {
-            log.finer(msg.toString());
-        }
         if (sender != conf.getProcessId()) {
             msclog.log(Level.INFO, "{0} --> {1} P{2}-{3}", new Object[]{sender,
                         conf.getProcessId(), eid, round.getNumber()});
@@ -700,7 +697,7 @@ public class Acceptor {
             //define the leader for the next round: (previous_leader + 1) % N
             Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
             if (currentNextLader != newNextLeader) {
-                leaderModule.addLeaderInfo(exec.getId(), nextRound.getNumber(), newNextLeader);
+                leaderModule.freezeRound(exec.getId(), nextRound.getNumber(), newNextLeader);
 
                 msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",
                         new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
