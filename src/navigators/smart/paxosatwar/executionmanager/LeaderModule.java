@@ -330,5 +330,9 @@ public class LeaderModule {
             this.round = round;
             this.leaderId = l;
         }
+        
+        public String toString() {
+            return "R "+round+" | L "+leaderId;
+        }
     }
 }
