@@ -91,7 +91,9 @@ public class LeaderModule {
         if (ci != null) {
             oldleader = ci.leaderId;
             ci.leaderId = newLeader;
+            log.log(Level.FINE,"E {0} | R {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldleader});
         } else {
+            log.log(Level.FINE,"E {0} | R {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
             list.add(new ConsInfo(r, newLeader));
         }
 
