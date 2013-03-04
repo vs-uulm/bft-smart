@@ -204,7 +204,7 @@ public class Proposer {
      * @param round The new round where to propose
      */
     private void createPropose(Execution execution, Round round) {
-        byte[] inProp = verifier.getGoodValue(round.proofs, round.getNumber() - 1);
+        byte[] inProp = verifier.getGoodValue(round.proofs, round.getNumber());
 //		manager.getRequestHandler().imAmTheLeader();
 
         //Count view changes in statistics
