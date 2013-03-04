@@ -167,11 +167,11 @@ public class LeaderModule {
             }
         } else {
             ConsInfo info = findInfo(list, r);
-            log.log(Level.FINE,"E {0} | R {1} | CI found - LEADER {2}", 
-                    new Object[]{exec, r, info.leaderId});
-            log.log(Level.FINEST,"E {0} | R {1} | INFOLIST {2}", 
+            log.log(Level.FINEST,"E {0} | R {1} | INFOLIST existant {2}", 
                     new Object[]{exec, r, leaderInfos.entrySet()});
             if (info != null) {
+                log.log(Level.FINE,"E {0} | R {1} | CI found - LEADER {2}", 
+                        new Object[]{exec, r, info.leaderId});
                 return info.leaderId;
             }
         }
