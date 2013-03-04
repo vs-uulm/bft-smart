@@ -696,6 +696,10 @@ public class Acceptor {
 
             //define the leader for the next round: (previous_leader + 1) % N
             Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
+            
+            log.log(Level.FINEST,"E {0} | R {1} | new leader? {2} ({3})",
+                    new Object[]{round.getExecution(), round.getNumber(),
+                        currentNextLader,newNextLeader});
             if (currentNextLader != newNextLeader) {
                 leaderModule.freezeRound(exec.getId(), nextRound.getNumber(), newNextLeader);
 
