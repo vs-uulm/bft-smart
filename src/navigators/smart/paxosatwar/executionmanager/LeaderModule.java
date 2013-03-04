@@ -91,9 +91,9 @@ public class LeaderModule {
         if (ci != null) {
             oldleader = ci.leaderId;
             ci.leaderId = newLeader;
-            log.log(Level.FINE,"E {0} | R {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldleader});
+            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldleader});
         } else {
-            log.log(Level.FINE,"E {0} | R {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
+            log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
             list.add(new ConsInfo(r, newLeader));
         }
 
@@ -151,7 +151,7 @@ public class LeaderModule {
     public Integer getLeader(Long exec, Integer r) {
         List<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
-            log.log(Level.FINE,"E {0} | R {1} | Creating CI List", new Object[]{exec,r});
+            log.log(Level.FINE,"{0} | {1} | Creating CI List", new Object[]{exec,r});
             //there are no information for the execution c
             //let's see who were the leader of the last execution
             list = new LinkedList<ConsInfo>();
@@ -167,10 +167,10 @@ public class LeaderModule {
             }
         } else {
             ConsInfo info = findInfo(list, r);
-            log.log(Level.FINEST,"E {0} | R {1} | INFOLIST existant {2}", 
+            log.log(Level.FINEST,"{0} | {1} | INFOLIST existant {2}", 
                     new Object[]{exec, r, leaderInfos.entrySet()});
             if (info != null) {
-                log.log(Level.FINE,"E {0} | R {1} | CI found - LEADER {2}", 
+                log.log(Level.FINE,"{0} | {1} | CI found - LEADER {2}", 
                         new Object[]{exec, r, info.leaderId});
                 return info.leaderId;
             }

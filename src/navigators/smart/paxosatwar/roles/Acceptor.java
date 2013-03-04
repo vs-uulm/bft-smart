@@ -707,7 +707,7 @@ public class Acceptor {
             //define the leader for the next round: (previous_leader + 1) % N
             Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
             
-            log.log(Level.FINEST,"E {0}|{1} | new leader? {2} ({3})",
+            log.log(Level.FINEST,"{0} | {1} | new leader? {2} ({3})",
                     new Object[]{round.getExecution(), round.getNumber(),
                         currentNextLader,newNextLeader});
             if (currentNextLader != newNextLeader) {
@@ -742,7 +742,7 @@ public class Acceptor {
             communication.send(new Integer[]{newNextLeader},
                     factory.createCollect(exec.getId(), round.getNumber(), clProof));
         } else {
-            log.log(Level.FINEST,"E {0}|{1} | nothing to do - freezes: {2} collected: {3}",
+            log.log(Level.FINEST,"{0} | {1} | nothing to do - freezes: {2} collected: {3}",
                     new Object[]{round.getExecution(), round.getNumber(),
                         round.countFreeze(),round.isCollected()});
         }

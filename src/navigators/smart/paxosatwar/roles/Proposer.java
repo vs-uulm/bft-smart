@@ -84,7 +84,7 @@ public class Proposer {
     public void startExecution(Long eid, byte[] value) {
         
         if(log.isLoggable(Level.FINER)){
-            log.finer("E " + eid + " | R 0 | STARTING");
+            log.finer(eid + " | 0 | STARTING");
         }
         if (msclog.isLoggable(Level.INFO)) {
             Integer[] acc = manager.getOtherAcceptors();
@@ -150,7 +150,7 @@ public class Proposer {
             execution.lock.lock();
             if (cp != null && verifier.validSignature(cp, msg.getSender().intValue())) {
                 if (log.isLoggable(Level.FINEST)) {
-                    log.log(Level.FINEST, "E {0} | R {1} | COLLECT SIGNED",
+                    log.log(Level.FINEST, "{0} | {1} | COLLECT SIGNED",
                             new Object[]{msg.getEid(), msg.getRound()});
                 }
                 if ((cp.getProofs() != null)
@@ -160,13 +160,13 @@ public class Proposer {
                     Integer nextRoundNumber = msg.getRound() + 1;
 
                     if (log.isLoggable(Level.FINEST)) {
-                        log.log(Level.FINEST, "E {0} | R {1} | COLLECT VALID",
+                        log.log(Level.FINEST, "{0} | {1} | COLLECT VALID",
                                 new Object[]{execution.getId(), nextRoundNumber});
                     }
                     Round round = execution.getRound(nextRoundNumber);
                     round.setCollectProof(msg.getSender(), cp);
 
-                    log.log(Level.FINEST, "E {0} | R {1} | {3} VALID PROOFS",
+                    log.log(Level.FINEST, "{0} | {1} | {2} VALID PROOFS",
                             new Object[]{execution.getId(), nextRoundNumber,
                                 verifier.countProofs(round.proofs)});
                     if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
@@ -210,7 +210,7 @@ public class Proposer {
         //Count view changes in statistics
         Statistics.stats.viewChange();
         if (log.isLoggable(Level.FINEST)) {
-            log.log(Level.FINEST, "E {0} | R {1} | STARTING",
+            log.log(Level.FINEST, "{0} | {1} | STARTING",
                     new Object[]{execution.getId(), round.getNumber()});
         }
 
