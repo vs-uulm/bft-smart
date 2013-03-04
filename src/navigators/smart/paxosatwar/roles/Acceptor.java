@@ -222,7 +222,13 @@ public class Acceptor {
                 // Is the proposed value good according to the PaW algorithm?
                 if (msg.getValue() != null && (verifier.good(msg.getValue(), collected, msg.getRound()))) {
                     executePropose(round, msg.getValue());
-                }
+                } else {
+					if (msg.getValue() == null ) {
+						log.info(msg + " | Proposed value null");
+					} else {
+						log.info(msg + " | Proposed value NOT GOOD");
+					}
+				}
 
 //				else if (checkAndDiscardConsensus(eid, collected, msg.getRound())) {
 //					leaderModule.addLeaderInfo(eid, 0, msg.getSender());
@@ -246,8 +252,12 @@ public class Acceptor {
 //						leaderModule.addLeaderInfo(eid + 1, 0, msg.getSender());
 //					}
 //				}
-            }
-        }
+            } else {
+				log.log(Level.INFO,"{0} | invalid leader for this proposal", new Object[]{msg });
+			}
+        } else {
+			log.log(Level.INFO,"{0} | {1} | no proofs provided", new Object[]{eid, round.getNumber()});
+		}
     }
 
 //	/**
@@ -318,7 +328,7 @@ public class Acceptor {
     private void executePropose(Round round, byte[] value) {
         Long eid = round.getExecution().getId();
         if (log.isLoggable(Level.FINER)) {
-            log.finer("E " + eid + " | R " + round.getNumber() + " | executing PROPOSE");
+            log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE");
         }
 
         scheduleTimeout(round);
@@ -342,7 +352,7 @@ public class Acceptor {
                 //Only send msg when not frozen
                 if (!round.isFrozen()) {
                     if (log.isLoggable(Level.FINER)) {
-                        log.finer("E " + eid + " | R " + round.getNumber() + " | sending WEAK");
+                        log.finer( eid + " | " + round.getNumber() + " | sending WEAK");
                     }
 
                     round.setWeak(me.intValue(), hash);		//set myself as weak acceptor
@@ -410,7 +420,7 @@ public class Acceptor {
         int weakAccepted = round.countWeak();
 
         if (log.isLoggable(Level.FINER)) {
-            log.finer("E " + eid + " | R " + round.getNumber() + " | " + weakAccepted
+            log.finer( eid + " | " + round.getNumber() + " | " + weakAccepted
                     + " WEAKS");
         }
 
@@ -423,7 +433,7 @@ public class Acceptor {
         // Can I go straight to decided state?
         if (weakAccepted > manager.quorumFastDecide && !round.isDecided()) {
             if (log.isLoggable(Level.FINE)) {
-                log.fine("E " + eid + " | R " + round.getNumber() + " | WEAK DECIDE");
+                log.fine( eid + " | " + round.getNumber() + " | WEAK DECIDE");
             }
             decide(eid, round, valuehash);
         }
@@ -447,7 +457,7 @@ public class Acceptor {
      */
     private void sendStrong(final Long eid, final Round round, final byte[] valuehash) {
         if (log.isLoggable(Level.FINER)) {
-            log.finer("E " + eid + " | R " + round.getNumber() + " | Sending STRONG");
+            log.finer( eid + " | " + round.getNumber() + " | Sending STRONG");
         }
         if (msclog.isLoggable(Level.INFO)) {
             Integer[] acc = manager.getOtherAcceptors();
@@ -508,14 +518,14 @@ public class Acceptor {
         int strongAccepted = round.countStrong();
 
         if (log.isLoggable(Level.FINER)) {
-            log.finer("E " + eid + " | R " + round.getNumber() + " | " + strongAccepted
+            log.finer( eid + " | " + round.getNumber() + " | " + strongAccepted
                     + " STRONGS");
         }
 
         if (strongAccepted > manager.quorum2F && !round.isDecided()) {
 
             if (log.isLoggable(Level.FINE)) {
-                log.fine("E " + eid + " | R " + round.getNumber() + " | STRONG DECIDE");
+                log.fine( eid + " | " + round.getNumber() + " | STRONG DECIDE");
             }
             decide(eid, round, value);
         }
@@ -536,12 +546,12 @@ public class Acceptor {
 
         if (round.countDecide() > manager.quorumF && !round.isDecided()) {
             if (log.isLoggable(Level.FINER)) {
-                log.fine("E " + eid + " | R " + round.getNumber() + " | DECIDE MSG DECIDE");
+                log.fine( eid + " | " + round.getNumber() + " | DECIDE MSG DECIDE");
             }
             decide(eid, round, value);
         } else if (round.isDecided()) {
             if (log.isLoggable(Level.FINER)) {
-                log.fine("E " + eid + " | R " + round.getNumber() + " | already decided.");
+                log.fine( eid + " | " + round.getNumber() + " | already decided.");
             }
         }
     }
@@ -557,7 +567,7 @@ public class Acceptor {
     private void scheduleTimeout(Round round) {
         if (round.getTimeoutTask() == null && !round.isFrozen()) {
             if (log.isLoggable(Level.FINER)) {
-                log.finer("E " + round.getExecution() + " | R " 
+                log.finer( round.getExecution() + " | " 
                         + round.getNumber() + " | SCHEDULE TO " 
                         + round.getTimeout() + " ms");
             }
@@ -583,7 +593,7 @@ public class Acceptor {
         execution.lock.lock();
 
         if (log.isLoggable(Level.INFO)) {
-            log.info("E " + round.getExecution() + " | R " + round.getNumber() + " | TIMEOUT");
+            log.info( round.getExecution() + " | " + round.getNumber() + " | TIMEOUT");
         }
 
         if (!round.isDecided() && !round.isRemoved()/*
@@ -655,7 +665,7 @@ public class Acceptor {
 
     private void doFreeze(Round round) {
         if (log.isLoggable(Level.FINER)) {
-            log.finer("E " + round.getExecution() + " | R " + round.getNumber() + " | FREEZING round");
+            log.finer( round.getExecution() + " | " + round.getNumber() + " | FREEZING round");
         }
 
         msclog.log(Level.INFO, "{0} note: freezing Round: {1}-{2}", new Object[]{me, round.getExecution().getId(), round.getNumber()});
@@ -676,7 +686,7 @@ public class Acceptor {
     @SuppressWarnings("boxing")
     private void computeFreeze(Round round) {
         if (log.isLoggable(Level.FINER)) {
-            log.finer("E " + round.getExecution() + " | R " + round.getNumber() + " | " + round.countFreeze() + " FREEZES");
+            log.finer( round.getExecution() + " | " + round.getNumber() + " | " + round.countFreeze() + " FREEZES");
         }
         //if there is more than f+1 timeouts
         if (round.countFreeze() > manager.quorumF && !round.isCollected()) {
@@ -697,7 +707,7 @@ public class Acceptor {
             //define the leader for the next round: (previous_leader + 1) % N
             Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
             
-            log.log(Level.FINEST,"E {0} | R {1} | new leader? {2} ({3})",
+            log.log(Level.FINEST,"E {0}|{1} | new leader? {2} ({3})",
                     new Object[]{round.getExecution(), round.getNumber(),
                         currentNextLader,newNextLeader});
             if (currentNextLader != newNextLeader) {
@@ -708,7 +718,7 @@ public class Acceptor {
                 msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
                         new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
                 if (log.isLoggable(Level.FINER)) {
-                    log.finer("E " + round.getExecution() + " | R " + round.getNumber() + " | NEW LEADER for the next round is " + newNextLeader);
+                    log.finer( round.getExecution() + " | " + round.getNumber() + " | NEW LEADER for the next round is " + newNextLeader);
                 }
             }
 
@@ -732,7 +742,7 @@ public class Acceptor {
             communication.send(new Integer[]{newNextLeader},
                     factory.createCollect(exec.getId(), round.getNumber(), clProof));
         } else {
-            log.log(Level.FINEST,"E {0} | R {1} | nothing to do - freezes: {2} collected: {3}",
+            log.log(Level.FINEST,"E {0}|{1} | nothing to do - freezes: {2} collected: {3}",
                     new Object[]{round.getExecution(), round.getNumber(),
                         round.countFreeze(),round.isCollected()});
         }
