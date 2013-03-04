@@ -723,13 +723,18 @@ public class Acceptor {
             CollectProof clProof = new CollectProof(proofs, newNextLeader);
 
             verifier.sign(clProof);
-            msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), newNextLeader, exec.getId(), round.getNumber()});
+            msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), 
+                newNextLeader, exec.getId(), round.getNumber()});
             String id = String.format("C%1$d-%2$d-%3$d-%4$d", conf.getProcessId(),
                     newNextLeader, exec.getId(), round.getNumber());
             msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}|"
                     + " 4| {2}|", new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
             communication.send(new Integer[]{newNextLeader},
                     factory.createCollect(exec.getId(), round.getNumber(), clProof));
+        } else {
+            log.log(Level.FINEST,"E {0} | R {1} | nothing to do - freezes: {2} collected: {3}",
+                    new Object[]{round.getExecution(), round.getNumber(),
+                        round.countFreeze(),round.isCollected()});
         }
     }
 

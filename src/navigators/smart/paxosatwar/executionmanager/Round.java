@@ -389,7 +389,7 @@ public class Round {
 	 * @return Ammount of replicas that locally freezed this round
 	 */
 	public int countFreeze() {
-		return freeze.size();
+            return freeze.size();
 	}
 
 	public int countWeak() {
