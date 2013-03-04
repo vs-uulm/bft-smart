@@ -1,19 +1,22 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
- * 
+ * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and
+ * the authors indicated in the
+ *
+ * @author tags
+ *
  * This file is part of SMaRt.
- * 
- * SMaRt is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * SMaRt is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * SMaRt is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
 package navigators.smart.paxosatwar.executionmanager;
 
@@ -28,14 +31,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
 /**
- * This class manages information about the leader of each round of each consensus
+ * This class manages information about the leader of each round of each
+ * consensus
+ *
  * @author edualchieri
  */
 public class LeaderModule {
+    
+    private static final Logger log = Logger.getLogger(LeaderModule.class.getCanonicalName());
 
     // Each value of this map is a list of all the rounds of a consensus
     // Each element of that list is a tuple which stands for a round, and the id
@@ -53,7 +62,8 @@ public class LeaderModule {
     }
 
     /**
-     * Adds or updates information about a leader. 
+     * Adds or updates information about a leader.
+     *
      * @param exec Consensus where the replica is a leader
      * @param r Rounds of the consensus where the replica is a leader
      * @param l ID of the leader
@@ -72,34 +82,35 @@ public class LeaderModule {
             list.add(new ConsInfo(r, l));
         }
     }
-	
-	public void freezeRound(final Long exec, final Integer r, final Integer newLeader){
-		List<ConsInfo> list = leaderInfos.get(exec);		
-		ConsInfo ci = findInfo(list, r);
-		Integer oldleader = null;
+
+    public void freezeRound(final Long exec, final Integer r, final Integer newLeader) {
+        List<ConsInfo> list = leaderInfos.get(exec);
+        ConsInfo ci = findInfo(list, r);
+        Integer oldleader = null;
 
         if (ci != null) {
-			oldleader = ci.leaderId;
+            oldleader = ci.leaderId;
             ci.leaderId = newLeader;
         } else {
             list.add(new ConsInfo(r, newLeader));
         }
-		
-		// Check later executions and set new leader
-		long current_exec = exec + 1;
-		
-		while((list = leaderInfos.get(current_exec++)) != null){
-			for(ConsInfo cit: list){
-				// Replace leaders of later executions if they have this current leader
-				if(cit.leaderId.equals(oldleader)){
-					cit.leaderId = newLeader;
-				}
-			}
-		}
-	}
+
+        // Check later executions and set new leader
+        long current_exec = exec + 1;
+
+        while ((list = leaderInfos.get(current_exec++)) != null) {
+            for (ConsInfo cit : list) {
+                // Replace leaders of later executions if they have this current leader
+                if (cit.leaderId.equals(oldleader)) {
+                    cit.leaderId = newLeader;
+                }
+            }
+        }
+    }
 
     /**
      * Retrieves the tuple for the specified round, given a list of tuples
+     *
      * @param l List of tuples formed by a round number and the ID of the leader
      * @param r Number of the round tobe searched
      * @return The tuple for the specified round, or null if there is none
@@ -114,11 +125,12 @@ public class LeaderModule {
     }
 
     /**
-     * Invoked by the acceptor object when a value is decided
-     * It adds a new tuple to the list, which corresponds to the next consensus
+     * Invoked by the acceptor object when a value is decided It adds a new
+     * tuple to the list, which corresponds to the next consensus
      *
      * @param c ID of the consensus established as being decided
-     * @param l ID of the replica established as being the leader for the round 0 of the next consensus
+     * @param l ID of the replica established as being the leader for the round
+     * 0 of the next consensus
      */
     public void decided(Long c, Integer l) {
         if (leaderInfos.get(c) == null) {
@@ -127,7 +139,9 @@ public class LeaderModule {
     }
 
     /**
-     * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number
+     * Retrieves the replica ID of the leader for the specified consensus's
+     * execution ID and round number
+     *
      * @param exec consensus's execution ID
      * @param r Round number for the specified consensus
      * @return The replica ID of the leader
@@ -135,6 +149,7 @@ public class LeaderModule {
     public Integer getLeader(Long exec, Integer r) {
         List<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
+            log.log(Level.FINE,"E {0} | R {1} | Creating CI List", new Object[]{exec,r});
             //there are no information for the execution c
             //let's see who were the leader of the last execution
             list = new LinkedList<ConsInfo>();
@@ -150,24 +165,32 @@ public class LeaderModule {
             }
         } else {
             ConsInfo info = findInfo(list, r);
+            log.log(Level.FINE,"E {0} | R {1} | CI found - LEADER {2}", 
+                    new Object[]{exec, r, info.leaderId});
+            log.log(Level.FINEST,"E {0} | R {1} | INFOLIST {2}", 
+                    new Object[]{exec, r, leaderInfos.entrySet()});
             if (info != null) {
                 return info.leaderId;
-			}
+            }
         }
         return null;
     }
 
     /**
-     * Retrieves the replica ID of the leader for the specified consensus's execution ID and round number 0
+     * Retrieves the replica ID of the leader for the specified consensus's
+     * execution ID and round number 0
+     *
      * @param exec consensus's execution ID
      * @return The replica ID of the leader
      */
     public Integer getLeader(Long exec) {
         return getLeader(exec, ROUND_ZERO);
     }
-	
-	/**
-     * Retrieves the replica ID of the leader for the specified consensus's execution ID and last(current) round number
+
+    /**
+     * Retrieves the replica ID of the leader for the specified consensus's
+     * execution ID and last(current) round number
+     *
      * @param c consensus's execution ID
      * @return The replica ID of the leader
      */
@@ -210,7 +233,9 @@ public class LeaderModule {
         }
     }
 
-    /**Removes all stable consensusinfos older than c **/
+    /**
+     * Removes all stable consensusinfos older than c *
+     */
     public void removeAllStableConsenusInfo(Long c) {
         Long next = Long.valueOf(c.longValue() + 1);
 
@@ -259,7 +284,9 @@ public class LeaderModule {
         }
     }
 
-    /********************************************************/
+    /**
+     * *****************************************************
+     */
     public byte[] getState() {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
         ObjectOutputStream oos;
@@ -286,7 +313,8 @@ public class LeaderModule {
     }
 
     /**
-     * This class represents a tuple formed by a round number and the replica ID of that round's leader
+     * This class represents a tuple formed by a round number and the replica ID
+     * of that round's leader
      */
     private class ConsInfo {
 
