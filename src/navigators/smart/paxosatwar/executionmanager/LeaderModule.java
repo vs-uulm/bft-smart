@@ -103,7 +103,7 @@ public class LeaderModule {
         while ((list = leaderInfos.get(current_exec++)) != null) {
             for (ConsInfo cit : list) {
                 // Replace leaders of later executions if they have this current leader
-                if (cit.leaderId.equals(oldleader)) {
+                if (oldleader == null || cit.leaderId.equals(oldleader)) {
                     cit.leaderId = newLeader;
                 }
             }
