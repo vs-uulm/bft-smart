@@ -556,7 +556,7 @@ public class Round {
 	 * @return true if frozen or not decided, false otherwise
 	 */
 	public boolean isActive() {
-		return proposed && (collected || !decided);
+		return (proposed && !decided) || collected;
 	}
 
 	/**
