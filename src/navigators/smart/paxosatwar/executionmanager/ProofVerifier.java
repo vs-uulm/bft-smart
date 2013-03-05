@@ -186,6 +186,15 @@ public class ProofVerifier {
 				}
 			}
 		}
+		// No value is in poss -> G1 of the PaW Algorithms can use any value
+		for (RoundInfo s:infos){
+			for(ByteWrapper w: s.acc){
+				// TODO Check here if w element of I of the PaW
+				if (w.value != null){
+					return w.value;
+				}
+			}
+		}
         return null;
     }
 
