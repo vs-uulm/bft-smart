@@ -54,12 +54,18 @@ public final class ExecutionManager{
 	private static final Logger log = Logger.getLogger(ExecutionManager.class.getCanonicalName());
 
     private LeaderModule lm;
+	
+	/**
+	 * The id of the consensus being executed (or -1 if there is none)
+	 */
+	private static final Long IDLE = Long.valueOf(-1l);
+	private Long inExecution = IDLE;
+	private Long lastExecuted = IDLE;
+	private Long nextExecution = Long.valueOf(0);
 
-    private Acceptor acceptor; // Acceptor role of the PaW algorithm
-    private Proposer proposer; // Proposer role of the PaW algorithm
-    private Integer me; // This process ID
-    private Integer[] acceptors; // Process ID's of all replicas, including this one
-    private Integer[] otherAcceptors; // Process ID's of all replicas, except this one
+    private Acceptor acceptor;	// Acceptor role of the PaW algorithm
+    private Proposer proposer;	// Proposer role of the PaW algorithm
+	private GroupManager gm;	// Manager for the group of replicas
 
     private Map<Long, Execution> executions = new TreeMap<Long, Execution>(); // Executions
     private ReentrantLock executionsLock = new ReentrantLock(); //lock for executions table
@@ -104,8 +110,7 @@ public final class ExecutionManager{
             Integer[] acceptors, int f, Integer me, long initialTimeout, TOMLayer tom, LeaderModule lm) {
         this.acceptor = acceptor;
         this.proposer = proposer;
-        this.acceptors = acceptors;
-        this.me = me;
+		this.gm = new GroupManager(acceptors,me);
         this.initialTimeout = initialTimeout;
         this.quorumF = f;
         this.quorum2F = 2 * f;
@@ -144,7 +149,7 @@ public final class ExecutionManager{
      * @return This process ID
      */
     public Integer getProcessId() {
-        return me;
+        return gm.me;
     }
 
     /**
@@ -152,7 +157,7 @@ public final class ExecutionManager{
      * @return Array of the process ID's of all replicas, including this one
      */
     public Integer[] getAcceptors() {
-        return acceptors;
+        return gm.acceptors;
     }
 
     /**
@@ -160,17 +165,7 @@ public final class ExecutionManager{
      * @return Array of the process ID's of all replicas, except this one
      */
     public Integer[] getOtherAcceptors() {
-        if (otherAcceptors == null) {
-            otherAcceptors = new Integer[acceptors.length - 1];
-            int c = 0;
-            for (int i = 0; i < acceptors.length; i++) {
-                if (!acceptors[i].equals(me)) {
-                    otherAcceptors[c++] = acceptors[i];
-                }
-            }
-        }
-
-        return otherAcceptors;
+        return gm.otherAcceptors;
     }
 
     /**
@@ -197,8 +192,8 @@ public final class ExecutionManager{
     		log.fine("(ExecutionManager.stoping) Stoping execution manager");
         stoppedMsgsLock.lock();
         this.stopped = true;
-        if (!requesthandler.isIdle()) {
-            stoppedRound = getExecution(requesthandler.getInExec()).getLastRound();
+        if (!isIdle()) {
+            stoppedRound = getExecution(getInExec()).getLastRound();
             stoppedRound.getTimeoutTask().cancel(false);
             if(log.isLoggable(Level.FINE))
                 log.fine("Stopping round " + stoppedRound.getNumber() + " of consensus " + stoppedRound.getExecution().getId());
@@ -243,7 +238,7 @@ public final class ExecutionManager{
 			// This lock is required to block the addition of messages during ooc processing
 			outOfContextLock.lock();
 			Long consId = msg.getEid();
-			Long lastConsId = requesthandler.getLastExec();
+			Long lastConsId = getLastExec();
 
 
 			// Old message -> discard. Do not discard messages for the last consensus as it
@@ -255,7 +250,7 @@ public final class ExecutionManager{
 			boolean isRetrievingState = tomLayer.isRetrievingState();
 
 			if (isRetrievingState && log.isLoggable(Level.FINEST)) {
-				log.finest(" I'm waiting for a state and received " + msg + " at execution " + requesthandler.getInExec() + " last las execution is " + lastConsId);
+				log.finest(" I'm waiting for a state and received " + msg + " at execution " + getInExec() + " last las execution is " + lastConsId);
 			}
 
 			boolean canProcessTheMessage = false;
@@ -263,7 +258,7 @@ public final class ExecutionManager{
 			if (    // this switch is to redirect ooc messages when we are receiving a state transfer
 					isRetrievingState || 
 					// Check revival bounds -> not idle and lastmsg == -1 (revived indicator) and msgid >= revivalHighmark
-					(!(requesthandler.isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark))
+					(!(isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark))
 					// Msg is within the low and high marks (or the is replica synchronizing)
 					&& (consId.longValue() >= lastConsId.longValue() && (consId.longValue() < (lastConsId.longValue() + paxosHighMark))))) { 
 
@@ -294,14 +289,14 @@ public final class ExecutionManager{
 					}
 					canProcessTheMessage = true;													//msg should be processed normally
 				}
-			} else if ((requesthandler.isIdle() && lastConsId.longValue() == -1 
+			} else if ((isIdle() && lastConsId.longValue() == -1 
 					&& consId.longValue() >= (lastConsId.longValue() + revivalHighMark))			// Replica is revived and idle TODO this is an unclear case
 					|| (consId.longValue()> 0 && consId.longValue() >= (lastConsId.longValue() + paxosHighMark))) {			// Message is beyond highmark
 				if (log.isLoggable(Level.FINE)) {
 					log.fine(msg + " is beyond the paxos highmark, adding it to ooc set and checking if state transfer is needed");
 				}
 				addOutOfContextMessage(msg);														//add to ooc 
-				tomLayer.requestStateTransfer(me, getOtherAcceptors(), msg.getSender(), consId);	//request statetx to recover from idle state
+				tomLayer.requestStateTransfer(gm.me, getOtherAcceptors(), msg.getSender(), consId);	//request statetx to recover from idle state
 			}
 			return canProcessTheMessage;
 		} finally {
@@ -422,8 +417,7 @@ public final class ExecutionManager{
 		try {
 //			Guard all by the outofcontextlock			
 			outOfContextLock.lock();
-			//define that end of the prior execution
-			requesthandler.setIdle();
+			
 			/******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
 			// First check for a propose...
 			if (thereArePendentMessages(eid)){
@@ -457,6 +451,8 @@ public final class ExecutionManager{
 			/******* END OUTOFCONTEXT CRITICAL SECTION *******/
 			outOfContextLock.unlock();
 		}
+		//check if we need to propose
+		requesthandler.notifyNewRequest();
 	}
 
 	/**
@@ -505,8 +501,10 @@ public final class ExecutionManager{
 	 * @param cons The consensus that was finished.
 	 */
     public void executionFinished(Consensus<?> cons) {
+		Execution e = executions.get(cons.getId());
+		long nextExecution = e.getId()+1;
+		if (!e.isExecuted()){
          
-
             //define the last stable consensus... the stable consensus can
             //be removed from the leaderManager and the executionManager
             if (cons.getId().longValue() > 2) {
@@ -515,19 +513,24 @@ public final class ExecutionManager{
                 removeExecution(stableConsensus);
             }
 			
-			requesthandler.executionFinished(cons.getId());
-			
-            //verify if there is a next proposal to be executed
-            //(it only happens if the previous consensus were decided in a
-            //round > 0
-            acceptor.executeAcceptedPendent(requesthandler.getNextExec());
+			//set this consensus as the last executed
+			setLastExec(cons.getId());
+		}
+		
+		// Process pending messages for the next execution
+		processOOCMessages(nextExecution);
+
+		//verify if there is a next proposal to be executed
+		//(it only happens if the previous consensus were decided in a
+		//round > 0
+		acceptor.executeAcceptedPendent(nextExecution);
     }
 
     public void deliverState(TransferableState state){
         Long lastEid = state.lastEid;
-         //set this consensus as the last executed
-        requesthandler.setLastExec(lastEid);
-
+        //set this consensus as the last executed
+		setLastExec(state.lastEid);
+		
         //define the last stable consensus... the stable consensus can
         //be removed from the leaderManager and the executionManager
         if (lastEid.longValue() > 2) {
@@ -548,6 +551,124 @@ public final class ExecutionManager{
 
         //define that end of this execution
         //stateManager.setWaiting(-1);
-        requesthandler.executionFinished(state.lastEid);
+		// process ooc messages within the ooc lock 
+		// idle mode is set within this call to prevent simulataneous message processing of the next consensus
+		processOOCMessages(nextExecution);
     }
+	
+	/**
+	 * Sets which consensus was the last to be executed
+	 *
+	 * @param last ID of the consensus which was last to be executed
+	 */
+	public void setLastExec(Long last) {
+		try {
+			executionsLock.lock();
+			this.lastExecuted = last;
+			this.nextExecution = new Long(last.longValue() + 1);
+		} finally {
+			executionsLock.unlock();
+		}
+	}
+
+	/**
+	 * Gets the ID of the consensus which was established as the last executed
+	 *
+	 * @return ID of the consensus which was established as the last executed
+	 */
+	public Long getLastExec() {
+		try {
+			executionsLock.lock();
+			return this.lastExecuted;
+		} finally {
+			executionsLock.unlock();
+		}
+	}
+	
+	/**
+	 * Gets the ID of the consensus which will be executed next
+	 *
+	 * @return ID of the consensus  which will be executed next
+	 */
+	public Long getNextExec() {
+		try {
+			executionsLock.lock();
+			return this.nextExecution;
+		} finally {
+			executionsLock.unlock();
+		}
+	}
+
+	/**
+	 * Sets which consensus is being executed at the moment. If the value is set to -1 a new Proposal is triggered if this replica is the leader.
+	 *
+	 * @param inEx ID of the consensus being executed at the moment
+	 */
+	public void setInExec(Long inEx) {
+		try {
+			executionsLock.lock();
+			if (log.isLoggable(Level.FINEST)) {
+				log.finest("Modifying state from " + this.inExecution + " to " + inEx);
+			}
+			this.inExecution = inEx;
+		} finally {
+			executionsLock.unlock();
+		}
+	}
+
+
+	/**
+	 * Gets the ID of the consensus currently beign executed
+	 *
+	 * @return ID of the consensus currently beign executed (if no consensus ir executing, -1 is returned)
+	 */
+	public Long getInExec() {
+		try {
+			executionsLock.lock();
+			return this.inExecution;
+		} finally {
+			executionsLock.unlock();
+		}
+	}
+
+	/**
+	 * Starts a new Execution when the requesthandler recognizes that
+	 * there are pending requests.
+	 */
+	public void startNextExecution() {
+		try {
+			executionsLock.lock();
+			// Sets the current execution to the upcoming one
+			setInExec(nextExecution);
+
+			//getExecution and if its not created create it
+			getExecution(inExecution);
+
+			// Check if we neet to propose
+			proposer.startExecution(inExecution, tomLayer.createPropose());
+		} finally {
+			executionsLock.unlock();
+		}
+	}
+	
+	/**
+	 * Checks if there are active executions in this manager.
+	 * @return 
+	 */
+	public boolean isIdle() {
+		try {
+			executionsLock.lock();
+			for(Execution e:executions.values()){
+				if(e.isActive()){
+					log.fine(e+" is still active");
+					return false;
+				}
+			}
+			return true;
+		} finally {
+			executionsLock.unlock();
+		}
+//		return inExecution.equals(IDLE) 
+//					&& !getExecution(lastExecuted).isActive();
+	}
 }

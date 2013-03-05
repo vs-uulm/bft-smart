@@ -342,8 +342,8 @@ public class Acceptor {
 //			}
 
             //start this execution if it is not already running
-            if (eid.intValue() == requesthandler.getLastExec().intValue() + 1) {
-                requesthandler.setInExec(eid);
+            if (eid.intValue() == manager.getNextExec()) {
+                manager.setInExec(eid);
             }
             Object deserialised = tomlayer.checkProposedValue(value);
             if (deserialised != null) {
@@ -596,9 +596,7 @@ public class Acceptor {
             log.info( round.getExecution() + " | " + round.getNumber() + " | TIMEOUT");
         }
 
-        if (!round.isDecided() && !round.isRemoved()/*
-                 * isFrozen()
-                 */) {
+        if (!round.isDecided()) {
             // Send freeze msg to all acceptors including me
             checkFreezeMsg(round);
             doFreeze(round);
@@ -733,12 +731,16 @@ public class Acceptor {
             CollectProof clProof = new CollectProof(proofs, newNextLeader);
 
             verifier.sign(clProof);
+			
             msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), 
                 newNextLeader, exec.getId(), round.getNumber()});
-            String id = String.format("C%1$d-%2$d-%3$d-%4$d", conf.getProcessId(),
-                    newNextLeader, exec.getId(), round.getNumber());
-            msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}|"
-                    + " 4| {2}|", new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
+			if (msctlog.isLoggable(Level.INFO)) {
+				String id = String.format("C%1$d-%2$d-%3$d-%4$d", conf.getProcessId(),
+						newNextLeader, exec.getId(), round.getNumber());
+				msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| 0x{0}|"
+						+ " 4| {2}|", new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
+			}
+			
             communication.send(new Integer[]{newNextLeader},
                     factory.createCollect(exec.getId(), round.getNumber(), clProof));
         } else {

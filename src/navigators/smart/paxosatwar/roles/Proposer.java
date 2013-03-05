@@ -107,7 +107,7 @@ public class Proposer {
                         new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
             }
         }
-
+		manager.getExecution(eid).getRound(Round.ROUND_ZERO).setProposed();
         communication.send(manager.getAcceptors(),
                 factory.createPropose(eid, Round.ROUND_ZERO, value, null));
     }
@@ -169,7 +169,8 @@ public class Proposer {
                     log.log(Level.FINEST, "{0} | {1} | {2} VALID PROOFS",
                             new Object[]{execution.getId(), nextRoundNumber,
                                 verifier.countProofs(round.proofs)});
-                    if (verifier.countProofs(round.proofs) > manager.quorumStrong) {
+                    if (verifier.countProofs(round.proofs) > manager.quorumStrong && !round.isProposed()) {
+						round.setProposed();
                         createPropose(execution, round);
                     }
                 } else {

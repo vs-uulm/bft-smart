@@ -58,6 +58,21 @@ public class ProofVerifier {
 			this.acc = acc;
 			this.poss = poss;
 		}
+		
+		@Override
+		public String toString(){
+			StringBuilder sb = new StringBuilder();
+			sb.append(round).append(" | Acc:");
+			
+			for(ByteWrapper b:acc){
+				sb.append(Arrays.toString(b.value)).append(" | ");
+			}
+			sb.append("Poss: ");
+			for(ByteWrapper b:poss){
+				sb.append(Arrays.toString(b.value)).append(" | ");
+			}
+			return sb.toString();
+		}
 	}
 
 	/**
@@ -179,6 +194,7 @@ public class ProofVerifier {
         /* condition G2 in Paxos At War 
 		   Check each round for a possible w */
 		for (RoundInfo s : infos) {
+			log.log(Level.FINER,"Checking G2 of {0}",s);
 			// Check each value in acc
 			for(ByteWrapper w:s.acc){
 				if (checkGood(w, s, r, infos)) {
@@ -188,6 +204,7 @@ public class ProofVerifier {
 		}
 		// No value is in poss -> G1 of the PaW Algorithms can use any value
 		for (RoundInfo s:infos){
+			log.log(Level.FINER,"Checking G1 of {0}",s);
 			for(ByteWrapper w: s.acc){
 				// TODO Check here if w element of I of the PaW
 				if (w.value != null){

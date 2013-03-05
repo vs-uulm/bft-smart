@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.ExemptionMechanism;
 import navigators.smart.consensus.MeasuringConsensus;
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
@@ -34,7 +35,8 @@ public class Execution {
 	private List<Round> rounds = new LinkedList<Round>();
 //    private HashMap<Integer,Round> rounds = new HashMap<Integer,Round>(2);
 	private ReentrantLock roundsLock = new ReentrantLock(); // Lock for concurrency control
-//    private boolean decided; // Is this execution decided?
+	private volatile boolean started = false; // Did we start this execution
+    private volatile boolean executed = false; // Is the execution of this consensus decision finished.
 	private long initialTimeout; // Initial timeout for rounds
 	private Integer decisionRound = Integer.valueOf(-1); // round at which a desision was made
 	private Integer currentRound = ROUND_ZERO; //Currently active round
@@ -52,6 +54,7 @@ public class Execution {
 		this.manager = manager;
 		this.consensus = consensus;
 		this.initialTimeout = initialTimeout;
+		getRound(0);
 	}
 
 	/**
@@ -107,7 +110,8 @@ public class Execution {
 			Round round = null;
 			if (rounds.size() <= number) {
 				if (create) {
-					log.log(Level.FINER, "Creating round {0} for Execution {1}", new Object[]{number, consensus.getId()});
+					log.log(Level.FINER, "Creating round {0} for Execution {1}",
+							new Object[]{number, consensus.getId()});
 					round = new Round(this, number, initialTimeout);
 					rounds.add(round);
 				}
@@ -129,25 +133,25 @@ public class Execution {
 		return rounds;
 	}
 
-	/**
-	 * Removes rounds greater than 'limit' from this execution
-	 *
-	 * @param limit Rounds that should be kept (from 0 to 'limit')
-	 */
-	public void removeRoundsandCancelTO(int limit) {
-		try {
-			roundsLock.lock();
-
-			for (int i = 0; i<limit;i++) {
-				Round r = rounds.get(i);
-				r.setRemoved();
-				r.getTimeoutTask().cancel(true);
-			}
-
-		} finally {
-			roundsLock.unlock();
-		}
-	}
+//	/**
+//	 * Removes rounds greater than 'limit' from this execution
+//	 *
+//	 * @param limit Rounds that should be kept (from 0 to 'limit')
+//	 */
+//	public void removeRoundsandCancelTO(int limit) {
+//		try {
+//			roundsLock.lock();
+//
+//			for (int i = 0; i<limit;i++) {
+//				Round r = rounds.get(i);
+//				r.setRemoved();
+//				r.getTimeoutTask().cancel(true);
+//			}
+//
+//		} finally {
+//			roundsLock.unlock();
+//		}
+//	}
 
 	/**
 	 * The round at which a decision was possible to make
@@ -201,9 +205,51 @@ public class Execution {
 	public boolean isDecided() {
 		return decisionRound != -1;
 	}
+	
+	/**
+	 * Is this execution already executed by the service
+	 *
+	 * @return True if it is decided, false otherwise
+	 */
+	public boolean isExecuted() {
+		return executed;
+	}
+	
+	/**
+	 * Sets this execution to be executed
+	 */
+	public void  setExecuted() {
+		executed = true;
+	}
+	/**
+	 * Is this execution already started by a proposal
+	 *
+	 * @return True if it is decided, false otherwise
+	 */
+	public boolean isStarted() {
+		return started;
+	}
+	
+	/**
+	 * Sets this execution to be executed
+	 */
+	public void  setStarted() {
+		started = true;
+	}
+	
+	/**
+	 * Informs wether or not the execution is currently active. This can
+	 * change back to true if f+1 freeze messages for the last round arrive.
+	 *
+	 * @return True if it is decided, false otherwise
+	 */
+	public boolean isActive() {
+		return getLastRound().isActive();
+	}
 
 	/**
-	 * Called by the Acceptor, to set the decided value. If the Propose for the round was not yet received the execution is postponed until the decide
+	 * Called by the Acceptor, to set the decided value. If the Propose for the 
+	 * round was not yet received the execution is postponed until the decide
 	 * arrives and this method is called again.
 	 *
 	 * @param value The decided value
@@ -213,17 +259,23 @@ public class Execution {
 	public void decided(Round round/*
 			 * , byte[] value
 			 */) {
+		// This is the first time we decide
 		if (decisionRound == -1) {
 			decisionRound = round.getNumber();
-		}
-		if (round.getPropValue() != null) {
-			consensus.decided(round.getPropValue(), decisionRound);
+			if (round.getPropValue() != null) {
+				consensus.decided(round.getPropValue(), decisionRound);
 
-			manager.getTOMLayer().decided(consensus);
+				manager.getTOMLayer().decided(consensus);
+			}
+		} else {		
+			// Multiple decisions where made
+			//Check if we have stuff remaining or new messages to propose
+			manager.executionFinished(consensus);
 		}
 	}
         
-        public String toString(){
-            return consensus.getId().toString();
-        }
+	@Override
+	public String toString() {
+		return consensus.getId().toString();
+	}
 }

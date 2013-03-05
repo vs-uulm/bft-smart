@@ -33,17 +33,10 @@ import navigators.smart.tom.util.TOMUtil;
 public class RequestHandler extends Thread {
 
 	private static final Logger log = Logger.getLogger(RequestHandler.class.getCanonicalName());
-	private static final Long IDLE = Long.valueOf(-1l);
 	private final ExecutionManager execManager; // Execution manager
 	private final LeaderModule lm; // Leader module
 	private final ProofVerifier verifier; // Acceptor role of the PaW algorithm
 	private final TOMConfiguration conf;
-	/**
-	 * The id of the consensus being executed (or -1 if there is none)
-	 */
-	private Long inExecution = IDLE;
-	private Long lastExecuted = IDLE;
-	private Long nextExecution = Long.valueOf(0);
 	private Map<Integer, RTInfo> timeoutInfo = new HashMap<Integer, RTInfo>();
 	private ReentrantLock lockTI = new ReentrantLock();
 
@@ -77,62 +70,58 @@ public class RequestHandler extends Thread {
 //		leaderLock.unlock();
 //	}
 
-	/**
-	 * Sets which consensus was the last to be executed
-	 *
-	 * @param last ID of the consensus which was last to be executed
-	 */
-	public void setLastExec(Long last) { // TODO:  Condiçao de corrida?
-		this.lastExecuted = last;
-		this.nextExecution = new Long(last.longValue() + 1);
-	}
-
-	/**
-	 * Gets the ID of the consensus which was established as the last executed
-	 *
-	 * @return ID of the consensus which was established as the last executed
-	 */
-	public Long getLastExec() {
-		return this.lastExecuted;
-	}
-
-	/**
-	 * Sets which consensus is being executed at the moment. If the value is set to -1 a new Proposal is triggered if this replica is the leader.
-	 *
-	 * @param inEx ID of the consensus being executed at the moment
-	 */
-	public void setInExec(Long inEx) {
-		if (log.isLoggable(Level.FINEST)) {
-			log.finest("Modifying state from " + this.inExecution + " to " + inEx);
-		}
-
-		leaderLock.lock();
-		this.inExecution = inEx;
-		if (inEx.equals(IDLE) && !tomlayer.isRetrievingState()) { //code of joao for state transfer
-			iAmLeader.signalAll();
-		}
-		leaderLock.unlock();
-	}
-
-
-	/**
-	 * Gets the ID of the consensus currently beign executed
-	 *
-	 * @return ID of the consensus currently beign executed (if no consensus ir executing, -1 is returned)
-	 */
-	public Long getInExec() {
-		return this.inExecution;
-	}
-
-	/**
-	 * Checks whether the given execution is currently executed
-	 *
-	 * @param exec The execution to check
-	 * @return true if it is currently executed, false if not
-	 */
-	public boolean isInExec(Long exec) {
-		return inExecution.equals(exec);
-	}
+//	/**
+//	 * Sets which consensus was the last to be executed
+//	 *
+//	 * @param last ID of the consensus which was last to be executed
+//	 */
+//	public void setLastExec(Long last) { // TODO:  Condiçao de corrida?
+//		this.lastExecuted = last;
+//		this.nextExecution = new Long(last.longValue() + 1);
+//	}
+//
+//	/**
+//	 * Gets the ID of the consensus which was established as the last executed
+//	 *
+//	 * @return ID of the consensus which was established as the last executed
+//	 */
+//	public Long getLastExec() {
+//		return this.lastExecuted;
+//	}
+//
+//	/**
+//	 * Sets which consensus is being executed at the moment. If the value is set to -1 a new Proposal is triggered if this replica is the leader.
+//	 *
+//	 * @param inEx ID of the consensus being executed at the moment
+//	 */
+//	public void setInExec(Long inEx) {
+//
+//		leaderLock.lock();
+//		if (inEx.equals(IDLE) && !tomlayer.isRetrievingState()) { //code of joao for state transfer
+//			iAmLeader.signalAll();
+//		}
+//		leaderLock.unlock();
+//	}
+//
+//
+//	/**
+//	 * Gets the ID of the consensus currently beign executed
+//	 *
+//	 * @return ID of the consensus currently beign executed (if no consensus ir executing, -1 is returned)
+//	 */
+//	public Long getInExec() {
+//		return this.inExecution;
+//	}
+//
+//	/**
+//	 * Checks whether the given execution is currently executed
+//	 *
+//	 * @param exec The execution to check
+//	 * @return true if it is currently executed, false if not
+//	 */
+//	public boolean isInExec(Long exec) {
+//		return inExecution.equals(exec);
+//	}
 
 	/**
 	 * This is the main code for this thread. It basically waits until this replica becomes the leader, and when so, proposes a value to the other
@@ -151,8 +140,9 @@ public class RequestHandler extends Thread {
 			// blocks until this replica learns to be the leader for the current round of the current consensus
 			try {
 				leaderLock.lock();
+				
 				if (log.isLoggable(Level.FINER)) {
-					log.finer("Next leader for eid=" + (getNextExec()) + ": " + lm.getLeader(getNextExec()));
+					log.finer("Next leader for eid=" + (execManager.getNextExec()) + ": " + lm.getLeader(execManager.getNextExec()));
 				}
 				
 				while (!canPropose()){
@@ -163,13 +153,7 @@ public class RequestHandler extends Thread {
 					log.finer("I can propose.");
 				}
 	
-				// Sets the current execution
-				setInExec(nextExecution);
-
-				//getExecution and if its not created create it
-				//TODO make this better
-				execManager.getExecution(inExecution);
-				execManager.getProposer().startExecution(inExecution, tomlayer.createPropose());
+				execManager.startNextExecution();
 				
 				leaderChanged = false;
 			} finally {
@@ -185,23 +169,22 @@ public class RequestHandler extends Thread {
 	private boolean canPropose(){
 		boolean leader, ready;
 		//Check if i'm the leader
-		Integer nextLeader = lm.getLeader(execManager.getExecution(nextExecution));
+		Integer nextLeader = lm.getLeader(execManager.getNextExec());
 		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
-			//there are messages to be ordered and no consensus is in execution 
-		ready = tomlayer.clientsManager.hasPendingRequests() && isIdle();
+		//there are messages to be ordered and no consensus is in execution 
+		ready = tomlayer.clientsManager.hasPendingRequests() && execManager.isIdle()
+				// and we are not retrieving a state
+				&& !tomlayer.isRetrievingState();
 
 		if (log.isLoggable(Level.FINER)) {
-			log.log(Level.FINER,"Requesthandler checking: leader: {0}, ready: {1}, changed:{2}",new Object[]{leader,ready,leaderChanged});
+			log.log(Level.FINER,"Requesthandler checking: leader: {0}, "
+					+ "ready: {1}(hasPending) && {2}(isIdle) && {3}(no statetx), changed:{4}",
+					new Object[]{leader,tomlayer.clientsManager.hasPendingRequests(), 
+						execManager.isIdle(),!tomlayer.isRetrievingState(),leaderChanged});
 		} 
 		return leader && (ready || leaderChanged);
 	}
 	
-	
-
-	public Long getNextExec() {
-		return nextExecution;
-	}
-
 	/**
 	 * Invoked when a timeout for a TOM message is triggered.
 	 *
@@ -237,7 +220,7 @@ public class RequestHandler extends Thread {
 
 	public void forwardRequestToLeader(TOMMessage request) {
 		@SuppressWarnings("boxing")
-		Integer leaderId = lm.getLeader(getLastExec() + 1, 0);
+		Integer leaderId = lm.getLeader(execManager.getLastExec() + 1, 0);
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("Forwarding " + request + " to " + leaderId);
 		}
@@ -305,7 +288,7 @@ public class RequestHandler extends Thread {
 		leaderLock.lock(); // Signal the TOMlayer thread, if this replica is the leader
 		lm.addLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
 		leaderChanged = true;
-		if (lm.getLeader(getNextExec()).equals(conf.getProcessId())) {
+		if (lm.getLeader(execManager.getNextExec()).equals(conf.getProcessId())) {
 			iAmLeader.signal();
 		}
 		leaderLock.unlock();
@@ -468,7 +451,7 @@ public class RequestHandler extends Thread {
 
 			Integer newLeader = chooseNewLeader();
 
-			Long last = isIdle() ? getLastExec() : inExecution;
+			Long last = execManager.getLastExec();
 
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Sending COLLECT to " + newLeader
@@ -515,7 +498,7 @@ public class RequestHandler extends Thread {
 	private Integer chooseNewLeader() {
 		Integer lastRoundNumber = Round.ROUND_ZERO; //the number of the last round successfully executed
 
-		Execution lastExec = execManager.getExecution(getLastExec());
+		Execution lastExec = execManager.getExecution(execManager.getLastExec());
 		if (lastExec != null) {
 			Round lastRound = lastExec.getDecisionRound();
 			if (lastRound != null) {
@@ -523,7 +506,7 @@ public class RequestHandler extends Thread {
 			}
 		}
 
-		return (lm.getLeader(getLastExec(), lastRoundNumber) + 1) % conf.getN();
+		return (lm.getLeader(execManager.getLastExec(), lastRoundNumber) + 1) % conf.getN();
 	}
 
 	/**
@@ -553,18 +536,18 @@ public class RequestHandler extends Thread {
 
 		return valid.toArray(new RTCollect[0]); // return the valid proofs ans an array
 	}
-
-	public void setIdle() {
-		if (log.isLoggable(Level.FINEST)) {
-			log.finest("Setting Requesthandler to idle after " + this.inExecution);
-		}
-
-		leaderLock.lock();
-		this.inExecution = IDLE;
-		//ot.addUpdate();
-		iAmLeader.signalAll();
-		leaderLock.unlock();
-	}
+//
+//	public void setIdle() {
+//		if (log.isLoggable(Level.FINEST)) {
+//			log.finest("Setting Requesthandler to idle after " + this.inExecution);
+//		}
+//
+//		leaderLock.lock();
+//		this.inExecution = IDLE;
+//		//ot.addUpdate();
+//		iAmLeader.signalAll();
+//		leaderLock.unlock();
+//	}
 
 	public void notifyNewRequest() {
 		leaderLock.lock();
@@ -572,15 +555,14 @@ public class RequestHandler extends Thread {
 		leaderLock.unlock();
 	}
 
-	public boolean isIdle() {
-		return inExecution.equals(IDLE);
-	}
+//	public boolean isIdle() {
+//		try {
+//			leaderLock.lock();
+//			return inExecution.equals(IDLE) 
+//					&& !execManager.getExecution(lastExecuted).isActive();
+//		} finally {
+//			leaderLock.unlock();
+//		}
+//	}
 	
-	public void executionFinished(Long eid){
-		//set this consensus as the last executed
-		setLastExec(eid);
-		// process ooc messages within the ooc lock 
-		// idle mode is set within this call to prevent simulataneous message processing of the next consensus
-		execManager.processOOCMessages(getNextExec());
-	}
 }

@@ -32,7 +32,6 @@ public class Round {
 	private transient Execution execution; // Execution where the round belongs to
 	private transient ScheduledFuture<?> timeoutTask; // Timeout ssociated with this round
 	private Integer number; // Round's number
-	private Integer me; // Process ID
 	private boolean[] weakSetted;
 	private boolean[] strongSetted;
 	//Counters for weaks, strongs and decides
@@ -43,12 +42,13 @@ public class Round {
 	private byte[][] strong; // strongly accepted values from other processes
 	private byte[][] decide; // values decided by other processes
 	private boolean decided = false; // Is this round decided
+	private boolean proposed = false; // Did we propose in this round
 	private Collection<Integer> freeze = null; // processes where this round was freezed
 	private boolean frozen = false; // is this round frozen?
 	private boolean collected = false; // indicates if a collect message for this round was already sent
 	private long timeout; // duration of the timeout
 	private boolean isTimeout = false; // Was a timeout sent for this round?
-	private boolean alreadyRemoved = false; // indicates if this round was removed from its execution
+//	private boolean alreadyRemoved = false; // indicates if this round was removed from its execution
 	private byte[] propValue = null; // proposed value
 	private byte[] propValueHash = null; // proposed value hash
 	public CollectProof[] proofs; // proof from other processes
@@ -66,8 +66,6 @@ public class Round {
 		this.number = number;
 
 		ExecutionManager manager = execution.getManager();
-
-		this.me = manager.getProcessId();
 
 		Integer[] acceptors = manager.getAcceptors();
 		int n = acceptors.length;
@@ -127,21 +125,21 @@ public class Round {
 		return propValueHash;
 	}
 
-	/**
-	 * Set this round as removed from its execution
-	 */
-	public void setRemoved() {
-		this.alreadyRemoved = true;
-	}
+//	/**
+//	 * Set this round as removed from its execution
+//	 */
+//	public void setRemoved() {
+//		this.alreadyRemoved = true;
+//	}
 
-	/**
-	 * Informs if this round was removed from its execution
-	 *
-	 * @return True if it is removed, false otherwise
-	 */
-	public boolean isRemoved() {
-		return this.alreadyRemoved;
-	}
+//	/**
+//	 * Informs if this round was removed from its execution
+//	 *
+//	 * @return True if it is removed, false otherwise
+//	 */
+//	public boolean isRemoved() {
+//		return this.alreadyRemoved;
+//	}
 
 	/**
 	 * Adds a collect proof from another replica
@@ -549,5 +547,33 @@ public class Round {
 
 	public void decided() {
 		decided = true;
+	}
+
+	/**
+	 * Indicates if this round is still active and further processing will happen
+	 * befor the corresponding execution will be done.
+	 * 
+	 * @return true if frozen or not decided, false otherwise
+	 */
+	public boolean isActive() {
+		return proposed && (collected || !decided);
+	}
+
+	/**
+	 * Indicates if a proposal for this round was already sent.
+	 * 
+	 * @return true if a proposal was sent false otherwise
+	 */
+	public boolean isProposed() {
+		return proposed;
+	}
+	
+	/**
+	 * Sets the proposed flag for this round
+	 * 
+	 * @return true if a proposal was sent false otherwise
+	 */
+	public void setProposed() {
+		proposed = true;
 	}
 }
