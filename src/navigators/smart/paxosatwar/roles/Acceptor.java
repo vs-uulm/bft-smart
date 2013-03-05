@@ -330,7 +330,7 @@ public class Acceptor {
         if (log.isLoggable(Level.FINER)) {
             log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE");
         }
-
+		round.setProposed();
         scheduleTimeout(round);
         if (round.getPropValue() == null) {
             byte[] hash = tomlayer.computeHash(value);
