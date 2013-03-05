@@ -433,7 +433,7 @@ public class Acceptor {
         // Can I go straight to decided state?
         if (weakAccepted > manager.quorumFastDecide && !round.isDecided()) {
             if (log.isLoggable(Level.FINE)) {
-                log.fine( eid + " | " + round.getNumber() + " | WEAK DECIDE");
+                log.fine( eid + " | " + round.getNumber() + " | DECIDE (WEAK)");
             }
             decide(eid, round, valuehash);
         }
@@ -525,7 +525,7 @@ public class Acceptor {
         if (strongAccepted > manager.quorum2F && !round.isDecided()) {
 
             if (log.isLoggable(Level.FINE)) {
-                log.fine( eid + " | " + round.getNumber() + " | STRONG DECIDE");
+                log.fine( eid + " | " + round.getNumber() + " | DECIDE(STRONG)");
             }
             decide(eid, round, value);
         }

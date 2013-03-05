@@ -23,6 +23,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import navigators.smart.paxosatwar.messages.CollectProof;
@@ -175,11 +176,9 @@ public class ProofVerifier {
      */
     public byte[] getGoodValue(CollectProof[] proofs, Integer r) {
         List<RoundInfo> infos = buildInfos(proofs);
-
         /* condition G2 in Paxos At War 
 		   Check each round for a possible w */
 		for (RoundInfo s : infos) {
-			
 			// Check each value in acc
 			for(ByteWrapper w:s.acc){
 				if (checkGood(w, s, r, infos)) {
@@ -187,7 +186,6 @@ public class ProofVerifier {
 				}
 			}
 		}
-
         return null;
     }
 
@@ -228,12 +226,14 @@ public class ProofVerifier {
 			for (int i = s.round; i < infos.size(); i++) {
 				if (!infos.get(i).poss.contains(w)) {
 					good = false;
+					log.log(Level.INFO,"ACC w of {1} not in poss of {0}",new Object[]{i,s.round});
 				}
 			}
 			if (good) {
 				return true;	// Value was in acc(s) for s < r and in poss(t) with s <= t < r
 			}
 		}
+		log.log(Level.INFO,"w not in acc of {0} or s({0}) >= r({1})",new Object[]{s.round,r});
 		return false;
 	}
 
