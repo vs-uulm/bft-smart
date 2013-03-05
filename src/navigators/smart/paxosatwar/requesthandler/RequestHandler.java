@@ -353,7 +353,7 @@ public class RequestHandler extends Thread {
 					request.setBytes(serializedRequest[0]);
 					request.serializedMessageSignature = serializedRequest[1];
 
-					if (tomlayer.clientsManager.requestReceived(request, false, true)) { //Is this a pending message?
+					if (tomlayer.clientsManager.checkAndRecordRequest(request, false, true)) { //Is this a pending message?
 						RTInfo rti = getTimeoutInfo(request.getId());
 						timeout(msg.getSender().intValue(), request, rti);
 					} else {

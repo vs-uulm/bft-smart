@@ -67,16 +67,8 @@ public class ClientData {
         return lastMessageExecuted;
     }
 
-    public void setLastMessageReceived(int lastMessageReceived) {
-        this.lastMessageReceived = lastMessageReceived;
-    }
-
     public int getLastMessageReceived() {
         return lastMessageReceived;
-    }
-
-    public void setLastMessageReceivedTime(long lastMessageReceivedTime) {
-        this.lastMessageReceivedTime = lastMessageReceivedTime;
     }
 
     public long getLastMessageReceivedTime() {
@@ -155,5 +147,16 @@ public class ClientData {
 	
 	public int getProposedRequests() {
 		return proposedRequests.size();
+	}
+
+	/**
+	 * Update this client data set with this received message by storing the sequence
+	 * number and the reception time.
+	 * 
+	 * @param request The request to record
+	 */
+	void recordRequestInfo(TOMMessage request) {
+        this.lastMessageReceived = request.getSequence();
+        this.lastMessageReceivedTime = request.receptionTime;
 	}
 }

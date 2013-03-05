@@ -139,7 +139,7 @@ public class TOMLayer implements RequestReceiver {
 				clientsManager.resetClients();
 			}
 			// check if this request is valid
-			if (clientsManager.requestReceived(msg, true, !msg.isReadOnlyRequest())) {
+			if (clientsManager.checkAndRecordRequest(msg, true, !msg.isReadOnlyRequest())) {
 				if (msg.isReadOnlyRequest()) {
 					receiver.receiveUnorderedMessage(msg);
 				} else {
@@ -230,7 +230,7 @@ public class TOMLayer implements RequestReceiver {
 			for (int i = 0; i < requests.length; i++) {
 				
 				//check all proposed requests with the client manager
-				if (!clientsManager.requestReceived(requests[i], false, true)) {
+				if (!clientsManager.checkAndRecordRequest(requests[i], false, true)) {
 					log.log(Level.WARNING,"Something is wrong with {0}, "
 							+ "returning null",requests[i]);
 					return null;
