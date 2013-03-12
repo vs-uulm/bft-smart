@@ -724,7 +724,7 @@ public class Acceptor {
             LinkedList<FreezeProof> proofs = new LinkedList<FreezeProof>();
             for (Round r : exec.getRounds()) {
                 if (r.getNumber() < nextRound.getNumber()) {	// add only smaller rounds
-                    proofs.add(createProof(exec.getId(), round));
+                    proofs.add(createProof(exec.getId(), r));
                 }
             }
 

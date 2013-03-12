@@ -250,9 +250,11 @@ public class ProofVerifier {
 
 			// Check if val is in poss beginning with the round where it was in acc 
 			for (int i = s.round; i < infos.size(); i++) {
-				if (!infos.get(i).poss.contains(w)) {
+				Set<ByteWrapper> currposs = infos.get(i).poss;
+				// Check if w only val in poss or poss empty for a t < r
+				if (currposs.size()> 2 ||  currposs.size() == 1 && !currposs.contains(w)) {
 					good = false;
-					log.log(Level.INFO,"ACC w of {1} not in poss of {0}",new Object[]{i,s.round});
+					log.log(Level.INFO,"ACC w of {1} not in poss of {0} and poss not empty",new Object[]{i,s.round});
 				}
 			}
 			if (good) {
@@ -300,6 +302,7 @@ public class ProofVerifier {
 		if (proofs == null){
 			return false;
 		}
+		log.log(Level.FINER,"Checking Proofs: {0}",proofs);
 		for(FreezeProof p: proofs){
 			if (!p.getEid().equals(eid)){
 				return false;
@@ -384,16 +387,19 @@ public class ProofVerifier {
 
 		//Check each Proof for its weak value;
 		for (int i = 0; i < proofs.length; i++) {
+			// Get weakly and strongly accepted values for this collectproof
 			ByteWrapper w = getWeakProof(proofs[i], round);
 			ByteWrapper s = getStrongProof(proofs[i], round);
-
+			log.log(Level.FINER,"Checking Proof: {0} w: {1} s:{2}",new Object[]{proofs[i],w,s});
+			// Check the value if it exists for ACC and POSS
 			if (w != null && !acc.contains(w) && !poss.contains(w)) {
 				int weakcount = 0;
 				int strongcount = 0;
-				for (int j = 0; j < proofs.length; j++) {
+				// Check all later rounds 
+				for (int j = i+1; j < proofs.length; j++) {
 
-					//Check rounds of other proofs for the same w
-					if (j != i) {
+					//Check other proofs for the same w
+					if (proofs[j] != null) {
 						ByteWrapper cw = getWeakProof(proofs[j], round);		// current weak
 						ByteWrapper cs = getStrongProof(proofs[j], round);		// current strong
 
@@ -415,7 +421,9 @@ public class ProofVerifier {
 				}
 			}
 		}
-		return new RoundInfo(round, acc, poss);
+		RoundInfo ret = new RoundInfo(round, acc, poss);
+		log.log(Level.FINE,"Info for {0}",ret);
+		return ret;
 	}
 	
 	/**

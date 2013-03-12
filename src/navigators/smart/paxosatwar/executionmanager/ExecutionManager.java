@@ -565,7 +565,6 @@ public final class ExecutionManager{
 		try {
 			executionsLock.lock();
 			this.lastExecuted = last;
-			this.nextExecution = new Long(last.longValue() + 1);
 		} finally {
 			executionsLock.unlock();
 		}
@@ -611,6 +610,7 @@ public final class ExecutionManager{
 				log.finest("Modifying state from " + this.inExecution + " to " + inEx);
 			}
 			this.inExecution = inEx;
+			this.nextExecution = new Long(inEx.longValue() + 1);
 		} finally {
 			executionsLock.unlock();
 		}

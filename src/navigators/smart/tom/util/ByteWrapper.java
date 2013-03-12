@@ -54,6 +54,9 @@ public class ByteWrapper {
 		return hash;
 	}
 	
-	
+	@Override
+	public String toString(){
+		return Arrays.toString(value);
+	}
 	
 }

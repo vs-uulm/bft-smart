@@ -131,7 +131,7 @@ public final class FreezeProof {
     @Override
     public String toString() {
 
-        return "W="+weak+" S="+strong+" D="+decide;
+        return eid+" | "+round+" ("+pid+") W="+weak+" S="+strong+" D="+decide+" w="+Arrays.toString(value);
 
     }
 

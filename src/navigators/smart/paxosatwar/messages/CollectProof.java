@@ -21,7 +21,6 @@ package navigators.smart.paxosatwar.messages;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 import navigators.smart.tom.util.SerialisationHelper;
 
 /**
@@ -175,6 +174,11 @@ public final class CollectProof {
 		if (!Arrays.equals(signature, other.signature))
 			return false;
 		return true;
+	}
+	
+	@Override
+	public String toString(){
+		return String.format("CP | L {0} | Proofs {1}", new Object[]{newLeader,proofIn});
 	}
 
 }
