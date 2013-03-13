@@ -201,7 +201,7 @@ public class Acceptor {
             log.log(Level.FINE, "Processing propose for {0}-{1} normally", new Object[]{eid, round.getNumber()});
             executePropose(round, value);
         } else {
-            log.log(Level.FINE, "Checking propose for {0}-{1} for goodness", new Object[]{eid, round.getNumber()});
+            log.log(Level.FINE, "Checking propose for {0}-{1} for goodness, expected leader:{0}", new Object[]{eid, round.getNumber(),leader});
             checkPropose(round, msg);
         }
     }
