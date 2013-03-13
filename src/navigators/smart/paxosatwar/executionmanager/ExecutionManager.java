@@ -514,7 +514,7 @@ public final class ExecutionManager{
 		Execution e = executions.get(cons.getId());
 		long nextExecution = e.getId()+1;
 		if (!e.isExecuted()){
-         
+			e.setExecuted();
             //define the last stable consensus... the stable consensus can
             //be removed from the leaderManager and the executionManager
             if (cons.getId().longValue() > 2) {
