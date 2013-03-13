@@ -107,7 +107,9 @@ public class Proposer {
                         new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
             }
         }
-		manager.getExecution(eid).getRound(Round.ROUND_ZERO).setProposed();
+		Round r = manager.getExecution(eid).getRound(Round.ROUND_ZERO);
+		r.setProposed();
+		r.scheduleTimeout();
         communication.send(manager.getAcceptors(),
                 factory.createPropose(eid, Round.ROUND_ZERO, value, null));
     }
@@ -234,7 +236,8 @@ public class Proposer {
                         new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
             }
         }
-
+		round.setProposed();
+		round.scheduleTimeout();
         //Send propose
         communication.send(manager.getAcceptors(),
                 factory.createPropose(execution.getId(), round.getNumber(),

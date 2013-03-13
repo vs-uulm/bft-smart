@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.TreeMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,9 +64,11 @@ public final class ExecutionManager{
 	private Long lastExecuted = IDLE;
 	private Long nextExecution = Long.valueOf(0);
 
-    private Acceptor acceptor;	// Acceptor role of the PaW algorithm
-    private Proposer proposer;	// Proposer role of the PaW algorithm
+    final Acceptor acceptor;	// Acceptor role of the PaW algorithm
+    final Proposer proposer;	// Proposer role of the PaW algorithm
 	private GroupManager gm;	// Manager for the group of replicas
+	
+	final ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(5); // scheduler for timeouts
 
     private Map<Long, Execution> executions = new TreeMap<Long, Execution>(); // Executions
     private ReentrantLock executionsLock = new ReentrantLock(); //lock for executions table

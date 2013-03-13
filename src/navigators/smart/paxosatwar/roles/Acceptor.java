@@ -51,7 +51,6 @@ public class Acceptor {
     public static final Logger msclog = Logger.getLogger("MSCLogger");
     public static final Logger msctlog = Logger.getLogger("MSCTracer");
     private static final Logger log = Logger.getLogger(Acceptor.class.getCanonicalName());
-    private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(5); // scheduler for timeouts
     private Integer me; // This replica ID
     private ExecutionManager manager; // Execution manager of consensus's executions
     private final MessageFactory factory; // Factory for PaW messages
@@ -331,7 +330,7 @@ public class Acceptor {
             log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE");
         }
 		round.setProposed();
-        scheduleTimeout(round);
+        round.scheduleTimeout();
         if (round.getPropValue() == null) {
             byte[] hash = tomlayer.computeHash(value);
             round.setpropValue(value, hash);
@@ -427,7 +426,7 @@ public class Acceptor {
         //Schedule timeout if not yet scheduled when one correct replica indicates
         //the existance of this round
         if (weakAccepted > manager.quorumF) {
-            scheduleTimeout(round);
+            round.scheduleTimeout();
         }
 
         // Can I go straight to decided state?
@@ -557,31 +556,6 @@ public class Acceptor {
     }
 
     /**
-     * Schedules a timeout for a given round. It is called by an Execution when
-     * a new round is confirmably created. This means when a propose arrives,
-     * when f+1 weaks or strongs arrive or a round is frozen by 2f+1 freeze
-     * messages.
-     *
-     * @param round Round to be associated with the timeout
-     */
-    private void scheduleTimeout(Round round) {
-        if (round.getTimeoutTask() == null && !round.isFrozen()) {
-            if (log.isLoggable(Level.FINER)) {
-                log.finer( round.getExecution() + " | " 
-                        + round.getNumber() + " | SCHEDULE TO " 
-                        + round.getTimeout() + " ms");
-            }
-            TimeoutTask task = new TimeoutTask(this, round);
-            ScheduledFuture<?> future = timer.schedule(task, round.getTimeout(), TimeUnit.MILLISECONDS);
-            round.setTimeoutTask(future);
-        }
-        //purge timer every 100 timeouts
-        if (round.getExecution().getId().longValue() % 100 == 0) {
-            timer.purge();
-        }
-    }
-
-    /**
      * This mehod is called by timertasks associated with rounds. It will
      * locally freeze a round, given that is not already frozen, its not
      * decided, and is not removed from its execution
@@ -699,7 +673,7 @@ public class Acceptor {
             exec.nextRound();	//Set active round to next round
 
             // schedule TO if not scheduled yet
-            scheduleTimeout(nextRound);
+            nextRound.scheduleTimeout();
             Integer currentNextLader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
 
             //define the leader for the next round: (previous_leader + 1) % N

@@ -30,7 +30,7 @@ import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 public class Execution {
 
 	public static final Logger log = Logger.getLogger(Execution.class.getCanonicalName());
-	private ExecutionManager manager; // Execution manager for this execution
+	final ExecutionManager manager; // Execution manager for this execution
 	private MeasuringConsensus consensus; // MeasuringConsensus instance to which this execution works for
 	private List<Round> rounds = new LinkedList<Round>();
 //    private HashMap<Integer,Round> rounds = new HashMap<Integer,Round>(2);

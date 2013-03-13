@@ -19,8 +19,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.TreeSet;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import navigators.smart.paxosatwar.messages.CollectProof;
+import navigators.smart.paxosatwar.roles.Acceptor;
 
 /**
  * This class stands for a round of an execution of a consensus
@@ -29,8 +32,8 @@ public class Round {
 
 	public static final Integer ROUND_ZERO = Integer.valueOf(0);
 	private static final Logger log = Logger.getLogger(Round.class.getCanonicalName());
-	private transient Execution execution; // Execution where the round belongs to
-	private transient ScheduledFuture<?> timeoutTask; // Timeout ssociated with this round
+	private transient final Execution execution; // Execution where the round belongs to
+	private transient volatile ScheduledFuture<?> timeoutTask; // Timeout ssociated with this round
 	private Integer number; // Round's number
 	private boolean[] weakSetted;
 	private boolean[] strongSetted;
@@ -184,15 +187,6 @@ public class Round {
 	}
 
 	/**
-	 * Sets the timeout associated with this round
-	 *
-	 * @param timeoutTask The timeout associated with this round
-	 */
-	public void setTimeoutTask(ScheduledFuture<?> timeoutTask) {
-		this.timeoutTask = timeoutTask;
-	}
-
-	/**
 	 * Retrieves the timeout associated with this round
 	 *
 	 * @param timeoutTask The timeout associated with this round
@@ -200,6 +194,30 @@ public class Round {
 	public ScheduledFuture<?> getTimeoutTask() {
 		return timeoutTask;
 	}
+	
+	/**
+     * Schedules a timeout for a given round. It is called by an Execution when
+     * a new round is confirmably created. This means when a propose arrives,
+     * when f+1 weaks or strongs arrive or a round is frozen by 2f+1 freeze
+     * messages.
+     *
+     */
+    public void scheduleTimeout() {
+        if (timeoutTask == null && !isFrozen()) {
+            if (log.isLoggable(Level.FINER)) {
+                log.finer( execution + " | " 
+                        + number + " | SCHEDULE TO " 
+                        + timeout+ " ms");
+            }
+			Acceptor acc = execution.getManager().acceptor;
+            TimeoutTask task = new TimeoutTask(acc, this);
+            timeoutTask = execution.manager.timer.schedule(task, timeout, TimeUnit.MILLISECONDS);
+        }
+        //purge timer every 100 timeouts
+        if (execution.getId().longValue() % 100 == 0) {
+            execution.manager.timer.purge();
+        }
+    }
 
 	/**
 	 * Informs if there is a weakly accepted value from a replica
