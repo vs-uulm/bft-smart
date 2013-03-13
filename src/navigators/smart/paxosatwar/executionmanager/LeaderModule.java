@@ -101,11 +101,14 @@ public class LeaderModule {
         long current_exec = exec + 1;
 
         while ((list = leaderInfos.get(current_exec++)) != null) {
+			Integer nextLeader = newLeader;
             for (ConsInfo cit : list) {
                 // Replace leaders of later executions if they have this current leader
-                if (oldleader == null || cit.leaderId.equals(oldleader)) {
-                    cit.leaderId = newLeader;
-                }
+//                if (oldleader == null || cit.leaderId.equals(oldleader)) {
+//					oldleader = cit.leaderId;
+                    cit.leaderId = nextLeader;
+					nextLeader ++;
+//                }
             }
         }
     }

@@ -52,11 +52,13 @@ public class ProofVerifier {
 		final int round;
 		final Set<ByteWrapper> acc;
 		final Set<ByteWrapper> poss;
+		final Set<ByteWrapper> val;
 
-		public RoundInfo(int round, Set<ByteWrapper> acc, Set<ByteWrapper> poss) {
+		public RoundInfo(int round, Set<ByteWrapper> acc, Set<ByteWrapper> poss, Set<ByteWrapper> val) {
 			this.round = round;
 			this.acc = acc;
 			this.poss = poss;
+			this.val = val;
 		}
 		
 		@Override
@@ -193,26 +195,35 @@ public class ProofVerifier {
         List<RoundInfo> infos = buildInfos(proofs);
         /* condition G2 in Paxos At War 
 		   Check each round for a possible w */
-		for (RoundInfo s : infos) {
+		for (int i = infos.size()-1; i >= 0; i--) {
+			RoundInfo s = infos.get(i);
 			log.log(Level.FINER,"Checking G2 of {0}",s);
 			// Check each value in acc
 			for(ByteWrapper w:s.acc){
-				if (checkGood(w, s, r, infos)) {
+				if (checkGoodG2(w, s, r, infos)) {
 					return w.value;
 				}
+			}
+		}
+		
+		// No value is in poss -> G1 of the PaW Algorithms can use any value
+		for (RoundInfo s : infos) {
+			log.log(Level.FINER, "Checking G1 of {0}", s);
+			if (!s.poss.isEmpty()) {
+				log.severe("No G2 value found, but poss is not empty!");
+				return null;
 			}
 		}
 		// No value is in poss -> G1 of the PaW Algorithms can use any value
-		for (RoundInfo s:infos){
-			log.log(Level.FINER,"Checking G1 of {0}",s);
-			for(ByteWrapper w: s.acc){
+		for (RoundInfo s : infos) {
+			log.log(Level.FINER, "Checking G1 of {0}", s);
+			for (ByteWrapper w : s.val) {
 				// TODO Check here if w element of I of the PaW
-				if (w.value != null){
-					return w.value;
-				}
+				return w.value;
 			}
 		}
-        return null;
+		log.severe("No value found to propose - should not happen");
+		return null;
     }
 
     /**
@@ -230,7 +241,7 @@ public class ProofVerifier {
 
         //condition G2 in Paxos At War 
 		for (RoundInfo s : infos) {
-			if (checkGood(w, s, r, infos)) {
+			if (checkGoodG2(w, s, r, infos)) {
 				return true;
 			}
 		}
@@ -244,7 +255,15 @@ public class ProofVerifier {
         return true;
     }
 	
-	private boolean checkGood( ByteWrapper w, RoundInfo s, Integer r, List<RoundInfo> infos){
+	/**
+	 * Check Condition G2 for this value starting from round s
+	 * @param w The value to check
+	 * @param s The round to start from (w E acc)
+	 * @param r The current round
+	 * @param infos The infos of all rounds in this execution
+	 * @return 
+	 */
+	private boolean checkGoodG2( ByteWrapper w, RoundInfo s, Integer r, List<RoundInfo> infos){
 		if (s.acc.contains(w) && s.round < r) {
 			boolean good = true;
 
@@ -383,18 +402,19 @@ public class ProofVerifier {
 		CollectProof[] proofs = Arrays.copyOf(proofsin, proofsin.length);
 		Set<ByteWrapper> acc = new HashSet<ByteWrapper>();
 		Set<ByteWrapper> poss = new HashSet<ByteWrapper>();
-		
+		Set<ByteWrapper> vals = getProposedValues(proofsin,round);
 
 		//Check each Proof for its weak value;
 		for (int i = 0; i < proofs.length; i++) {
 			// Get weakly and strongly accepted values for this collectproof
 			ByteWrapper w = getWeakProof(proofs[i], round);
 			ByteWrapper s = getStrongProof(proofs[i], round);
-			log.log(Level.FINER,"Checking Proof: {0} w: {1} s:{2}",new Object[]{proofs[i],w,s});
 			// Check the value if it exists for ACC and POSS
 			if (w != null && !acc.contains(w) && !poss.contains(w)) {
-				int weakcount = 0;
-				int strongcount = 0;
+				log.log(Level.FINER,"Checking Proof: {0} w: {1} s:{2}",
+						new Object[]{proofs[i],w,s});
+				int weakcount = w != null ? 1 : 0;
+				int strongcount = s != null ? 1 : 0;
 				// Check all later rounds 
 				for (int j = i+1; j < proofs.length; j++) {
 
@@ -421,9 +441,26 @@ public class ProofVerifier {
 				}
 			}
 		}
-		RoundInfo ret = new RoundInfo(round, acc, poss);
+		RoundInfo ret = new RoundInfo(round, acc, poss, vals);
 		log.log(Level.FINE,"Info for {0}",ret);
 		return ret;
+	}
+	
+	/**
+	 * Returns the all proposed Values of this round;.
+	 * @param p The CollectProof to check
+	 * @param round The round to check
+	 * @return The weakly accepted value or null
+	 */
+	private Set<ByteWrapper> getProposedValues(CollectProof[] p, int round){
+		Set<ByteWrapper> vals = new HashSet<ByteWrapper>();
+		for (int i = 0; i < p.length; i++) {
+			if (p[i] != null && p[i].getProofs().size() > round && p[i].getProofs().get(round).getValue() != null) {
+				vals.add(new ByteWrapper(p[i].getProofs().get(round).getValue()));
+			}
+			
+		}
+		return vals;
 	}
 	
 	/**

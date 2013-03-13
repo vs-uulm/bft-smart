@@ -21,6 +21,7 @@
 package navigators.smart.paxosatwar.roles;
 
 import java.security.SignedObject;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
@@ -192,11 +193,15 @@ public class Acceptor {
             msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 0| {2}|",
                     new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
         }
+		
+		// check if the leader is correct or unkown
+		if (!leader.equals(sender)) {
+			round.storedProposes.add(msg);
+			return;
+		}
 
         // Proposals in round 0 are always valid and admissible
-        // TODO why is the leader here null sometimes when a state transfer occurred
-        if (msg.getRound().equals(ROUND_ZERO) && leader != null
-                && leader.equals(sender)) {
+        if (msg.getRound().equals(ROUND_ZERO)) {
             log.log(Level.FINE, "Processing propose for {0}-{1} normally", new Object[]{eid, round.getNumber()});
             executePropose(round, value);
         } else {
@@ -327,7 +332,7 @@ public class Acceptor {
     private void executePropose(Round round, byte[] value) {
         Long eid = round.getExecution().getId();
         if (log.isLoggable(Level.FINER)) {
-            log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE");
+            log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE with value "+Arrays.toString(value));
         }
 		round.setProposed();
         round.scheduleTimeout();
@@ -604,7 +609,12 @@ public class Acceptor {
             }
             checkFreezeMsg(round);
         }
-        computeFreeze(round);
+		// Retry stored proposes if the leader for later rounds changed
+        if(computeFreeze(round)){
+			for(Propose p:round.storedProposes){
+				proposeReceived(round, p);
+			}
+		}
     }
 
     private void checkFreezeMsg(Round round) {
@@ -654,9 +664,10 @@ public class Acceptor {
      *
      * @param round Round of the receives message
      * @param value Value sent in the message
+	 * @return true if the round was collected, false otherwise
      */
     @SuppressWarnings("boxing")
-    private void computeFreeze(Round round) {
+    private boolean computeFreeze(Round round) {
         if (log.isLoggable(Level.FINER)) {
             log.finer( round.getExecution() + " | " + round.getNumber() + " | " + round.countFreeze() + " FREEZES");
         }
@@ -717,10 +728,12 @@ public class Acceptor {
 			
             communication.send(new Integer[]{newNextLeader},
                     factory.createCollect(exec.getId(), round.getNumber(), clProof));
+			return true;
         } else {
             log.log(Level.FINEST,"{0} | {1} | nothing to do - freezes: {2} collected: {3}",
                     new Object[]{round.getExecution(), round.getNumber(),
                         round.countFreeze(),round.isCollected()});
+			return false;
         }
     }
 

@@ -15,14 +15,13 @@
  */
 package navigators.smart.paxosatwar.executionmanager;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import navigators.smart.paxosatwar.messages.CollectProof;
+import navigators.smart.paxosatwar.messages.Propose;
 import navigators.smart.paxosatwar.roles.Acceptor;
 
 /**
@@ -32,8 +31,8 @@ public class Round {
 
 	public static final Integer ROUND_ZERO = Integer.valueOf(0);
 	private static final Logger log = Logger.getLogger(Round.class.getCanonicalName());
-	private transient final Execution execution; // Execution where the round belongs to
-	private transient volatile ScheduledFuture<?> timeoutTask; // Timeout ssociated with this round
+	private transient final Execution execution;				// Execution where the round belongs to
+	private transient volatile ScheduledFuture<?> timeoutTask;	// Timeout ssociated with this round
 	private Integer number; // Round's number
 	private boolean[] weakSetted;
 	private boolean[] strongSetted;
@@ -41,20 +40,22 @@ public class Round {
 	private int weaks = 0;
 	private int strongs = 0;
 	private int decides = 0;
-	private byte[][] weak; // weakling accepted values from other processes
-	private byte[][] strong; // strongly accepted values from other processes
-	private byte[][] decide; // values decided by other processes
-	private boolean decided = false; // Is this round decided
-	private boolean proposed = false; // Did we propose in this round
-	private Collection<Integer> freeze = null; // processes where this round was freezed
-	private boolean frozen = false; // is this round frozen?
-	private boolean collected = false; // indicates if a collect message for this round was already sent
-	private long timeout; // duration of the timeout
-	private boolean isTimeout = false; // Was a timeout sent for this round?
-//	private boolean alreadyRemoved = false; // indicates if this round was removed from its execution
-	private byte[] propValue = null; // proposed value
-	private byte[] propValueHash = null; // proposed value hash
-	public CollectProof[] proofs; // proof from other processes
+	private byte[][] weak;						// weakling accepted values from other processes
+	private byte[][] strong;					// strongly accepted values from other processes
+	private byte[][] decide;					// values decided by other processes
+	private boolean decided = false;			// Is this round decided
+	private boolean proposed = false;			// Did we propose in this round
+	private Collection<Integer> freeze = null;	// processes where this round was freezed
+	private boolean frozen = false;				// is this round frozen?
+	private boolean collected = false;			// indicates if a collect message for this round was already sent
+	private long timeout;						// duration of the timeout
+	private boolean isTimeout = false;			// Was a timeout sent for this round?
+//	private boolean alreadyRemoved = false;		// indicates if this round was removed from its execution
+	private byte[] propValue = null;			// proposed value
+	private byte[] propValueHash = null;		// proposed value hash
+	public CollectProof[] proofs;				 // proof from other processes
+	// Stores proposes where the leader did not mach whilst reception
+	public Set<Propose> storedProposes = new HashSet<Propose>(); 
 
 	/**
 	 * Creates a new instance of Round for acceptors
@@ -419,33 +420,7 @@ public class Round {
 	public int countDecide() {
 		return decides;
 	}
-//    /**
-//     * Retrives the ammount of replicas from which this process weakly accepted a specified value
-//     * @param value The value in question
-//     * @return Ammount of replicas from which this process weakly accepted the specified value
-//     */
-//    public int countWeak(byte[] value) {
-//        return count(weakSetted,weak, value);
-//    }
 
-	/**
-	 * Retrives the ammount of replicas from which this process strongly accepted a specified value
-	 *
-	 * @param value The value in question
-	 * @return Ammount of replicas from which this process strongly accepted the specified value
-	 */
-//    public int countStrong(byte[] value) {
-//        return count(strongSetted,strong, value);
-//    }
-	/**
-	 * Retrives the ammount of replicas that decided a specified value
-	 *
-	 * @param value The value in question
-	 * @return Ammount of replicas that decided the specified value
-	 */
-//    public int countDecide(byte[] value) {
-//        return count(null,decide, value);
-//    }
 	/**
 	 * Counts how many times 'value' occurs in 'array'
 	 *

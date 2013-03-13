@@ -59,9 +59,9 @@ public final class ExecutionManager{
 	/**
 	 * The id of the consensus being executed (or -1 if there is none)
 	 */
-	private static final Long IDLE = Long.valueOf(-1l);
-	private Long inExecution = IDLE;
-	private Long lastExecuted = IDLE;
+	private static final Long STARTED = Long.valueOf(-1l);
+	private Long inExecution = STARTED;
+	private Long lastExecuted = STARTED;
 	private Long nextExecution = Long.valueOf(0);
 
     final Acceptor acceptor;	// Acceptor role of the PaW algorithm
@@ -241,47 +241,37 @@ public final class ExecutionManager{
 			// This lock is required to block the addition of messages during ooc processing
 			outOfContextLock.lock();
 			Long consId = msg.getEid();
-			Long lastConsId = getLastExec();
 
-
-			// Old message -> discard. Do not discard messages for the last consensus as it
-			// might still freeze.
-			if(consId < lastConsId){	
+			// Old message -> discard. Do not discard messages for the last 
+			// consensus as it might still freeze.
+			if(consId < lastExecuted-1 && ! (executions.containsKey(consId) 
+					&& executions.get(consId).isActive())){	
+				log.log(Level.FINE, "{0} IS OLD - discarding",msg);
 				return false;
 			}
 
 			boolean isRetrievingState = tomLayer.isRetrievingState();
 
 			if (isRetrievingState && log.isLoggable(Level.FINEST)) {
-				log.finest(" I'm waiting for a state and received " + msg + " at execution " + getInExec() + " last las execution is " + lastConsId);
+				log.finest(" I'm waiting for a state and received " + msg + " at execution " + getInExec() + " last las execution is " + lastExecuted);
 			}
 
 			boolean canProcessTheMessage = false;
-
+			
 			if (    // this switch is to redirect ooc messages when we are receiving a state transfer
 					isRetrievingState || 
 					// Check revival bounds -> not idle and lastmsg == -1 (revived indicator) and msgid >= revivalHighmark
-					(!(isIdle() && lastConsId.longValue() == -1 && consId.longValue() >= (lastConsId.longValue() + revivalHighMark))
-					// Msg is within the low and high marks (or the is replica synchronizing)
-					&& (consId.longValue() >= lastConsId.longValue() && (consId.longValue() < (lastConsId.longValue() + paxosHighMark))))) { 
+					(!(isIdle() && lastExecuted == STARTED && consId.longValue() >= (lastExecuted + revivalHighMark))
+					// Msg is within high marks (or the is replica synchronizing)
+					&&  (consId.longValue() < (lastExecuted + paxosHighMark)))) { 
 
 				//just an optimization to avoid calling the lock in normal case
 				if(stopped) {
-					try {
-						stoppedMsgsLock.lock();
-						if (stopped) {
-							if (log.isLoggable(Level.FINEST)) {
-								log.finest("Adding " + msg + " for execution " + consId + " to stopped");
-						}
-						//store for later execution
-						stoppedMsgs.add(msg);
-					}} finally {
-						stoppedMsgsLock.unlock();
-					}
+					handleStopped(consId, msg);
 				}
 
 				if (isRetrievingState ||															// add to ooc when retrieving state
-						consId.longValue() > (lastConsId.longValue() + 1)) {						// or msg is a normal ooc msg between boundaries
+						consId.longValue() > (lastExecuted + 1)) {						// or msg is a normal ooc msg between boundaries
 					if (log.isLoggable(Level.FINEST)) {
 						log.finest("Adding "+ msg +" to out of context set");
 					}
@@ -292,20 +282,37 @@ public final class ExecutionManager{
 					}
 					canProcessTheMessage = true;													//msg should be processed normally
 				}
-			} else if ((isIdle() && lastConsId.longValue() == -1 
-					&& consId.longValue() >= (lastConsId.longValue() + revivalHighMark))			// Replica is revived and idle TODO this is an unclear case
-					|| (consId.longValue()> 0 && consId.longValue() >= (lastConsId.longValue() + paxosHighMark))) {			// Message is beyond highmark
+			} else if ((isIdle() && lastExecuted == STARTED 
+					&& consId.longValue() >= (lastExecuted + revivalHighMark))			// Replica is revived and idle TODO this is an unclear case
+					|| (consId.longValue()> 0 && consId.longValue() >= (lastExecuted + paxosHighMark))) {			// Message is beyond highmark
 				if (log.isLoggable(Level.FINE)) {
 					log.fine(msg + " is beyond the paxos highmark, adding it to ooc set and checking if state transfer is needed");
 				}
 				addOutOfContextMessage(msg);														//add to ooc 
 				tomLayer.requestStateTransfer(gm.me, getOtherAcceptors(), msg.getSender(), consId);	//request statetx to recover from idle state
+			} else {
+				log.log(Level.WARNING, "{0} missed all statements - DISCARDING...",msg);
 			}
 			return canProcessTheMessage;
 		} finally {
 			outOfContextLock.unlock();
 		}
     }
+	
+	private void handleStopped(Long consId, PaxosMessage msg) {
+		try {
+			stoppedMsgsLock.lock();
+			if (stopped) {
+				if (log.isLoggable(Level.FINEST)) {
+					log.finest("Adding " + msg + " for execution " + consId + " to stopped");
+				}
+				//store for later execution
+				stoppedMsgs.add(msg);
+			}
+		} finally {
+			stoppedMsgsLock.unlock();
+		}
+	}
 
     /**
      * Informs if there are messages till to be processed associated the specified consensus's execution
@@ -567,7 +574,9 @@ public final class ExecutionManager{
 	public void setLastExec(Long last) {
 		try {
 			executionsLock.lock();
-			this.lastExecuted = last;
+			if (last > lastExecuted) {
+				this.lastExecuted = last;
+			}
 		} finally {
 			executionsLock.unlock();
 		}

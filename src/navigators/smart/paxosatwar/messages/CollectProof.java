@@ -20,6 +20,7 @@ package navigators.smart.paxosatwar.messages;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Formatter;
 import java.util.LinkedList;
 import navigators.smart.tom.util.SerialisationHelper;
 
@@ -178,7 +179,7 @@ public final class CollectProof {
 	
 	@Override
 	public String toString(){
-		return String.format("CP | L {0} | Proofs {1}", new Object[]{newLeader,proofIn});
+		return String.format("CP | L %1s | Proofs %2s", newLeader, proofIn);
 	}
 
 }
