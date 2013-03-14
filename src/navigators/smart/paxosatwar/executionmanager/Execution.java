@@ -244,7 +244,7 @@ public class Execution {
 	 * @return True if it is decided, false otherwise
 	 */
 	public boolean isActive() {
-		return !executed || getLastRound().isActive();
+		return (getRound(0).isProposed() && !executed) || getLastRound().isActive();
 	}
 
 	/**
