@@ -122,7 +122,10 @@ public class ClientsManager {
 		int noMoreMessages = 0;
 		List<ClientData> clients = new ArrayList<ClientData>(clientsData.values());
 		do {
-			for (; nextClient < clients.size(); nextClient++) {
+			for (; nextClient < clients.size() 
+					&& clientsData.size() != noMoreMessages //break if all clients are empty
+					&& allReq.size() != conf.getMaxBatchSize() // break if we reach max batch size
+					; nextClient++) {
 				ClientData clientData = clients.get(nextClient);
 				TOMMessage request = null;
 				try {
@@ -137,17 +140,9 @@ public class ClientsManager {
 					}
 					// this client have pending message
 					allReq.addLast(request);
-					// I inserted a message on the batch, now I must check if the max batch size is reached
-					if (allReq.size() == conf.getMaxBatchSize()) {
-						break;
-					}
 				} else {
 					// this client do not have more pending requests
 					noMoreMessages++;
-					//break if all clients are empty
-					if (clientsData.size() == noMoreMessages) {
-						break;
-					}
 				}
 			}
 			if (nextClient >= clients.size() || !conf.isFairClientHandling()) { 
