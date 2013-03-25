@@ -156,7 +156,7 @@ public class StateManager {
 //    public StateLog getLog() {
 //        return statelog;
 //    }
-	public void saveState(Long lastEid, Integer decisionRound, Integer leader, byte[] lmstate, byte[] recvstate, byte[] recvstatehash) {
+	public void saveState(Long lastEid, Integer decisionRound, Integer leader, byte[] lmstate, byte[] recvstate) {
 
 		lockState.lock();
 
@@ -164,7 +164,7 @@ public class StateManager {
 			log.finer(" Saving state of EID " + lastEid + ", round " + decisionRound + " and leader " + leader);
 		}
 
-		statelog.newCheckpoint(lastEid, decisionRound, leader, -1l, recvstate, recvstatehash, lmstate);
+		statelog.newCheckpoint(lastEid, decisionRound, leader, -1l, recvstate, md.digest(recvstate), lmstate);
 
 		lockState.unlock();
 

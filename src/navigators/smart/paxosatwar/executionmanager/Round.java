@@ -188,15 +188,6 @@ public class Round {
 	}
 
 	/**
-	 * Retrieves the timeout associated with this round
-	 *
-	 * @param timeoutTask The timeout associated with this round
-	 */
-	public ScheduledFuture<?> getTimeoutTask() {
-		return timeoutTask;
-	}
-	
-	/**
      * Schedules a timeout for a given round. It is called by an Execution when
      * a new round is confirmably created. This means when a propose arrives,
      * when f+1 weaks or strongs arrive or a round is frozen by 2f+1 freeze
@@ -219,6 +210,15 @@ public class Round {
             execution.manager.timer.purge();
         }
     }
+	
+	/**
+	 * Cancels the currently running timeout if one exists
+	 */
+	public void cancelTimeout() {
+		if (timeoutTask != null) {
+			timeoutTask.cancel(false);
+		}
+	}		
 
 	/**
 	 * Informs if there is a weakly accepted value from a replica
@@ -283,6 +283,10 @@ public class Round {
 			// Increase count only when we have received a valid propose for this round
 			if (propValueHash != null) {
 				weaks++;
+			}
+		} else {
+			if(!Arrays.equals(value, propValueHash)){
+				log.log(Level.WARNING, "Bash hash received from {0}: {1}", new Object[]{acceptor, Arrays.toString(value)});
 			}
 		}
 	}
@@ -368,6 +372,7 @@ public class Round {
 	 * Establishes that a collect message for this round was already sent
 	 */
 	public void collect() {
+		cancelTimeout();
 		collected = true;
 	}
 
@@ -539,6 +544,7 @@ public class Round {
 	}
 
 	public void decided() {
+		cancelTimeout();
 		decided = true;
 	}
 

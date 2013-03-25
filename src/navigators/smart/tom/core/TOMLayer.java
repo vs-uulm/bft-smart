@@ -77,18 +77,18 @@ public class TOMLayer implements RequestReceiver {
 		this.receiver = receiver;
 		this.communication = cs;
 		this.conf = conf;
-
+		MessageDigest state_md = null;
 		try {
 			// TODO: Shouldn't we use SHA
 			this.md = MessageDigest.getInstance("MD5"); 
+			state_md = MessageDigest.getInstance("MD5");
 		} catch (Exception e) {
 			e.printStackTrace(System.out);
 		}
 
 		this.clientsManager = new ClientsManager(conf); // Create clients manager
-
 		stateManager = new StateManager(conf.getCheckpoint_period(), conf.getF(),
-				conf.getN(), conf.getProcessId().intValue(), md);
+				conf.getN(), conf.getProcessId().intValue(), state_md);
 
 		this.dt = new DeliveryThread(this, receiver, conf); // Create delivery thread
 		this.dt.start();

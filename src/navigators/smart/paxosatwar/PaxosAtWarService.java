@@ -161,7 +161,7 @@ public class PaxosAtWarService implements ConsensusService {
 					}
 
 					byte[] recvstate = tom.getState();
-					statemgr.saveState(cons.getId(), cons.getDecisionRound(), getProposer(cons), lm.getState(), recvstate, tom.computeHash(recvstate));
+					statemgr.saveState(cons.getId(), cons.getDecisionRound(), getProposer(cons), lm.getState(), recvstate);
 
 				} else {
 					if (log.isLoggable(Level.FINER)) {

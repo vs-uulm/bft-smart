@@ -103,10 +103,10 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
     }
     
     /**
-     * Retrieves the debug info from the TOM layer
+     * Sets the debug info from the TOM layer
      * @return The debug info from the TOM layer
      */
-    public void  setSequence(DebugInfo info) {
+    public void  setDebugInfo(DebugInfo info) {
         this.info = info;
     }
 
@@ -174,7 +174,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
 
     @Override
     public String toString() {
-        return super.toString()+"(" + sender + "," + sequence + ")";
+        return "TOMMsg (" + sender + "," + sequence + ")";
     }
 
     @Override

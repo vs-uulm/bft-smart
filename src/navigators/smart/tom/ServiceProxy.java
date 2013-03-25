@@ -144,10 +144,11 @@ public class ServiceProxy extends TOMSender {
 					}
 					sync.wait(timeout);
 					if(!decided){
-						StringBuilder s = new StringBuilder("Timeout while waiting for replies, replica was ")
+						StringBuilder s = new StringBuilder("Timeout while waiting for replies, randomreplica was(when unicasting) ")
 						.append(group.get(randomreplica))
 						.append(", got replies from: \n")
-						.append(Arrays.toString(replies));
+						.append(Arrays.toString(replies))
+						.append(tommsg);
 						log.warning(s.toString());
 						//Blacklist the evil non proposer
 						if(random){

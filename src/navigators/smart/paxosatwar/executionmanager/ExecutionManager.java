@@ -197,7 +197,7 @@ public final class ExecutionManager{
         this.stopped = true;
         if (!isIdle()) {
             stoppedRound = getExecution(getInExec()).getLastRound();
-            stoppedRound.getTimeoutTask().cancel(false);
+            stoppedRound.cancelTimeout();
             if(log.isLoggable(Level.FINE))
                 log.fine("Stopping round " + stoppedRound.getNumber() + " of consensus " + stoppedRound.getExecution().getId());
 
@@ -503,6 +503,23 @@ public final class ExecutionManager{
     public RequestHandler getRequestHandler() {
         return requesthandler;
     }
+	
+	public void executionDecided(Execution e){
+		//set this consensus as the last executed
+		setLastExec(e.getId());
+		long nextExec = e.getId()+1;
+		
+		// Process pending messages for the next execution
+		processOOCMessages(nextExec);
+
+		//verify if there is a next proposal to be executed
+		//(it only happens if the previous consensus were decided in a
+		//round > 0
+		acceptor.executeAcceptedPendent(nextExec);
+		
+		// Inform tomlayer of the execution
+		tomLayer.decided(e.getConsensus());
+	}
 
 	/**
 	 * This method is called when the execution of the current consensus is finished
@@ -512,7 +529,7 @@ public final class ExecutionManager{
 	 */
     public void executionFinished(Consensus<?> cons) {
 		Execution e = executions.get(cons.getId());
-		long nextExecution = e.getId()+1;
+		
 		if (!e.isExecuted()){
 			e.setExecuted();
             //define the last stable consensus... the stable consensus can
@@ -522,18 +539,7 @@ public final class ExecutionManager{
                 lm.removeStableConsenusInfo(stableConsensus);
                 removeExecution(stableConsensus);
             }
-			
-			//set this consensus as the last executed
-			setLastExec(cons.getId());
 		}
-		
-		// Process pending messages for the next execution
-		processOOCMessages(nextExecution);
-
-		//verify if there is a next proposal to be executed
-		//(it only happens if the previous consensus were decided in a
-		//round > 0
-		acceptor.executeAcceptedPendent(nextExecution);
     }
 
     public void deliverState(TransferableState state){

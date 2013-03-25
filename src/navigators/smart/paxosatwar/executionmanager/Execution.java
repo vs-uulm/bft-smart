@@ -244,7 +244,7 @@ public class Execution {
 	 * @return True if it is decided, false otherwise
 	 */
 	public boolean isActive() {
-		return (getRound(0).isProposed() && !executed) || getLastRound().isActive();
+		return (getRound(0).isProposed() && !isDecided()) || getLastRound().isActive();
 	}
 
 	/**
@@ -264,13 +264,13 @@ public class Execution {
 			decisionRound = round.getNumber();
 			if (round.getPropValue() != null) {
 				consensus.decided(round.getPropValue(), decisionRound);
-
-				manager.getTOMLayer().decided(consensus);
+				manager.executionDecided(this);
 			}
 		} else {		
 			// Multiple decisions where made
 			//Check if we have stuff remaining or new messages to propose
-			manager.executionFinished(consensus);
+			// TODO Remove this commented code if unnecessary
+//			manager.executionFinished(consensus);
 		}
 	}
         
