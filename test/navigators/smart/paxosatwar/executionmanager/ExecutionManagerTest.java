@@ -3,6 +3,7 @@ package navigators.smart.paxosatwar.executionmanager;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import navigators.smart.consensus.Consensus;
+import navigators.smart.consensus.MeasuringConsensus;
 import navigators.smart.paxosatwar.messages.MessageFactory;
 import navigators.smart.paxosatwar.messages.PaxosMessage;
 import navigators.smart.paxosatwar.messages.Propose;
@@ -53,20 +54,14 @@ public class ExecutionManagerTest {
 		Integer[] others = {1,2,3}; //list of the other acceptors
 		
 		//test initial configuration
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertTrue(mng.checkLimits(new Propose( 0l, 0, 1,null,null)));
 		assertFalse(mng.thereArePendentMessages(0l));
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message with state transfer
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose( 99l, 0, 1,null,null)));
 		verify(tom).requestStateTransfer(me, others, 1, 99l);
@@ -77,20 +72,18 @@ public class ExecutionManagerTest {
 	public void testCheckLimits_normal() {
 		Integer[] others = {1,2,3}; //list of the other acceptors
 		//test normal configuration
-		when(mng.getLastExec()).thenReturn(0l);
-		when(mng.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertTrue(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
-		assertFalse(mng.thereArePendentMessages(1l));
+		assertTrue(mng.checkLimits(new Propose(0l, 0, 0,null,null)));
+		assertFalse(mng.thereArePendentMessages(0l));
+		//test normal execution wrong leader msg
+		when(tom.isRetrievingState()).thenReturn(false);
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 0,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg
-		when(mng.getLastExec()).thenReturn(0l);
-		when(mng.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(2l, 0, 1,null,null)));
-		assertTrue(mng.thereArePendentMessages(2l));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg with state transfer
-		when(mng.getLastExec()).thenReturn(0l);
-		when(mng.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose(101l, 0, 1,null,null)));
 		verify(tom).requestStateTransfer(me, others, 1, 101l);
@@ -101,20 +94,14 @@ public class ExecutionManagerTest {
 	public void testCheckLimits_initial_StateTransfer() {
 		//STATE TRANSFER ENABLED
 		//test initial configuration
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(true);
 		assertFalse(mng.checkLimits(new Propose(0l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(0l));
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(true);
 		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message with state transfer
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(true);
 		assertFalse(mng.checkLimits(new Propose(99l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
@@ -125,20 +112,14 @@ public class ExecutionManagerTest {
 		//STATE TRANSFER ENABLED
 		
 		//test normal configuration
-		when(mng.getLastExec()).thenReturn(0l);
-		when(mng.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(true);
 		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg
-		when(mng.getLastExec()).thenReturn(0l);
-		when(mng.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(true);
 		assertFalse(mng.checkLimits(new Propose(2l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(2l));
 		//test normal execution ooc msg with state transfer
-		when(mng.getLastExec()).thenReturn(0l);
-		when(mng.getInExec()).thenReturn(1l);
 		when(tom.isRetrievingState()).thenReturn(true);
 		assertFalse(mng.checkLimits(new Propose(101l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(101l));
@@ -147,14 +128,10 @@ public class ExecutionManagerTest {
 	@Test
 	public void testThereArePendentMessages() {
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
@@ -163,16 +140,12 @@ public class ExecutionManagerTest {
 	@Test
 	public void testRemoveExecution() {
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		mng.removeExecution(1l);
 		assertFalse(mng.thereArePendentMessages(1l));
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
@@ -183,15 +156,11 @@ public class ExecutionManagerTest {
 	@Test
 	public void testRemoveOutOfContexts() {
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
@@ -211,8 +180,6 @@ public class ExecutionManagerTest {
 		assertEquals(exec, mng.removeExecution(exec.getId()));
 		
 		//test initial ooc message
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		PaxosMessage msg = new Propose( 1l, 0, 1, null, null);
 		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1l, 0, 1,new byte[0]);
@@ -224,24 +191,22 @@ public class ExecutionManagerTest {
 		assertEquals(exec, mng.removeExecution(exec.getId()));
 	}
 
-	@Test
-	public void testDecided() {
-		mng.getExecution(0l);
-		mng.executionFinished(new Consensus<Object>(0l));
-		verify(mng).executionFinished(0l);
-
-		//verify with removal of stable consensus
-		mng.getExecution(0l);
-		mng.executionFinished(new Consensus<Object>(3l));
-		verify(mng).executionFinished(3l);
-		verify(lm).removeStableConsenusInfo(0l);
-		assertNull(mng.removeExecution(0l));
-	}
+//	@Test
+//	public void testDecided() {
+//		mng.getExecution(0l);
+//		mng.executionFinished(new Consensus<Object>(0l));
+//		verify(mng).executionFinished(0l);
+//
+//		//verify with removal of stable consensus
+//		mng.getExecution(0l);
+//		mng.executionFinished(new Consensus<Object>(3l));
+//		verify(mng).executionFinished(3l);
+//		verify(lm).removeStableConsenusInfo(0l);
+//		assertNull(mng.removeExecution(0l));
+//	}
 
 	@Test
 	public void testDeliverState() {
-		when(mng.getLastExec()).thenReturn(-1l);
-		when(mng.getInExec()).thenReturn(-1l);
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
@@ -249,7 +214,6 @@ public class ExecutionManagerTest {
 		TransferableState state = new TransferableState(0l,0,0,10l,null,null,null,null);
 		mng.getExecution(5l);
 		mng.deliverState(state);
-		verify(mng).executionFinished(10l);
 		assertNull(mng.removeExecution(5l));
 		assertFalse(mng.thereArePendentMessages(1l));
 	}
