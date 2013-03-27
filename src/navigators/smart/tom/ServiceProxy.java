@@ -130,7 +130,7 @@ public class ServiceProxy extends TOMSender {
 				reqId = getLastSequenceNumber();
 				while (!decided){
 					// Send the request to the replicas, and get its ID
-					if (random){
+					if (random && !readOnly){
 						while (blacklist.contains(group.get(randomreplica))) {
 							//Try all replicas clockwise until decision.
 							randomreplica++;
