@@ -59,6 +59,7 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
     public TOMMessage(ByteBuffer in) {
         super(Type.TOM_MSG,in);
         sequence = in.getInt();
+		readOnlyRequest = in.get() == 1 ? true : false;
         content = SerialisationHelper.readByteArray(in);
         buildId();
     }
@@ -181,12 +182,13 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
     public void serialise(ByteBuffer out) {
         super.serialise(out);
         out.putInt(sequence);
+		out.put(readOnlyRequest?(byte)1:0);
         SerialisationHelper.writeByteArray(content, out);
     }
     
     @Override
     public int getMsgSize(){
-    	return super.getMsgSize()+ 8 + content.length; //4+4+content.length
+    	return super.getMsgSize() + 9 + content.length; //4 + 1 + 4 + content.length
     }
     
 
