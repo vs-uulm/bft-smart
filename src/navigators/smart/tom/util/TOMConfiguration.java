@@ -57,6 +57,8 @@ public class TOMConfiguration extends Configuration {
 	/** Shall we not use the previously implemented unfair 'fair' clienthandling 
 	 that always starts batches with client (0)*/
 	private boolean fairClientHandling;
+	// Shall we send readonly requests to f+1 or to all replicas
+	private boolean readonlytoall;
 
     public TOMConfiguration(TOMConfiguration conf, int processId) {
         super(conf, processId);
@@ -88,6 +90,7 @@ public class TOMConfiguration extends Configuration {
         this.signatureSize = conf.signatureSize;
         this.sendDelay = conf.sendDelay;
 		this.fairClientHandling = conf.fairClientHandling;
+		this.readonlytoall = conf.readonlytoall;
     }
 
     /** Creates a new instance of TOMConfiguration
@@ -299,6 +302,13 @@ public class TOMConfiguration extends Configuration {
 				fairClientHandling = true;
 			} else {
 				fairClientHandling = Boolean.parseBoolean(s);
+			}
+			
+			s = configs.remove("system.client.readonlytoall");
+			if(s == null) {
+				readonlytoall = false;
+			} else {
+				readonlytoall = Boolean.parseBoolean(s);
 			}
 
             rsaLoader = new RSAKeyLoader(this, configHome);

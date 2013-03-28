@@ -17,8 +17,10 @@
  */
 package navigators.smart.tom;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +29,7 @@ import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.BlackList;
 import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
+
 
 /**
  * This class implements a TOMReplyReceiver, and a proxy to be used on the client side of the application.
@@ -115,7 +118,7 @@ public class ServiceProxy extends TOMSender {
 	 * @return The reply from the replicas related to request
 	 */
 	public byte[] invoke(byte[] request, boolean readOnly, boolean random) {
-
+		List<Integer> targets = new ArrayList<Integer>();
 		// Ahead lies a critical section.
 		// This ensures the thread-safety by means of a semaphore
 		synchronized (sync) {
@@ -131,29 +134,24 @@ public class ServiceProxy extends TOMSender {
 				while (!decided){
 					// Send the request to the replicas, and get its ID
 					if (random && !readOnly){
-						while (blacklist.contains(group.get(randomreplica))) {
-							//Try all replicas clockwise until decision.
-							randomreplica++;
-							if (randomreplica == group.size()) {
-								randomreplica = 0;
+						doTOUnicast( group.get(getNextRandomReplica()),tommsg);
+					} else if (readOnly){
+						while (targets.size() <= f) {
+							Integer next = getNextRandomReplica();
+							if (targets.contains(next)){
+								log.warning("Failure while selecting targets, selecting all");
+								targets = group;
+								break;
+							} else {
+								targets.add(next);
 							}
 						}
-						doTOUnicast( group.get(randomreplica),tommsg);
 					} else {
 						doTOMulticast(tommsg);	
 					}
 					sync.wait(timeout);
 					if(!decided){
-						StringBuilder s = new StringBuilder("Timeout while waiting for replies, randomreplica was(when unicasting) ")
-						.append(group.get(randomreplica))
-						.append(", got replies from: \n")
-						.append(Arrays.toString(replies))
-						.append(tommsg);
-						log.warning(s.toString());
-						//Blacklist the evil non proposer
-						if(random){
-							blacklist.addFirst(group.get(randomreplica));
-						}
+						handleTimeout(tommsg, random, targets);
 					}
 				}
 				decided = false; //reset
@@ -161,11 +159,21 @@ public class ServiceProxy extends TOMSender {
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
 			}
-
+			return response; // return the response
 		}
-
-		return response; // return the response
 	}
+
+	private int getNextRandomReplica() {
+		while (blacklist.contains(group.get(randomreplica))) {
+			//Try all replicas clockwise until decision.
+			randomreplica++;
+			if (randomreplica == group.size()) {
+				randomreplica = 0;
+			}
+		}
+		return randomreplica;
+	}
+
 	
 	/**
 	 * This method sends a request to the replicas, and returns the related reply. This method is
@@ -190,9 +198,7 @@ public class ServiceProxy extends TOMSender {
 				while (!decided){
 					sync.wait(timeout);
 					if(!decided){
-						StringBuilder s = new StringBuilder("Timeout while waiting for replies, got replies from: \n");
-						s.append(Arrays.toString(replies));
-						log.warning(s.toString());
+						handleTimeout(request, false, null);
 					}
 				}
 				decided = false; //reset decided
@@ -243,8 +249,7 @@ public class ServiceProxy extends TOMSender {
 							response = content;
 							reqId = -1;
 							decided = true;
-							sync.notify(); // unblocks the thread that is executing the "invoke" method,
-							// so it can deliver the reply to the application
+							sync.notify(); // unblocks the thread in invoke
 							break;
 						}
 					}
@@ -253,5 +258,31 @@ public class ServiceProxy extends TOMSender {
 		}
 
 		// Critical section ends here. The semaphore can be released
+	}
+
+	private void handleTimeout(TOMMessage tommsg, boolean random, List<Integer> group) {
+		StringBuilder s = new StringBuilder("Timeout while waiting for replies ")
+						.append(", got replies from: \n")
+						.append(Arrays.toString(replies))
+						.append("Targets: ");
+		if (random) {
+			s.append(randomreplica);
+		} else if (tommsg.isReadOnlyRequest()) {
+			s.append(group);
+		} else {
+			s.append("ALL");
+		}
+		s.append(tommsg);
+		log.warning(s.toString());
+		//Blacklist the evil non proposer
+		if(random){
+			blacklist.addFirst(group.get(randomreplica));
+		} else if(tommsg.isReadOnlyRequest()){
+			for(Integer target:group){
+				if(replies[target] == null){
+					blacklist.addFirst(target);
+				}
+			}
+		}
 	}
 }
