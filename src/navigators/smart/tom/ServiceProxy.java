@@ -118,7 +118,6 @@ public class ServiceProxy extends TOMSender {
 	 * @return The reply from the replicas related to request
 	 */
 	public byte[] invoke(byte[] request, boolean readOnly, boolean random) {
-		List<Integer> targets = new ArrayList<Integer>();
 		// Ahead lies a critical section.
 		// This ensures the thread-safety by means of a semaphore
 		synchronized (sync) {
@@ -132,6 +131,7 @@ public class ServiceProxy extends TOMSender {
 				}
 				reqId = getLastSequenceNumber();
 				while (!decided){
+					List<Integer> targets = new ArrayList<Integer>();
 					// Send the request to the replicas, and get its ID
 					if (random && !readOnly){
 						doTOUnicast( group.get(getNextRandomReplica()),tommsg);
@@ -146,6 +146,7 @@ public class ServiceProxy extends TOMSender {
 								targets.add(next);
 							}
 						}
+						doTOMulticast(tommsg, targets);
 					} else {
 						doTOMulticast(tommsg);	
 					}
@@ -275,7 +276,7 @@ public class ServiceProxy extends TOMSender {
 		s.append(tommsg);
 		log.warning(s.toString());
 		//Blacklist the evil non proposer
-		if(random){
+		if(random && !tommsg.isReadOnlyRequest()){
 			blacklist.addFirst(group.get(randomreplica));
 		} else if(tommsg.isReadOnlyRequest()){
 			for(Integer target:group){
@@ -283,6 +284,8 @@ public class ServiceProxy extends TOMSender {
 					blacklist.addFirst(target);
 				}
 			}
+		} else {
+			blacklist.addFirst(randomreplica);
 		}
 	}
 }

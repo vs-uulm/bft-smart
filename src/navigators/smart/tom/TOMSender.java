@@ -115,7 +115,7 @@ public abstract class TOMSender implements ReplyReceiver {
 	 * @param targets Targets to send the message to
 	 * 
      */
-    public void doTOMulticast(TOMMessage sm, ArrayList<Integer> targets) {
+    public void doTOMulticast(TOMMessage sm, List<Integer> targets) {
         cs.send(useSignatures, targets, sm);
     }
 
