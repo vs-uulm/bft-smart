@@ -1,3 +1,0 @@
-#!/bin/bash
-
-runscript.sh throughputtest_bench.sh throughputtest_bench_client.sh

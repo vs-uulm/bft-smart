@@ -1,7 +1,8 @@
+syntax: glob
 build/
+target
 nbproject/private
 runscripts/.*\.bat$
-syntax: glob
 *~
 *.log
 lib/commons-math-2.2/docs/**
