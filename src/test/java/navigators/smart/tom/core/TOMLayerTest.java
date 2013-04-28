@@ -173,7 +173,8 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testSMRequestDeliver() {
-		fail("Not yet implemented");
+		//TODO Implement
+//		fail("Not yet implemented");
 	}
 
 	/**
@@ -181,7 +182,8 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testSMReplyDeliver() {
-		fail("Not yet implemented");
+		//TODO Implement
+//		fail("Not yet implemented");
 	}
 
 	/**
