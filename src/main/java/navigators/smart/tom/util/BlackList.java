@@ -5,8 +5,7 @@
 
 package navigators.smart.tom.util;
 
-import java.util.Deque;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +23,8 @@ public class BlackList {
 	private static final Logger log = Logger.getLogger(BlackList.class.getName());
 
     private final boolean[] array;
-    private final Deque<Integer> queue;
+    private final Deque<Integer> blacklist;
+	private final Set<Integer> whitelist;
     private int f; //number of allowed malicious servers
 
     private int servers;
@@ -36,7 +36,11 @@ public class BlackList {
      */
     public BlackList(int servers,int f) {
         array = new boolean[servers];
-        queue = new LinkedList<Integer>();
+        blacklist = new LinkedList<Integer>();
+		whitelist = new HashSet<Integer>();
+		for (int i = 0;i<servers;i++){
+			whitelist.add(i);
+		}
         this.servers = servers;
         this.f = f;
     }
@@ -50,6 +54,14 @@ public class BlackList {
     public boolean contains(long view){
         return array[(int) (view%servers)];
     }
+	
+	/**
+	 * Returns the set of servers that are currently expected to be "correct".
+	 * @return A set of probably correct servers
+	 */
+	public List<Integer> getCorrect(){
+		return new LinkedList<Integer>(whitelist);
+	}
 
     /**
      * Adds the leader of the given view in the first position of
@@ -59,11 +71,13 @@ public class BlackList {
 	@SuppressWarnings("boxing")
 	public void addFirst(long view){
         int server = (int) (view % servers);
-        queue.addFirst(server);
+        blacklist.addFirst(server);
+		whitelist.remove(server);
         array[server]=true;
         //remove last if list > f
-        if(queue.size()>f){
-        	Integer oldest = queue.removeLast();
+        if(blacklist.size()>f){
+        	Integer oldest = blacklist.removeLast();
+			whitelist.add(oldest);
         	array[oldest]=false;
         }
         if(log.isLoggable(Level.FINE)){
@@ -79,11 +93,13 @@ public class BlackList {
     @SuppressWarnings("boxing")
 	public void replaceFirst(long  view){
         int server = (int)(view % servers);
-        if(!queue.isEmpty()){
-	        int oldfirst = queue.removeFirst();
+        if(!blacklist.isEmpty()){
+	        int oldfirst = blacklist.removeFirst();
+			whitelist.add(oldfirst);
 	        array[oldfirst] = false;
         }
-        queue.addFirst(server);
+        blacklist.addFirst(server);
+		whitelist.remove(server);
         array[server]=true;
     }
     

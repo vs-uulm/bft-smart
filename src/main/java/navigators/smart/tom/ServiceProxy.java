@@ -17,10 +17,7 @@
  */
 package navigators.smart.tom;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,9 +45,41 @@ public class ServiceProxy extends TOMSender {
 	private TOMMessage replies[] = null; // Replies from replicas are stored here
 	private byte[] response = null; // Pointer to the reply that is actually delivered to the application
 	boolean decided = false;
-	private int randomreplica = 0;
+	private ReplicaHolder r = new ReplicaHolder();
 	long timeout = 0; //timeout to wait for the client request
 	private BlackList blacklist;
+	
+	private class ReplicaHolder {
+//		private int currentReplica = 0;
+		/** Pseudorandom to select a replica to choose */
+		private final Random r = new Random();
+		
+		/**
+		 * Returns a random replica that is on the white list.
+		 * 
+		 * @return A probably correct replica
+		 */
+		public int getNextRandomReplica() {
+			List<Integer> good = blacklist.getCorrect();
+			return good.get(r.nextInt(good.size()));
+		}
+		
+		/**
+		 * Returns n random replicas from the white list. n must be smaller
+		 * than 2f+1 as there might be f bad replicas on the blacklist
+		 * @param n
+		 * @return 
+		 */
+		public List<Integer> getNRandomReplicas (int n){
+			if(n>f+1){
+				throw new IllegalArgumentException(
+						"n is "+n+" which is bigger than f+1="+(f+1));
+			}
+			List<Integer> good = blacklist.getCorrect();
+			Collections.shuffle(good);
+			return good.subList(0, n);
+		}
+	}
 
 	/**
 	 * Constructor
@@ -126,29 +155,21 @@ public class ServiceProxy extends TOMSender {
 				Arrays.fill(replies, null);
 				response = null;
 				TOMMessage tommsg = createTOMMsg(request, readOnly);
-				if(random){
-					Collections.shuffle(group);
-				}
+//				if(random){
+//					Collections.shuffle(group);
+//				}
 				reqId = getLastSequenceNumber();
 				while (!decided){
 					List<Integer> targets = new ArrayList<Integer>();
 					// Send the request to the replicas, and get its ID
 					if (random && !readOnly){
-						doTOUnicast( group.get(getNextRandomReplica()),tommsg);
+						targets.add(r.getNextRandomReplica());
+						doTOUnicast(targets.get(0) ,tommsg);
 					} else if (readOnly){
-						while (targets.size() <= f) {
-							Integer next = getNextRandomReplica();
-							if (targets.contains(next)){
-								log.warning("Failure while selecting targets, selecting all");
-								targets = group;
-								break;
-							} else {
-								targets.add(next);
-							}
-						}
+						targets = r.getNRandomReplicas(f+1);
 						doTOMulticast(tommsg, targets);
 					} else {
-						doTOMulticast(tommsg);	
+						doTOMulticast(tommsg);		// send to all
 					}
 					sync.wait(timeout);
 					if(!decided){
@@ -156,7 +177,6 @@ public class ServiceProxy extends TOMSender {
 					}
 				}
 				decided = false; //reset
-				randomreplica = 0;
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
 			}
@@ -164,16 +184,7 @@ public class ServiceProxy extends TOMSender {
 		}
 	}
 
-	private int getNextRandomReplica() {
-		while (blacklist.contains(group.get(randomreplica))) {
-			//Try all replicas clockwise until decision.
-			randomreplica++;
-			if (randomreplica == group.size()) {
-				randomreplica = 0;
-			}
-		}
-		return randomreplica;
-	}
+	
 
 	
 	/**
@@ -266,26 +277,25 @@ public class ServiceProxy extends TOMSender {
 						.append(", got replies from: \n")
 						.append(Arrays.toString(replies))
 						.append("Targets: ");
-		if (random) {
-			s.append(randomreplica);
-		} else if (tommsg.isReadOnlyRequest()) {
+		if (random || tommsg.isReadOnlyRequest()) {
 			s.append(group);
 		} else {
 			s.append("ALL");
 		}
 		s.append(tommsg);
 		log.warning(s.toString());
-		//Blacklist the evil non proposer
+		/* 
+		 * Blacklist the evil non proposer for random mode (like ebawa)
+		 * or the non repliant replicas for read only requests
+		 */
 		if(random && !tommsg.isReadOnlyRequest()){
-			blacklist.addFirst(group.get(randomreplica));
+			blacklist.addFirst(group.get(0));
 		} else if(tommsg.isReadOnlyRequest()){
 			for(Integer target:group){
 				if(replies[target] == null){
 					blacklist.addFirst(target);
 				}
 			}
-		} else {
-			blacklist.addFirst(randomreplica);
-		}
+		} 
 	}
 }
