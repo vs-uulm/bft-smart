@@ -365,6 +365,10 @@ public class ServerConnection {
 							if(msgHandlers.containsKey(type)){
 								log.finest("Starting deserialisation");
 								SystemMessage sm = msgHandlers.get(type).deserialise(type, buf, verificationresult);
+								if(sm == null){
+									log.warning("Deserialisation failed: disconnecting");
+									throw new IOException("Deserialisation failed");
+								}
 								log.finest("Finished deserialisation");
 								stats.decodedMsg(remoteId, sm);
 								if (log.isLoggable(Level.FINE)) {
