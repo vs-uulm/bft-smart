@@ -164,7 +164,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
     public void exceptionCaught(
             ChannelHandlerContext ctx, ExceptionEvent e) {
         if (e.getCause().toString().equals("Connection reset by peer")) {
-            log.info(e.toString());
+            log.info(e.getChannel().getRemoteAddress()+" disconnected");
         } else {
             log.warning(e.toString());
             e.getCause().printStackTrace();
