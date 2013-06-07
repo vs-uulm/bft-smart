@@ -239,6 +239,7 @@ public class ServiceProxy extends TOMSender {
 			// This ensures the thread-safety by means of a semaphore
 			if (reply.getSequence() == reqId) { // Is this a reply for the last request sent?
 				replies[sender] = reply;
+				log.log(Level.FINEST,"Received Reply for {0}: {1}", new Object[]{reqId,reply});
 				// Compare the reply just received, to the others
 				for (int i = 0; i < replies.length; i++) {
 					if (replies[i] != null) {

@@ -182,7 +182,7 @@ public class RequestHandler extends Thread {
 					new Object[]{leader,tomlayer.clientsManager.hasPendingRequests(), 
 						execManager.isIdle(),!tomlayer.isRetrievingState(),leaderChanged});
 		} 
-		return leader && (ready || leaderChanged);
+		return leader && ready ;
 	}
 	
 	/**

@@ -18,18 +18,12 @@ package navigators.smart.clientsmanagement;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.TOMConfiguration;
 import navigators.smart.tom.util.TOMUtil;
@@ -48,8 +42,9 @@ public class ClientsManager {
 	private final TOMConfiguration conf;
 	private final SortedMap<Integer, ClientData> clientsData = new TreeMap<Integer, ClientData>();
 	private final ReentrantLock clientsLock = new ReentrantLock();
-	private final List<ClientRequestListener> reqlisteners = new LinkedList<ClientRequestListener>();
+//	private final List<ClientRequestListener> reqlisteners = new LinkedList<ClientRequestListener>();
 	private final TOMUtil tomutil;
+	public final AtomicInteger unproposedreqs = new AtomicInteger();
 	public final AtomicInteger pendingreqs = new AtomicInteger();
 	private volatile int nextClient = 0;
 
@@ -73,13 +68,13 @@ public class ClientsManager {
 		tomutil = util;
 	}
 
-	/**
-	 * Registers a @see ClientRequestListener at this ClientsManager
-	 * @param listener The listener to be registered
-	 */
-	public void addClientRequestListener(final ClientRequestListener listener) {
-		reqlisteners.add(listener);
-	}
+//	/**
+//	 * Registers a @see ClientRequestListener at this ClientsManager
+//	 * @param listener The listener to be registered
+//	 */
+//	public void addClientRequestListener(final ClientRequestListener listener) {
+//		reqlisteners.add(listener);
+//	}
 
 	/**
 	 * We are assuming that no more than one thread will access the same 
@@ -117,42 +112,44 @@ public class ClientsManager {
 	public PendingRequests getPendingRequests() {
 		PendingRequests allReq = new PendingRequests();
 		try {
-		clientsLock.lock();
-		
-		int noMoreMessages = 0;
-		List<ClientData> clients = new ArrayList<ClientData>(clientsData.values());
-		do {
-			for (; nextClient < clients.size() 
-					&& clientsData.size() != noMoreMessages //break if all clients are empty
-					&& allReq.size() != conf.getMaxBatchSize() // break if we reach max batch size
-					; nextClient++) {
-				ClientData clientData = clients.get(nextClient);
-				TOMMessage request = null;
-				try {
-					clientData.clientLock.lock();
-					request = clientData.proposeReq();
-				} finally {
-					clientData.clientLock.unlock();
-				}
-				if (request != null) {
-					if (log.isLoggable(Level.FINEST)) {
-						log.log(Level.FINEST, "Adding message from {0}", clientData.getClientId());
+			clientsLock.lock();
+
+			int noMoreMessages = 0;
+			List<ClientData> clients = new ArrayList<ClientData>(clientsData.values());
+			do {
+				for (; nextClient < clients.size() 
+						&& clientsData.size() != noMoreMessages //break if all clients are empty
+						&& allReq.size() != conf.getMaxBatchSize() // break if we reach max batch size
+						; nextClient++) {
+					ClientData clientData = clients.get(nextClient);
+					TOMMessage request = null;
+					try {
+						clientData.clientLock.lock();
+						request = clientData.proposeReq();
+					} finally {
+						clientData.clientLock.unlock();
 					}
-					// this client have pending message
-					allReq.addLast(request);
-				} else {
-					// this client do not have more pending requests
-					noMoreMessages++;
+					if (request != null) {
+						if (log.isLoggable(Level.FINEST)) {
+							log.log(Level.FINEST, "Adding message from {0}", clientData.getClientId());
+						}
+						// this client has pending message
+						allReq.addLast(request);
+					} else {
+						// this client do not have more pending requests
+						noMoreMessages++;
+					}
 				}
-			}
-			if (nextClient >= clients.size() || !conf.isFairClientHandling()) { 
-				log.log(Level.FINE,"Resetting nextClient");
-				nextClient = 0; //reset nextClient if we handled all or want to be unfair
-			}
-			// I inserted a message on the batch, now I must verify if the max
-			// batch size is reached or no more messages are present
-		} while (allReq.size() < conf.getMaxBatchSize() 
-				&& clientsData.size() > noMoreMessages);
+				if (nextClient >= clients.size() || !conf.isFairClientHandling()) { 
+					log.log(Level.FINE,"Resetting nextClient");
+					nextClient = 0; //reset nextClient if we handled all or want to be unfair
+				}
+				// I inserted a message on the batch, now I must verify if the max
+				// batch size is reached or no more messages are present
+			} while (allReq.size() < conf.getMaxBatchSize() 
+					&& clientsData.size() > noMoreMessages);
+			pendingreqs.addAndGet(allReq.size());
+			unproposedreqs.addAndGet(-allReq.size());
 		} finally {
 			clientsLock.unlock();
 		}
@@ -185,23 +182,29 @@ public class ClientsManager {
 	public boolean hasPendingRequests() {
 		try {
 			clientsLock.lock();
-			/**
-			 * ***** BEGIN CLIENTS CRITICAL SECTION *****
-			 */
-			Iterator<Entry<Integer, ClientData>> it = clientsData.entrySet().iterator();
-
-			while (it.hasNext()) {
-				if (it.next().getValue().hasPendingRequests()) {
-					return true;
-				}
-			}
-			return false;
-			/**
-			 * ***** END CLIENTS CRITICAL SECTION *****
-			 */
+			return unproposedreqs.get() > 0;
 		} finally {
 			clientsLock.unlock();
 		}
+//		try {
+//			clientsLock.lock();
+//			/**
+//			 * ***** BEGIN CLIENTS CRITICAL SECTION *****
+//			 */
+//			Iterator<Entry<Integer, ClientData>> it = clientsData.entrySet().iterator();
+//
+//			while (it.hasNext()) {
+//				if (it.next().getValue().hasPendingRequests()) {
+//					return true;
+//				}
+//			}
+//			return false;
+//			/**
+//			 * ***** END CLIENTS CRITICAL SECTION *****
+//			 */
+//		} finally {
+//			clientsLock.unlock();
+//		}
 	}
 
 	/**
@@ -251,8 +254,10 @@ public class ClientsManager {
 	public boolean checkAndRecordRequest(TOMMessage request, boolean fromClient, 
 			boolean recordRequest) {
 		request.receptionTime = System.currentTimeMillis();
-		ClientData clientData = getClientData(request.getSender());
 		boolean valid = false;		// Is this message correct wrt the TOMLayer
+		try{
+		clientsLock.lock();
+		ClientData clientData = getClientData(request.getSender());
 
 		try {
 			/** ***** BEGIN CLIENTDATA CRITICAL SECTION ***** */
@@ -266,13 +271,13 @@ public class ClientsManager {
 						// Store request in cdata
 						if (recordRequest) {
 							clientData.addRequest(request);
-							pendingreqs.incrementAndGet();
+							unproposedreqs.incrementAndGet();
 						}
 						clientData.recordRequestInfo(request);
-						//inform listeners
-						for (ClientRequestListener listener : reqlisteners) {
-							listener.requestReceived(request);
-						}
+//						//inform listeners
+//						for (ClientRequestListener listener : reqlisteners) {
+//							listener.requestReceived(request);
+//						}
 						valid = true;
 				} else {
 					if (	// Replicas can propose requests again, otherwise the TO
@@ -297,6 +302,9 @@ public class ClientsManager {
 		} finally {
 			/** ***** END CLIENTDATA CRITICAL SECTION ***** */
 			clientData.clientLock.unlock();
+		}}
+		finally{
+			clientsLock.unlock();
 		}
 		return valid;
 	}
@@ -312,9 +320,9 @@ public class ClientsManager {
 	public void requestOrdered(TOMMessage request) {
 		ClientData clientData = getClientData(request.getSender());
 
-		for (ClientRequestListener listener : reqlisteners) {
-			listener.requestOrdered(request);
-		}
+//		for (ClientRequestListener listener : reqlisteners) {
+//			listener.requestOrdered(request);
+//		}
 		try {
 			clientData.clientLock.lock();
 			if (clientData.removeRequest(request) == false) {
