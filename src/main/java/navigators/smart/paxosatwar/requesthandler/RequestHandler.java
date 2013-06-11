@@ -144,8 +144,8 @@ public class RequestHandler extends Thread {
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("Next leader for eid=" + (execManager.getNextExec()) + ": " + lm.getLeader(execManager.getNextExec()));
 				}
-				
-				while (!canPropose()){
+				byte[] value = null;
+				while (!canPropose() || (value = tomlayer.createPropose()) == null){
 					iAmLeader.awaitUninterruptibly();	
 				}
 
@@ -153,7 +153,7 @@ public class RequestHandler extends Thread {
 					log.finer("I can propose.");
 				}
 	
-				execManager.startNextExecution();
+				execManager.startNextExecution(value);
 				
 				leaderChanged = false;
 			} finally {
@@ -171,16 +171,17 @@ public class RequestHandler extends Thread {
 		//Check if i'm the leader
 		Integer nextLeader = lm.getLeader(execManager.getNextExec());
 		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
-		//there are messages to be ordered and no consensus is in execution 
-		ready = tomlayer.clientsManager.hasPendingRequests() && execManager.isIdle()
+		//no consensus is in execution 
+		ready = /*tomlayer.clientsManager.hasPendingRequests() && */
+				execManager.isIdle()
 				// and we are not retrieving a state
 				&& !tomlayer.isRetrievingState();
 
 		if (log.isLoggable(Level.FINER)) {
 			log.log(Level.FINER,"Requesthandler checking: leader: {0}, "
-					+ "ready: {1}(hasPending) && {2}(isIdle) && {3}(no statetx), changed:{4}",
-					new Object[]{leader,tomlayer.clientsManager.hasPendingRequests(), 
-						execManager.isIdle(),!tomlayer.isRetrievingState(),leaderChanged});
+					+ "ready:  {1}(isIdle) && {2}(no statetx), changed:{3}",
+					new Object[]{leader, execManager.isIdle(), 
+						!tomlayer.isRetrievingState(), leaderChanged});
 		} 
 		return leader && ready ;
 	}

@@ -652,8 +652,9 @@ public final class ExecutionManager{
 	/**
 	 * Starts a new Execution when the requesthandler recognizes that
 	 * there are pending requests.
+	 * @param value The value to be decided on
 	 */
-	public void startNextExecution() {
+	public void startNextExecution(byte[] value) {
 		try {
 			executionsLock.lock();
 			// Sets the current execution to the upcoming one
@@ -663,7 +664,7 @@ public final class ExecutionManager{
 			getExecution(inExecution);
 
 			// Check if we neet to propose
-			proposer.startExecution(inExecution, tomLayer.createPropose());
+			proposer.startExecution(inExecution, value);
 		} finally {
 			executionsLock.unlock();
 		}

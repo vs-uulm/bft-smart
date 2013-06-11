@@ -44,7 +44,9 @@ public class ClientsManager {
 	private final ReentrantLock clientsLock = new ReentrantLock();
 //	private final List<ClientRequestListener> reqlisteners = new LinkedList<ClientRequestListener>();
 	private final TOMUtil tomutil;
-	public final AtomicInteger unproposedreqs = new AtomicInteger();
+	/** This is only to be used for printing stats. The number of pending requests
+	 * must be monitored through a list of present requests.
+	 */
 	public final AtomicInteger pendingreqs = new AtomicInteger();
 	private volatile int nextClient = 0;
 
@@ -148,8 +150,8 @@ public class ClientsManager {
 				// batch size is reached or no more messages are present
 			} while (allReq.size() < conf.getMaxBatchSize() 
 					&& clientsData.size() > noMoreMessages);
-			pendingreqs.addAndGet(allReq.size());
-			unproposedreqs.addAndGet(-allReq.size());
+//			pendingreqs.addAndGet(allReq.size());
+//			unproposedreqs.addAndGet(-allReq.size());
 		} finally {
 			clientsLock.unlock();
 		}
@@ -179,13 +181,13 @@ public class ClientsManager {
 	 *
 	 * @return true if there are some pending requests and false otherwise
 	 */
-	public boolean hasPendingRequests() {
-		try {
-			clientsLock.lock();
-			return unproposedreqs.get() > 0;
-		} finally {
-			clientsLock.unlock();
-		}
+//	public boolean hasPendingRequests() {
+////		try {
+////			clientsLock.lock();
+////			return unproposedreqs.get() > 0;
+////		} finally {
+////			clientsLock.unlock();
+////		}
 //		try {
 //			clientsLock.lock();
 //			/**
@@ -205,7 +207,7 @@ public class ClientsManager {
 //		} finally {
 //			clientsLock.unlock();
 //		}
-	}
+//	}
 
 	/**
 	 * Verifies if some reqId is pending.
@@ -271,7 +273,7 @@ public class ClientsManager {
 						// Store request in cdata
 						if (recordRequest) {
 							clientData.addRequest(request);
-							unproposedreqs.incrementAndGet();
+							pendingreqs.incrementAndGet();
 						}
 						clientData.recordRequestInfo(request);
 //						//inform listeners
@@ -349,6 +351,7 @@ public class ClientsManager {
 	public void resetClients() {
 		try {
 			clientsLock.lock();
+//			unproposedreqs.set(0);
 			pendingreqs.set(0);
 			clientsData.clear();
 		} finally {

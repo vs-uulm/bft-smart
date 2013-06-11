@@ -156,12 +156,17 @@ public class TOMLayer implements RequestReceiver {
 	/**
 	 * Creates a value to be proposed to the acceptors. Invoked if this replica is the leader
 	 *
-	 * @return A value to be proposed to the acceptors
+	 * @return A value to be proposed to the acceptors or null if no requests
+	 * are pending.
 	 */
 	@SuppressWarnings("null")
 	public byte[] createPropose() {
 		// Retrieve a set of pending requests from the clients manager
 		PendingRequests pendingReqs = clientsManager.getPendingRequests();
+		
+		if(pendingReqs.size() == 0){
+			return null;
+		}
 
 		int numberOfMessages = pendingReqs.size(); // number of messages retrieved
 		int numberOfNonces = conf.getNumberOfNonces(); // ammount of nonces to be generated
@@ -342,9 +347,9 @@ public class TOMLayer implements RequestReceiver {
 		dt.setConsensusservice(consensusService);
 	}
 
-	public boolean hasPendingRequests() {
-		return clientsManager.hasPendingRequests();
-	}
+//	public boolean hasPendingRequests() {
+//		return clientsManager.hasPendingRequests();
+//	}
 
 	public byte[] getState() {
 		return receiver.getState();

@@ -27,7 +27,7 @@ import navigators.smart.paxosatwar.roles.Acceptor;
 /**
  * This class stands for a round of an execution of a consensus
  */
-public class Round {
+public class Round implements Comparable<Round> {
 
 	public static final Integer ROUND_ZERO = Integer.valueOf(0);
 	private static final Logger log = Logger.getLogger(Round.class.getCanonicalName());
@@ -548,15 +548,15 @@ public class Round {
 		decided = true;
 	}
 
-	/**
-	 * Indicates if this round is still active and further processing will happen
-	 * befor the corresponding execution will be done.
-	 * 
-	 * @return true if frozen or not decided, false otherwise
-	 */
-	public boolean isActive() {
-		return (proposed && !decided) || collected;
-	}
+//	/**
+//	 * Indicates if this round is still active and further processing will happen
+//	 * befor the corresponding execution will be done.
+//	 * 
+//	 * @return true if frozen or not decided, false otherwise
+//	 */
+//	public boolean isActive() {
+//		return (proposed && !decided) || collected;
+//	}
 
 	/**
 	 * Indicates if a proposal for this round was already sent.
@@ -574,5 +574,15 @@ public class Round {
 	 */
 	public void setProposed() {
 		proposed = true;
+	}
+
+	/**
+	 * Creates an inverse ordering on the lists, sorting them from highest to 
+	 * lowest
+	 * @param o The round to be compared to
+	 * @return The negative output of number.compareTo(o.number)
+	 */
+	public int compareTo(Round o) {
+		return -number.compareTo(o.number);
 	}
 }

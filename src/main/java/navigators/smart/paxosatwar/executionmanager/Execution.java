@@ -15,12 +15,10 @@
  */
 package navigators.smart.paxosatwar.executionmanager;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.crypto.ExemptionMechanism;
 import navigators.smart.consensus.MeasuringConsensus;
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 
@@ -32,7 +30,7 @@ public class Execution {
 	public static final Logger log = Logger.getLogger(Execution.class.getCanonicalName());
 	final ExecutionManager manager; // Execution manager for this execution
 	private MeasuringConsensus consensus; // MeasuringConsensus instance to which this execution works for
-	private List<Round> rounds = new LinkedList<Round>();
+	private SortedMap<Integer,Round> rounds = new TreeMap<Integer,Round>();
 //    private HashMap<Integer,Round> rounds = new HashMap<Integer,Round>(2);
 	private ReentrantLock roundsLock = new ReentrantLock(); // Lock for concurrency control
 	private volatile boolean started = false; // Did we start this execution
@@ -108,13 +106,13 @@ public class Execution {
 			roundsLock.lock();
 
 			Round round = null;
-			if (rounds.size() <= number) {
-				if (create) {
-					log.log(Level.FINER, "Creating round {0} for Execution {1}",
-							new Object[]{number, consensus.getId()});
-					round = new Round(this, number, initialTimeout);
-					rounds.add(round);
-				}
+			if (!rounds.containsKey(number)
+					&& create) {
+				log.log(Level.FINER, "Creating round {0} for Execution {1}",
+						new Object[]{number, consensus.getId()});
+				round = new Round(this, number, initialTimeout);
+				rounds.put(number, round);
+
 			} else {
 				round = rounds.get(number);
 			}
@@ -129,8 +127,8 @@ public class Execution {
 	 * Returns all Rounds of this execution
 	 * @return The currently active rounds;
 	 */
-	public List<Round> getRounds(){
-		return rounds;
+	public Collection<Round> getRounds(){
+		return rounds.values();
 	}
 
 //	/**
@@ -244,7 +242,38 @@ public class Execution {
 	 * @return True if it is decided, false otherwise
 	 */
 	public boolean isActive() {
-		return (getRound(0).isProposed() && !isDecided()) || getLastRound().isActive();
+		try {
+			roundsLock.lock();
+
+			if(rounds.size() == 1){
+				Round r = getRound(0);
+				return r.isProposed() && !isDecided() || r.isCollected();
+			} else {
+				Iterator<Round> it = rounds.values().iterator();
+				//This set is reversed, because round sort from high to low
+				SortedSet<Round> reverseset = new TreeSet<Round>(rounds.values());
+				boolean lastdecided=false;
+				int lastid = -1;
+				for(Round r : reverseset){
+					if(r.isCollected()){
+						// If we find a frozen round 
+						return !(lastdecided && r.getNumber()+1 == lastid); 						
+					} else {
+						//If we find a decided round first we are done
+						if (r.isDecided()){
+							return false;
+						}
+					}
+					lastdecided = r.isDecided();
+					lastid = r.getNumber();
+					// Nothing must be done here, if we find a frozen round we are done
+				}
+			}
+			return false;
+		} finally {
+			roundsLock.unlock();
+		}
+		
 	}
 
 	/**

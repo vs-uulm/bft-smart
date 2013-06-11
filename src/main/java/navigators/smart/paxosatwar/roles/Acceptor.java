@@ -761,7 +761,7 @@ public class Acceptor {
         msctlog.log(Level.INFO, "ps| -t #time| 0x{0}| Deciding Round {1}-{2}|", new Object[]{me, round.getExecution().getId(), round.getNumber()});
 		
 		if (log.isLoggable(Level.FINER)){
-			log.log(Level.FINER,"{0}|{1} DECIDED",new Object[]{eid,round.getNumber()});
+			log.log(Level.FINER,"{0} | {1} DECIDED",new Object[]{eid,round.getNumber()});
 		}
 
         if (conf.isDecideMessagesEnabled()) {
