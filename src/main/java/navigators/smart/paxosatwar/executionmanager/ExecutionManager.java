@@ -461,8 +461,6 @@ public final class ExecutionManager{
 			/******* END OUTOFCONTEXT CRITICAL SECTION *******/
 			outOfContextLock.unlock();
 		}
-		//check if we need to propose
-		requesthandler.notifyNewRequest();
 	}
 
 	/**

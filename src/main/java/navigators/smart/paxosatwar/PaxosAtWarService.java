@@ -88,7 +88,7 @@ public class PaxosAtWarService implements ConsensusService {
 		if (requestsTimer != null) {
 			requestsTimer.watch(msg);
 		}
-		execmng.getRequestHandler().notifyNewRequest();
+		execmng.getRequestHandler().notifyChangedConditions();
 	}
 
 	@Override
@@ -146,6 +146,8 @@ public class PaxosAtWarService implements ConsensusService {
 		}
 		//deliver the state to executionmanager
 		execmng.deliverState(state);
+		//check if we need to propose
+		execmng.getRequestHandler().notifyChangedConditions();
 	}
 
 	@Override

@@ -2,7 +2,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>modularSMaRt</artifactId>
-  <version>1.21</version>
+  <version>1.22</version>
   <packaging>jar</packaging>
 
   <name>modular SMaRt</name>

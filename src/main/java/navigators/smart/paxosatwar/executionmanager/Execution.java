@@ -301,6 +301,8 @@ public class Execution {
 			// TODO Remove this commented code if unnecessary
 //			manager.executionFinished(consensus);
 		}
+		//check if we need to propose
+		manager.getRequestHandler().notifyChangedConditions();
 	}
         
 	@Override

@@ -550,7 +550,7 @@ public class RequestHandler extends Thread {
 //		leaderLock.unlock();
 //	}
 
-	public void notifyNewRequest() {
+	public void notifyChangedConditions() {
 		leaderLock.lock();
 		iAmLeader.signalAll();
 		leaderLock.unlock();
