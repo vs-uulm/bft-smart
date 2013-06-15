@@ -82,7 +82,7 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
 	        /* msg size */
 	        buf.writeInt(msglength);
 			if(log.isLoggable(Level.FINEST)){
-				log.log(Level.FINEST,"Sending msg with Size {0} readonly: {1}",new Object[]{4+msglength,sm.isReadOnlyRequest()});
+				log.log(Level.FINEST,"Sending TOMMsg with Size {0} readonly: {1}",new Object[]{4+msglength,sm.isReadOnlyRequest()});
 			}
 			/* control byte indicating if the message is signed or not */
 	        buf.writeByte(sm.signed==true?(byte)1:(byte)0);       
@@ -99,6 +99,9 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
 
     	} else {
     		buf = (ChannelBuffer)msg;
+			if(log.isLoggable(Level.FINEST)){
+				log.log(Level.FINEST,"Sending reply msg with Size {0}",new Object[]{buf.readableBytes()});
+			}
     	}
 
         Channels.write(ctx, e.getFuture(), buf);
