@@ -46,7 +46,7 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
     private ReentrantReadWriteLock rl;
     private boolean useMAC;
 	
-	private static final Logger log = Logger.getLogger(NettyClientPipelineFactory.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(NettyTOMMessageEncoder.class.getCanonicalName());
 
     public NettyTOMMessageEncoder(Hashtable<Integer,NettyClientServerSession> sessionTable, ReentrantReadWriteLock rl, int signatureLength, boolean useMAC){
         this.sessionTable = sessionTable;
