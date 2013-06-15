@@ -22,6 +22,8 @@ import static org.jboss.netty.buffer.ChannelBuffers.buffer;
 
 import java.util.Hashtable;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.Mac;
 
@@ -43,6 +45,8 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
     private int signatureLength;
     private ReentrantReadWriteLock rl;
     private boolean useMAC;
+	
+	private static final Logger log = Logger.getLogger(NettyClientPipelineFactory.class.getCanonicalName());
 
     public NettyTOMMessageEncoder(Hashtable<Integer,NettyClientServerSession> sessionTable, ReentrantReadWriteLock rl, int signatureLength, boolean useMAC){
         this.sessionTable = sessionTable;
@@ -77,9 +81,10 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
 	        buf = buffer(4+msglength);
 	        /* msg size */
 	        buf.writeInt(msglength);
-	        /* control byte indicating if the serialized message includes the class header */
-	        // buf.writeByte(sm.includesClassHeader==true?(byte)1:(byte)0);
-	        /* control byte indicating if the message is signed or not */
+			if(log.isLoggable(Level.FINEST)){
+				log.log(Level.FINEST,"Sending msg with Size {0}",new Object[]{4+msglength});
+			}
+			/* control byte indicating if the message is signed or not */
 	        buf.writeByte(sm.signed==true?(byte)1:(byte)0);       
 	        /* data to be sent */
 	        buf.writeBytes(msgData);
