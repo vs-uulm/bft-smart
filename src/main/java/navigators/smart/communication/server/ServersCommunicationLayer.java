@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
  *
  * @author tags
  *
@@ -25,6 +25,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -40,8 +41,9 @@ import static navigators.smart.tom.util.Statistics.stats;
 /**
  *
  * @author alysson
+ * @author Christian Spann 
  */
-public class ServersCommunicationLayer extends Thread {
+public class ServersCommunicationLayer extends Thread implements ConnectionMonitor{
 
 	private static final Logger log = Logger.getLogger(ServersCommunicationLayer.class.getCanonicalName());
 	private TOMConfiguration conf;
@@ -57,7 +59,8 @@ public class ServersCommunicationLayer extends Thread {
 	 * Holds the global verifier reference
 	 */
 	private GlobalMessageVerifier<SystemMessage> globalverifier;
-	private CountDownLatch latch;
+	private volatile boolean started = false;
+	private HashSet<Integer> connectedcons;
 
 	@SuppressWarnings("rawtypes")
 	public ServersCommunicationLayer(TOMConfiguration conf,
@@ -73,7 +76,7 @@ public class ServersCommunicationLayer extends Thread {
 		this.verifierfactory = verifierfactory;
 		this.globalverifier = globalverifier;
 		connections = new ServerConnection[conf.getN()];
-		latch = new CountDownLatch(conf.getN() - 1); // create latch to wait for all connections
+		connectedcons = new HashSet<Integer>(conf.getN());
 
 		serverSocket = ServerSocketChannel.open();
 		serverSocket.socket().setSoTimeout(10000);
@@ -85,10 +88,17 @@ public class ServersCommunicationLayer extends Thread {
 	public void start() {
 		ServerCommunicationSystem.setThreadPriority(this);
 		super.start();
-		try {
-			latch.await(); // wait for all connections on startup
-		} catch (InterruptedException e) {
-			log.severe(e.getMessage() + ": Got interrupted while waiting for other connections!");
+
+		synchronized(connectedcons){
+			// Wait for all connections to be established once
+			while(connectedcons.size()<conf.getN()-1){
+				try {
+						connectedcons.wait();
+				} catch (InterruptedException e) {
+					log.severe(e.getMessage() + ": Got interrupted while waiting for other connections!");
+				}
+			}
+			started = true;
 		}
 	}
 
@@ -138,8 +148,7 @@ public class ServersCommunicationLayer extends Thread {
 				verifier = verifierfactory.generateMessageVerifier();
 			}
 			connections[i] = new ServerConnection(conf, null, i, inQueue,
-					msgHandlers, verifier, globalverifier);
-			latch.countDown();
+					msgHandlers, verifier, globalverifier, this);
 			// }
 		}
 		while (doWork) {
@@ -160,11 +169,11 @@ public class ServersCommunicationLayer extends Thread {
 						}
 						connections[remoteId] = new ServerConnection(conf,
 								newSocketChannel, remoteId, inQueue, msgHandlers,
-								verifier, globalverifier);
-						latch.countDown();
+								verifier, globalverifier,this);
+						connected(remoteId);
 					} else {
 						// reconnection
-						connections[remoteId].reconnect(newSocketChannel);
+						connections[remoteId].gotConnection(newSocketChannel);
 					}
 				} else {
 					newSocketChannel.close();
@@ -229,5 +238,17 @@ public class ServersCommunicationLayer extends Thread {
 			sb.append(i).append(' ');
 		}
 		return sb.toString();
+	}
+	
+	@Override
+	public void connected(Integer id){
+		//If the thread waiting for the comlayer to start was not released yet 
+		//check if it could be released
+		if(!started){
+			synchronized(connectedcons){
+				connectedcons.add(id);
+				connectedcons.notifyAll();
+			}
+		}
 	}
 }

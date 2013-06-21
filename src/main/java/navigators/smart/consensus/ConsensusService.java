@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
  *
  * This file is part of SMaRt.
  *
@@ -25,7 +25,7 @@ import navigators.smart.tom.core.messages.TOMMessage;
  * This Interface represents a generic ConsensusService to be used by the TOMLayer
  * to provide total order multicaste despite f byzantine failures.
  *
- * @author Christian Spann <christian.spann at uni-ulm.de>
+ * @author Christian Spann 
  */
 public interface ConsensusService {
 

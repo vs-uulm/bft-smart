@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
  * 
  * This file is part of SMaRt.
  * 
@@ -82,7 +82,7 @@ public class RequestsTimer {
     
     /**
      * Cancels all timers that are currently set
-     * @author spann
+     * @author Christian Spann
      *
      */
     public void unwatchAll(){

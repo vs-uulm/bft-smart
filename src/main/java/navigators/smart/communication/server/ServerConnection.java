@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
  *
  * @author tags
  *
@@ -28,6 +28,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -57,7 +58,8 @@ public class ServerConnection {
 	private boolean useSenderThread;
 	protected final BlockingQueue<byte[]> outQueue;// = new LinkedBlockingQueue<byte[]>(SEND_QUEUE_SIZE);
 	private BlockingQueue<SystemMessage> inQueue;
-	private Lock connectLock = new ReentrantLock();
+	private final Lock connectLock = new ReentrantLock();
+	private final Condition reconnIndicator = connectLock.newCondition();
 	/**
 	 * Only used when there is no sender Thread
 	 */
@@ -69,13 +71,15 @@ public class ServerConnection {
 	@SuppressWarnings("rawtypes")
 	private final Map<SystemMessage.Type, MessageHandler> msgHandlers;
 	private Timer delayTimer;
+	private final ConnectionMonitor cm;
 
 	@SuppressWarnings("rawtypes")
 	public ServerConnection(TOMConfiguration conf, SocketChannel socket, int remoteId,
 			BlockingQueue<SystemMessage> inQueue,
 			Map<SystemMessage.Type, MessageHandler> msgHandlers,
 			PTPMessageVerifier ptpverifier,
-			GlobalMessageVerifier verifier) {
+			GlobalMessageVerifier verifier,
+			ConnectionMonitor cm) {
 		this.msgHandlers = msgHandlers;
 		this.conf = conf;
 		this.socketchannel = socket;
@@ -84,6 +88,7 @@ public class ServerConnection {
 		this.outQueue = new ArrayBlockingQueue<byte[]>(this.conf.getOutQueueSize());
 		this.ptpverifier = ptpverifier;
 		this.globalverifier = verifier;
+		this.cm = cm;
 
 		if (ptpverifier != null) {
 			//must be done before the RecieverThread is started because it uses
@@ -141,11 +146,8 @@ public class ServerConnection {
 	 * try to send a message through the socket if some problem is detected, a reconnection is done
 	 */
 	private void sendBytes(byte[] messageData) {
-		int i = 0;
 		do {
-			if (socketchannel != null /*
-					 * && socketOutStream != null
-					 */) {
+			if (socketchannel != null ) {
 				try {
 					ByteBuffer buf = ByteBuffer.allocate(4);
 					buf.putInt(messageData.length);
@@ -169,56 +171,78 @@ public class ServerConnection {
 					return;
 				} catch (IOException ex) {
 					log.log(Level.SEVERE, null, ex);
-
+					// close and null socketchannel so reconnection is going to 
+					// occur
 					closeSocket();
-
-					waitAndConnect();
 				}
 			} else {
-				waitAndConnect();
+				log.severe("No connection established, trying reconnection");
+				reconnect();
 			}
-			i++;
 		} while (true);
 	}
 
 	/**
-	 * (Re-)establish connection between peers.
+	 * Reestablish connection between peers. If target has higher id, we wait
+	 * for a connection, otherwise we try to initiate one.
 	 *
-	 * @param newSocket socket created when this server accepted the connection (only used if processId is less than remoteId)
+	 * @param newSocket socket created when this server accepted the connection 
+	 * (only used if processId is less than remoteId)
 	 */
-	protected void reconnect(SocketChannel newSocket) {
-		connectLock.lock();
-
-		if (socketchannel == null || !socketchannel.isConnected()) {
-			try {
-				if (conf.getProcessId() > remoteId) {
-					initSocketChannel();
-				} else {
-					socketchannel = newSocket;
+	protected void reconnect() {
+		try {
+			connectLock.lock();
+			if (conf.getProcessId() < remoteId) {
+				while (socketchannel == null || !socketchannel.isConnectionPending()
+						|| !socketchannel.isConnected()) {
+					try {
+						reconnIndicator.await();
+					} catch (InterruptedException ire) {
+					}
 				}
-			} catch (UnknownHostException ex) {
-				log.log(Level.SEVERE, "Error connecting", ex);
-			} catch (IOException ex) {
+			} else {
+				while (doWork && (socketchannel == null || !socketchannel.isConnected())) {
+					try {
+						initSocketChannel();
+					} catch (UnknownHostException ex) {
+						log.log(Level.SEVERE, "Error connecting", ex);
+					} catch (IOException ex) {
 //                log.log(Level.SEVERE, "Error connecting", ex); ignore and retry
-			}
+					}
+				}
+				if (socketchannel != null) {
+					log.log(Level.FINE, "Reconnected to {0}", remoteId);
+				}
 
-			if (socketchannel != null) {
-				log.log(Level.FINE, "Reconnected to {0}", remoteId);
 			}
+		} finally {
+			connectLock.unlock();
 		}
-
-		connectLock.unlock();
+	}
+	
+	protected void gotConnection(SocketChannel newSocket){
+		try {
+			connectLock.lock();
+			closeSocket();
+			socketchannel = newSocket;
+			reconnIndicator.signalAll();
+		} finally {
+			connectLock.unlock();
+		}
 	}
 
 	private void initSocketChannel() throws IOException {
-		this.socketchannel = SocketChannel.open(new InetSocketAddress(conf.getHost(remoteId), conf.getPort(remoteId)));
+		socketchannel = SocketChannel.open(new InetSocketAddress(conf.getHost(remoteId), conf.getPort(remoteId)));
 		if (socketchannel != null) {
+			// Setup channel and send id
 			socketchannel.configureBlocking(true);
-			ServersCommunicationLayer.setSocketOptions(this.socketchannel.socket());
+			ServersCommunicationLayer.setSocketOptions(socketchannel.socket());
 			ByteBuffer out = ByteBuffer.allocate(4);
 			out.putInt(conf.getProcessId());
 			out.flip();
 			socketchannel.write(out);
+			// Tell monitor that we connected.
+			cm.connected(remoteId);
 		}
 	}
 
@@ -236,17 +260,17 @@ public class ServerConnection {
 		}
 	}
 
-	private void waitAndConnect() {
-		if (doWork) {
-			try {
-				log.log(Level.FINEST, "Waiting to connect to {0}", remoteId);
-				Thread.sleep(POOL_TIME);
-			} catch (InterruptedException ie) {
-			}
-
-			reconnect(null);
-		}
-	}
+//	private void waitAndConnect() {
+//		if (doWork) {
+//			try {
+//				log.log(Level.FINEST, "Waiting to connect to {0}", remoteId);
+//				Thread.sleep(POOL_TIME);
+//			} catch (InterruptedException ie) {
+//			}
+//
+//			reconnect(null);
+//		}
+//	}
 
 	/**
 	 * Thread used to send packets to the remote server.
@@ -402,18 +426,15 @@ public class ServerConnection {
 						log.log(Level.FINE, "Socket reset. Reconnecting...");
 
 						closeSocket();
-
-						waitAndConnect();
 					} catch (IOException ex) {
 						log.log(Level.SEVERE, "IO Error. Reconnecting...", ex);
 
 						closeSocket();
-
-						waitAndConnect();
 					}
 				} else {
-					waitAndConnect();
+					reconnect();
 				}
+				
 			}
 
 			log.log(Level.INFO, "Receiver for {0} stopped!", remoteId);

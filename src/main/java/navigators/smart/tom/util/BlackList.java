@@ -1,6 +1,17 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ *
+ * @author tags
+ *
+ * This file is part of SMaRt.
+ *
+ * SMaRt is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SMaRt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package navigators.smart.tom.util;
@@ -16,15 +27,17 @@ import java.util.logging.Logger;
  * and liveness because more than f malicious leaders cannot be handled anyways. Therefore the oldest entry
  * in the blacklist is discarded in the case where the list would grow beyond f.
  * 
- * @author Christian Spann <christian.spann at uni-ulm.de>
+ * @author Christian Spann 
  */
 public class BlackList {
 	
 	private static final Logger log = Logger.getLogger(BlackList.class.getName());
 
     private final boolean[] array;
-    private final Deque<Integer> blacklist;
-	private final Set<Integer> whitelist;
+    private final TreeSet<Long> blacklist = new TreeSet<Long> ();
+	private final Set<Integer> whitelist = new HashSet<Integer>();
+	private final Set<Integer>listedservers = new HashSet<Integer>();
+	private final HashMap<Integer,Long> failedviews = new HashMap<Integer,Long>();
     private int f; //number of allowed malicious servers
 
     private int servers;
@@ -36,8 +49,6 @@ public class BlackList {
      */
     public BlackList(int servers,int f) {
         array = new boolean[servers];
-        blacklist = new LinkedList<Integer>();
-		whitelist = new HashSet<Integer>();
 		for (int i = 0;i<servers;i++){
 			whitelist.add(i);
 		}
@@ -71,18 +82,34 @@ public class BlackList {
 	@SuppressWarnings("boxing")
 	public void addFirst(long view){
         int server = (int) (view % servers);
-        blacklist.addFirst(server);
 		whitelist.remove(server);
-        array[server]=true;
-        //remove last if list > f
-        if(blacklist.size()>f){
-        	Integer oldest = blacklist.removeLast();
-			whitelist.add(oldest);
-        	array[oldest]=false;
-        }
-        if(log.isLoggable(Level.FINE)){
-    		log.fine("blacklisting " + server);
-    	}
+		
+		// Check if the views leader is blacklisted already
+		Long lastfailedview = failedviews.put(server,view);
+		if(lastfailedview > view){
+			//Readd the old one as it is newer, we are done
+			failedviews.put(server,lastfailedview);
+		} else if(lastfailedview < view) {
+			// Add the new one to the blacklist and remove the old one
+			blacklist.add(view);
+			blacklist.remove(lastfailedview);
+		}
+		
+		// Handle new additions
+		if(lastfailedview == null){
+			blacklist.add(view);
+			
+			//remove last if list > f
+			if(blacklist.size()>f){
+				Long oldest = blacklist.first();
+				server = (int) (oldest % servers);
+				whitelist.add(server);
+				array[server]=false;
+			}
+			if(log.isLoggable(Level.FINE)){
+				log.fine("blacklisting " + server);
+			}
+		}
     }
 
     /**
@@ -92,15 +119,16 @@ public class BlackList {
      */
     @SuppressWarnings("boxing")
 	public void replaceFirst(long  view){
-        int server = (int)(view % servers);
-        if(!blacklist.isEmpty()){
-	        int oldfirst = blacklist.removeFirst();
-			whitelist.add(oldfirst);
-	        array[oldfirst] = false;
-        }
-        blacklist.addFirst(server);
-		whitelist.remove(server);
-        array[server]=true;
+		long previousview = view-1;
+		
+		//Remove previous view if existant
+		if (blacklist.remove(previousview)){
+			int oldserver = (int) (previousview % servers);
+			whitelist.add(oldserver);
+			array[oldserver] = false;
+		}
+        
+       addFirst(view);
     }
     
     public boolean checkLGView(long current, long lgv){

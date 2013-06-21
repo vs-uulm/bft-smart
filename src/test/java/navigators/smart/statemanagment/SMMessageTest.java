@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author spann
+ * @author Christian Spann
  */
 public class SMMessageTest {
 	

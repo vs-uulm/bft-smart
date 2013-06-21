@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the
  *
  * @author tags
  *
@@ -34,7 +34,7 @@ import navigators.smart.tom.util.TOMUtil;
  * their requests to one or several replicas. This behaviour is protocolspecific.
  *
  * @author alysson
- * @author Christian Spann <christian.spann at uni-ulm.de>
+ * @author Christian Spann 
  */
 public class ClientsManager {
 

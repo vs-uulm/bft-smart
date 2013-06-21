@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
  *
  * This file is part of SMaRt.
  *
@@ -27,7 +27,7 @@ import navigators.smart.tom.core.messages.SystemMessage;
  *
  * @param <U> Resulttype of the verification of this message
  * @param <M> Messages that will be sent and received via this MessageHandler
- * @author Christian Spann <christian.spann at uni-ulm.de>
+ * @author Christian Spann 
  */
 public interface MessageHandler<M extends SystemMessage, U> {
 

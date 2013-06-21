@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
  * 
  * This file is part of SMaRt.
  * 
@@ -29,7 +29,7 @@ import navigators.smart.tom.util.DebugInfo;
 
 /**
  * Example replica that implements a BFT replicated service (a counter).
- * @author Christian Spann <christian.spann@uni-ulm.de>
+ * @author Christian Spann 
  */
 public class CounterServer extends ServiceReplica {
     

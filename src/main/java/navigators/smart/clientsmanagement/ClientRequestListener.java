@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
  *
  * This file is part of SMaRt.
  *
@@ -22,7 +22,7 @@ package navigators.smart.clientsmanagement;
  * This interface is used by components that want to be informed upon starting
  * and final descision of client requests.
  *
- * @author Christian Spann <christian.spann at uni-ulm.de>
+ * @author Christian Spann 
  */
 public interface ClientRequestListener {
 

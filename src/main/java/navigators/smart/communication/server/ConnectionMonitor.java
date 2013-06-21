@@ -13,19 +13,21 @@
  *
  * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.communication.server;
 
 /**
- *
+ * This interface describes a Monitor that is informed when a connection
+ * is made to the Publisher, where it is registered.
+ * 
  * @author Christian Spann 
  */
-public class HMacVerifierFactory implements MessageVerifierFactory<PTPMessageVerifier> {
-
-    public PTPMessageVerifier generateMessageVerifier() {
-        return new HMacVerifier();
-    }
-
-
-
+public interface ConnectionMonitor {
+	
+	/**
+	 * This method is called, when a connection with the replica with
+	 * the given ID is established
+	 * @param id The id of the connected replica.
+	 */
+	public void connected(Integer id);
+	
 }
