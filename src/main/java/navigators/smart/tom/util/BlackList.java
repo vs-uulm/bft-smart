@@ -86,19 +86,20 @@ public class BlackList {
 		
 		// Check if the views leader is blacklisted already
 		Long lastfailedview = failedviews.put(server,view);
-		if(lastfailedview > view){
-			//Readd the old one as it is newer, we are done
-			failedviews.put(server,lastfailedview);
-		} else if(lastfailedview < view) {
-			// Add the new one to the blacklist and remove the old one
+		if(lastfailedview != null ){
+			if(lastfailedview > view){
+				//Readd the old one as it is newer, we are done
+				failedviews.put(server,lastfailedview);
+			} else if(lastfailedview < view) {
+				// Add the new one to the blacklist and remove the old one
+				blacklist.add(view);
+				blacklist.remove(lastfailedview);
+			}
+			//do nothing if we handled this view already
+		} else {
+			// Handle new additions
 			blacklist.add(view);
-			blacklist.remove(lastfailedview);
-		}
-		
-		// Handle new additions
-		if(lastfailedview == null){
-			blacklist.add(view);
-			
+
 			//remove last if list > f
 			if(blacklist.size()>f){
 				Long oldest = blacklist.first();
