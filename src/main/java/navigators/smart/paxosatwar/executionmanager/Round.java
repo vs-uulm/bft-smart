@@ -286,7 +286,9 @@ public class Round implements Comparable<Round> {
 			}
 		} else {
 			if(!Arrays.equals(value, propValueHash)){
-				log.log(Level.WARNING, "Bash hash received from {0}: {1}", new Object[]{acceptor, Arrays.toString(value)});
+				log.log(Level.WARNING, "{2} | {3} | {0}: Weak with different hash received: {1}, "
+						+ "not counting this for this round.", new Object[]{acceptor,
+							Arrays.toString(value), execution, number});
 			}
 		}
 	}
