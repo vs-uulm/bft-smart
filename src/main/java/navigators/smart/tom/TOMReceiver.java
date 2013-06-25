@@ -87,12 +87,14 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
         cs.addMessageHandler(SystemMessage.Type.FORWARDED,new ForwardedMessageHandler(tomlayer));
         cs.addMessageHandler(SystemMessage.Type.SM_MSG,new StateMessageHandler(tomlayer));
         cs.setRequestReceiver(tomlayer);
-        cs.start();
 
         ConsensusServiceFactory factory = createFactory(cs, conf);
 
         ConsensusService service = factory.newInstance(tomlayer);
         tomlayer.setConsensusService(service); //set backlink
+		//start comlayer when consensus is ready to serve
+        cs.start();
+		//start consensus to get things going
         service.start();
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(cs,service,tomlayer));
 
