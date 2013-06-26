@@ -133,13 +133,15 @@ public class LeaderModule {
      * Invoked by the acceptor object when a value is decided It adds a new
      * tuple to the list, which corresponds to the next consensus
      *
-     * @param c ID of the consensus established as being decided
-     * @param l ID of the replica established as being the leader for the round
+     * @param consID ID of the consensus established as being decided
+     * @param leader ID of the replica established as being the leader for the round
      * 0 of the next consensus
      */
-    public void decided(Long c, Integer l) {
-        if (leaderInfos.get(c) == null) {
-            addLeaderInfo(Long.valueOf(c.longValue() + 1), ROUND_ZERO, l);
+    public void decided(Long consID, Integer leader) {
+		Long nextId = consID + 1;
+		//Only update leader information if none exists yet
+        if (leaderInfos.get(nextId) == null) {
+            addLeaderInfo(nextId, ROUND_ZERO, leader);
         }
     }
 

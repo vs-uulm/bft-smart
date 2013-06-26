@@ -247,6 +247,9 @@ public class Execution {
 
 			if(rounds.size() == 1){
 				Round r = getRound(0);
+				if(log.isLoggable(Level.FINEST))
+				log.log(Level.FINEST, "{0} | {1} isactive: prop: {2} AND !decided: {3} OR {4}", 
+						new Object[]{getId(),r.getNumber(),r.isProposed(),!r.isDecided(),r.isCollected()});
 				return r.isProposed() && !isDecided() || r.isCollected();
 			} else {
 				Iterator<Round> it = rounds.values().iterator();
@@ -255,8 +258,13 @@ public class Execution {
 				boolean lastdecided=false;
 				int lastid = -1;
 				for(Round r : reverseset){
+					if(log.isLoggable(Level.FINEST))
+					log.log(Level.FINEST, "{0} | {1} isactive: collected: {2} , decided: {3}, ret: {4}",
+							new Object[]{getId(),r.getNumber(),r.isCollected(),
+								r.isDecided(),!(lastdecided && r.getNumber()+1 == lastid)});
 					if(r.isCollected()){
-						// If we find a frozen round 
+						// If we find a collected round return status of the
+						//round after this one (which is located before this round in the reverse list)
 						return !(lastdecided && r.getNumber()+1 == lastid); 						
 					} else {
 						//If we find a decided round first we are done

@@ -253,7 +253,7 @@ public final class ExecutionManager{
 			boolean isRetrievingState = tomLayer.isRetrievingState();
 
 			if (isRetrievingState && log.isLoggable(Level.FINEST)) {
-				log.finest(" I'm waiting for a state and received " + msg + " at execution " + getInExec() + " last las execution is " + lastExecuted);
+				log.finest(" I'm waiting for a state and received " + msg + " at execution " + getInExec() + " last execution is " + lastExecuted);
 			}
 
 			boolean canProcessTheMessage = false;
@@ -272,8 +272,8 @@ public final class ExecutionManager{
 
 				if (isRetrievingState ||															// add to ooc when retrieving state
 						consId.longValue() > (lastExecuted + 1)) {						// or msg is a normal ooc msg between boundaries
-					if (log.isLoggable(Level.FINEST)) {
-						log.finest("Adding "+ msg +" to out of context set");
+					if (log.isLoggable(Level.FINER)) {
+						log.finer("Adding "+ msg +" to out of context set");
 					}
 					addOutOfContextMessage(msg);													//store it as an ahead of time message (out of context)
 				} else {
@@ -434,16 +434,16 @@ public final class ExecutionManager{
 
 				VoteMessage prop = outOfContextProposes.remove(eid);
 				if (prop != null) {
-					if(log.isLoggable(Level.FINER))
-						log.finer("(" + eid + ") Processing an out of context propose for "+eid);
+					if(log.isLoggable(Level.FINEST))
+						log.finest("(" + eid + ") Processing an out of context propose for "+eid);
 					acceptor.processMessage(prop);
 				}
 
 				//then we have to put the pending paxos messages
 				List<PaxosMessage> messages = outOfContext.remove(eid);
 				if (messages != null) {
-					if(log.isLoggable(Level.FINER))
-						log.finer("(" + eid + ") Processing " + messages.size() + " out of context messages");
+					if(log.isLoggable(Level.FINEST))
+						log.finest("(" + eid + ") Processing " + messages.size() + " out of context messages");
 					for (Iterator<PaxosMessage> i = messages.iterator(); i.hasNext();) {
 						acceptor.processMessage(i.next());
 						if (execution.isDecided()) {
@@ -453,8 +453,8 @@ public final class ExecutionManager{
 							//TODO round checking could be useful but is probably not possible
 						}
 					}
-					if(log.isLoggable(Level.FINER))
-						log.finer(" (" + eid + ") Finished out of context processing");
+					if(log.isLoggable(Level.FINEST))
+						log.finest(" (" + eid + ") Finished out of context processing");
 				}
 			}
 		} finally {
@@ -483,9 +483,9 @@ public final class ExecutionManager{
 			}
 			messages.add(m);
 
-			if (log.isLoggable(Level.FINE))
-				if (outOfContext.size() > 0 && outOfContext.size() % 1000 == 0) {
-					log.fine("out-of-context size: " + outOfContext.size());
+			if (log.isLoggable(Level.FINER))
+				if (outOfContext.size() > 0 ) {
+					log.finer("out-of-context size: " + outOfContext.size());
 				}
 		}
 

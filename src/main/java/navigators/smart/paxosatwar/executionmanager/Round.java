@@ -32,14 +32,14 @@ public class Round implements Comparable<Round> {
 	public static final Integer ROUND_ZERO = Integer.valueOf(0);
 	private static final Logger log = Logger.getLogger(Round.class.getCanonicalName());
 	private transient final Execution execution;				// Execution where the round belongs to
+	final int replicas;
 	private transient volatile ScheduledFuture<?> timeoutTask;	// Timeout ssociated with this round
 	private Integer number; // Round's number
 	private boolean[] weakSetted;
 	private boolean[] strongSetted;
-	//Counters for weaks, strongs and decides
-	private int weaks = 0;
-	private int strongs = 0;
-	private int decides = 0;
+	private List<ValueCount> weakcount;	// weakling accepted values from other processes
+	private List<ValueCount> strongcount;	// weakling accepted values from other processes
+	private List<ValueCount> decidedcount;	// weakling accepted values from other processes
 	private byte[][] weak;						// weakling accepted values from other processes
 	private byte[][] strong;					// strongly accepted values from other processes
 	private byte[][] decide;					// values decided by other processes
@@ -55,8 +55,39 @@ public class Round implements Comparable<Round> {
 	private byte[] propValueHash = null;		// proposed value hash
 	public CollectProof[] proofs;				 // proof from other processes
 	// Stores proposes where the leader did not mach whilst reception
-	public Set<Propose> storedProposes = new HashSet<Propose>(); 
-
+	public Set<Propose> storedProposes = new HashSet<Propose>();
+	
+	class ValueCount { 
+		private final byte[] value; 
+		private int count = 1; 
+		
+		public ValueCount(byte[] val) { 
+			this.value = val;
+		} 
+		
+		/**
+		 * Check if the given value equals the stored one and increment the count
+		 * if true;
+		 * @param other The value to check for equality
+		 * @return true if equal, false if not
+		 */
+		public boolean checkAndInc(byte[] other){
+			if(Arrays.equals(value, other)){
+				count++;
+				return true;
+			}
+			return false;
+		}
+		
+		public int getCount(){
+			return count;
+		}
+		
+		public boolean equals(byte[] other){
+			return Arrays.equals(value, other);
+		}
+	} 
+	
 	/**
 	 * Creates a new instance of Round for acceptors
 	 *
@@ -71,19 +102,22 @@ public class Round implements Comparable<Round> {
 
 		ExecutionManager manager = execution.getManager();
 
-		Integer[] acceptors = manager.getAcceptors();
-		int n = acceptors.length;
+		replicas = manager.getAcceptors().length;
 
-		weakSetted = new boolean[n];
-		strongSetted = new boolean[n];
+		weakSetted = new boolean[replicas];
+		strongSetted = new boolean[replicas];
 
 		Arrays.fill(weakSetted, false);
 		Arrays.fill(strongSetted, false);
 
 //        if (number.intValue() == 0) {
-		this.weak = new byte[n][];
-		this.strong = new byte[n][];
-		this.decide = new byte[n][];
+		weakcount = new ArrayList<ValueCount>();
+		strongcount = new ArrayList<ValueCount>();
+		decidedcount = new ArrayList<ValueCount>();
+		
+		this.weak = new byte[replicas][];
+		this.strong = new byte[replicas][];
+		this.decide = new byte[replicas][];
 
 		Arrays.fill(weak, null);
 		Arrays.fill(strong, null);
@@ -109,8 +143,8 @@ public class Round implements Comparable<Round> {
 	public void setpropValue(byte[] propValue, byte[] propValueHash) {
 		this.propValue = propValue;
 		this.propValueHash = propValueHash;
-		weaks = count(weakSetted, weak, propValueHash);
-		strongs = count(strongSetted, strong, propValueHash);
+//		weaks = count(weakSetted, weak, propValueHash);
+//		strongs = count(strongSetted, strong, propValueHash);
 	}
 
 	/**
@@ -153,7 +187,7 @@ public class Round implements Comparable<Round> {
 	 */
 	public void setCollectProof(int acceptor, CollectProof proof) {
 		if (proofs == null) {
-			proofs = new CollectProof[weak.length];
+			proofs = new CollectProof[replicas];
 			Arrays.fill(proofs, null);
 		}
 
@@ -227,7 +261,7 @@ public class Round implements Comparable<Round> {
 	 * @return True if there is a weakly accepted value from a replica, false otherwise
 	 */
 	public boolean isWeakSetted(int acceptor) {
-		return weak[acceptor] != null;
+		return weakSetted[acceptor];
 	}
 
 	/**
@@ -274,22 +308,25 @@ public class Round implements Comparable<Round> {
 	 *
 	 * @param acceptor The replica ID
 	 * @param value The value weakly accepted from the specified replica
+	 * @return The number of weaks that we have for this value;
 	 */
-	public void setWeak(int acceptor, byte[] value) {
+	public int setWeak(int acceptor, byte[] value) {
 		//it can only be setted once and only if it fits the proposed value if yet received
-		if (!weakSetted[acceptor] && (propValueHash == null || Arrays.equals(value, propValueHash))) {
+		if (!weakSetted[acceptor]) {
 			weak[acceptor] = value;
 			weakSetted[acceptor] = true;
-			// Increase count only when we have received a valid propose for this round
-			if (propValueHash != null) {
-				weaks++;
-			}
+			return countValue(weakcount, value);
+//			// Increase count only when we have received a valid propose for this round
+//			if (propValueHash != null) {
+//				weaks++;
+//			}
 		} else {
 			if(!Arrays.equals(value, propValueHash)){
-				log.log(Level.WARNING, "{2} | {3} | {0}: Weak with different hash received: {1}, "
-						+ "not counting this for this round.", new Object[]{acceptor,
+				log.log(Level.WARNING, "{2} | {3} | {0}: Second weak for this round received: {1}, "
+						+ "not counting it again.", new Object[]{acceptor,
 							Arrays.toString(value), execution, number});
 			}
+			return getCount(weakcount, value);
 		}
 	}
 
@@ -317,15 +354,21 @@ public class Round implements Comparable<Round> {
 	 *
 	 * @param acceptor The replica ID
 	 * @param value The value strongly accepted from the specified replica
+	 * @return The number of strongs that we have for this value;
 	 */
-	public void setStrong(int acceptor, byte[] value) {
+	public int setStrong(int acceptor, byte[] value) {
 		//it can only be setted once and only if it fits the proposed value if yet received, otherwise count later
-		if (!strongSetted[acceptor] && (propValueHash == null || Arrays.equals(value, propValueHash))) {
+		if (!strongSetted[acceptor]) {
 			strong[acceptor] = value;
 			strongSetted[acceptor] = true;
-			if (propValueHash != null) {
-				strongs++;
+			return countValue(strongcount,value);
+		} else {
+			if(!Arrays.equals(value, propValueHash)){
+				log.log(Level.WARNING, "{2} | {3} | {0}: Second strong for this round received: {1}, "
+						+ "not counting it again.", new Object[]{acceptor,
+							Arrays.toString(value), execution, number});
 			}
+			return getCount(strongcount, value);
 		}
 	}
 
@@ -357,7 +400,7 @@ public class Round implements Comparable<Round> {
 	public void setDecide(int acceptor, byte[] value) {
 		if (Arrays.equals(value, propValueHash) && !isFrozen()) {
 			decide[acceptor] = value;
-			decides++;
+			countValue(decidedcount, value);
 		}
 	}
 
@@ -416,16 +459,16 @@ public class Round implements Comparable<Round> {
             return freeze.size();
 	}
 
-	public int countWeak() {
-		return weaks;
+	public int countWeak(byte[] value) {
+		return getCount(weakcount, value);
 	}
 
-	public int countStrong() {
-		return strongs;
+	public int countStrong(byte[] value) {
+		return getCount(strongcount, value);
 	}
 
-	public int countDecide() {
-		return decides;
+	public int countDecide(byte[] value) {
+		return getCount(decidedcount, value);
 	}
 
 	/**
@@ -435,14 +478,25 @@ public class Round implements Comparable<Round> {
 	 * @param value Value to count
 	 * @return Ammount of times that 'value' was find in 'array'
 	 */
-	private int count(boolean[] arraySetted, byte[][] array, byte[] value) {
-		int counter = 0;
-		for (int i = 0; i < array.length; i++) {
-			if (arraySetted != null && arraySetted[i] && Arrays.equals(value, array[i])) {
-				counter++;
+	private int getCount(List<ValueCount> l, byte[] value) {
+		for(ValueCount c: l){
+			if(c.equals(value)){
+				return c.getCount();
 			}
 		}
-		return counter;
+		return 0;
+	}
+	
+	private int countValue(List<ValueCount> counts, byte[] value){
+		for(ValueCount c:counts){
+			if(c.checkAndInc(value)){
+				// We found one and incremented it
+				return c.getCount();
+			}
+		}
+		// we found none, add new one
+		counts.add(new ValueCount(value));
+		return 1;
 	}
 
 	/**
@@ -548,6 +602,7 @@ public class Round implements Comparable<Round> {
 	public void decided() {
 		cancelTimeout();
 		decided = true;
+		execution.decided(this);
 	}
 
 //	/**
