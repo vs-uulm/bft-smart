@@ -77,8 +77,10 @@ public class LeaderModule {
         ConsInfo ci = findInfo(list, r);
 
         if (ci != null) {
+            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,l,ci.leaderId});
             ci.leaderId = l;
         } else {
+            log.log(Level.FINE,"{0} | {1} | adding NEW LEADER {2} ", new Object[]{exec,r,l});
             list.add(new ConsInfo(r, l));
         }
     }
