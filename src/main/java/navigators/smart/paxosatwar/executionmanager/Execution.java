@@ -244,13 +244,17 @@ public class Execution {
 	public boolean isActive() {
 		try {
 			roundsLock.lock();
-
+			boolean ret;
 			if(rounds.size() == 1){
 				Round r = getRound(0);
+				ret = r.isProposed() && !isDecided() || r.isCollected();
 				if(log.isLoggable(Level.FINEST))
-				log.log(Level.FINEST, "{0} | {1} isactive: prop: {2} AND !decided: {3} OR {4}", 
-						new Object[]{getId(),r.getNumber(),r.isProposed(),!r.isDecided(),r.isCollected()});
-				return r.isProposed() && !isDecided() || r.isCollected();
+					log.log(Level.FINEST, "{0} | {1} isactive: prop: {2}, decided: {3}, collected: {4}", 
+							new Object[]{getId(),r.getNumber(),r.isProposed(),r.isDecided(),r.isCollected()});
+				if(log.isLoggable(Level.FINE))
+					log.log(Level.FINE,"{0} | {1} isactive: {2}",
+							new Object[]{getId(),r.getNumber(),ret});
+				return ret;
 			} else {
 				Iterator<Round> it = rounds.values().iterator();
 				//This set is reversed, because round sort from high to low
@@ -259,17 +263,24 @@ public class Execution {
 				int lastid = -1;
 				for(Round r : reverseset){
 					if(log.isLoggable(Level.FINEST))
-					log.log(Level.FINEST, "{0} | {1} isactive: collected: {2} , decided: {3}, ret: {4}",
-							new Object[]{getId(),r.getNumber(),r.isCollected(),
-								r.isDecided(),!(lastdecided && r.getNumber()+1 == lastid)});
+						log.log(Level.FINEST, "{0} | {1} isactive: prop: {2}, decided: {3}, collected: {4}", 
+								new Object[]{getId(),r.getNumber(),r.isProposed(),r.isDecided(),r.isCollected()});
 					if(r.isCollected()){
 						// If we find a collected round return status of the
 						//round after this one (which is located before this round in the reverse list)
-						return !(lastdecided && r.getNumber()+1 == lastid); 						
+						ret = !(lastdecided && r.getNumber()+1 == lastid);
+						if(log.isLoggable(Level.FINE))
+							log.log(Level.FINE,"{0} | {1} isactive: {2}",
+									new Object[]{getId(),r.getNumber(),ret});
+						return ret; 						
 					} else {
 						//If we find a decided round first we are done
 						if (r.isDecided()){
-							return false;
+							ret = false;
+							if(log.isLoggable(Level.FINE))
+								log.log(Level.FINE,"{0} | {1} isactive: {2}",
+										new Object[]{getId(),r.getNumber(),ret});
+							return ret;
 						}
 					}
 					lastdecided = r.isDecided();
