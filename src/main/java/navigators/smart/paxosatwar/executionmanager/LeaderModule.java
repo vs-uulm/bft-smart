@@ -57,8 +57,8 @@ public class LeaderModule {
      */
     @SuppressWarnings("boxing")
     public LeaderModule() {
-        addLeaderInfo(Long.valueOf(-1l), ROUND_ZERO, 0);
-        addLeaderInfo(Long.valueOf(0), ROUND_ZERO, 0);
+        setLeaderInfo(Long.valueOf(-1l), ROUND_ZERO, 0);
+        setLeaderInfo(Long.valueOf(0), ROUND_ZERO, 0);
     }
 
     /**
@@ -66,9 +66,9 @@ public class LeaderModule {
      *
      * @param exec Consensus where the replica is a leader
      * @param r Rounds of the consensus where the replica is a leader
-     * @param l ID of the leader
+     * @param leader ID of the leader
      */
-    public final void addLeaderInfo(Long exec, Integer r, Integer l) {
+    public final void setLeaderInfo(Long exec, Integer r, Integer leader) {
         List<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
             list = new LinkedList<ConsInfo>();
@@ -77,42 +77,61 @@ public class LeaderModule {
         ConsInfo ci = findInfo(list, r);
 
         if (ci == null) {
-            log.log(Level.FINE,"{0} | {1} | adding NEW LEADER {2} ", new Object[]{exec,r,l});
-            list.add(new ConsInfo(r, l));
+            log.log(Level.FINE,"{0} | {1} | adding NEW LEADER {2} ", new Object[]{exec,r,leader});
+            list.add(new ConsInfo(r, leader));
         } else {
-//            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,l,ci.leaderId});
-//            ci.leaderId = l;
+            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,leader,ci.leaderId});
+            ci.leaderId = leader;
         }
     }
 
-    public void freezeRound(final Long exec, final Integer r, final Integer newLeader) {
-        List<ConsInfo> list = leaderInfos.get(exec);
-        ConsInfo ci = findInfo(list, r);
-        Integer oldleader = null;
-
-        if (ci != null) {
-            oldleader = ci.leaderId;
-            ci.leaderId = newLeader;
-            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldleader});
-        } else {
-            log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
-            list.add(new ConsInfo(r, newLeader));
-        }
-
-        // Check later executions and set new leader
-        long current_exec = exec + 1;
-
-        while ((list = leaderInfos.get(current_exec++)) != null) {
-			Integer nextLeader = newLeader;
-            for (ConsInfo cit : list) {
-                // Replace leaders of later executions if they have this current leader
-//                if (oldleader == null || cit.leaderId.equals(oldleader)) {
-//					oldleader = cit.leaderId;
-                    cit.leaderId = nextLeader;
-					nextLeader ++;
+    public void freezeRound(final Long exec, final Integer r) {
+//		Integer currentNextLader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
+//
+//            //define the leader for the next round: (previous_leader + 1) % N
+//            Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
+//            
+//            log.log(Level.FINEST,"{0} | {1} | new leader? {2} ({3})",
+//                    new Object[]{round.getExecution(), round.getNumber(),
+//                        currentNextLader,newNextLeader});
+//            if (currentNextLader != newNextLeader) {
+//                leaderModule.freezeRound(exec.getId(), nextRound.getNumber(), newNextLeader);
+//
+//                msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",
+//                        new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
+//                msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
+//                        new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
+//                if (log.isLoggable(Level.FINER)) {
+//                    log.finer( round.getExecution() + " | " + round.getNumber() + " | NEW LEADER for the next round is " + newNextLeader);
 //                }
-            }
-        }
+//            }
+//        List<ConsInfo> list = leaderInfos.get(exec);
+//        ConsInfo ci = findInfo(list, r);
+//        Integer oldleader = null;
+//
+//        if (ci != null) {
+//            oldleader = ci.leaderId;
+//            ci.leaderId = newLeader;
+//            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldleader});
+//        } else {
+//            log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
+//            list.add(new ConsInfo(r, newLeader));
+//        }
+//
+//        // Check later executions and set new leader
+//        long current_exec = exec + 1;
+//
+//        while ((list = leaderInfos.get(current_exec++)) != null) {
+//			Integer nextLeader = newLeader;
+//            for (ConsInfo cit : list) {
+//                // Replace leaders of later executions if they have this current leader
+////                if (oldleader == null || cit.leaderId.equals(oldleader)) {
+////					oldleader = cit.leaderId;
+//                    cit.leaderId = nextLeader;
+//					nextLeader ++;
+////                }
+//            }
+//        }
     }
 
     /**
@@ -139,38 +158,44 @@ public class LeaderModule {
      * @param leader ID of the replica established as being the leader for the round
      * 0 of the next consensus
      */
-    public void decided(Long consID, Integer leader) {
-		Long nextId = consID + 1;
+    public void decided(Round r) {
+		Long nextId = r.getExecution().getId() + 1;
 		//Only update leader information if none exists yet
         if (leaderInfos.get(nextId) == null) {
-            addLeaderInfo(nextId, ROUND_ZERO, leader);
+            setLeaderInfo(nextId, ROUND_ZERO, getLeader(r.getExecution().getId(),r.getNumber()));
         }
     }
 
     /**
-     * Retrieves the replica ID of the leader for the specified consensus's
-     * execution ID and round number
+     * Checks if the given leader is a possible next leader and sets
+	 * its leadership if not set. If there is another designated leader
+	 * false is returned.
      *
      * @param exec consensus's execution ID
      * @param r Round number for the specified consensus
-     * @return The replica ID of the leader
+	 * @param leader The leader that is checked
+     * @return true if its the correct leader, false otherwise
      */
-    public Integer getLeader(Long exec, Integer r) {
+    public boolean checkAndSetLeader(Long exec, Integer r, Integer leader) {
         List<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
-            log.log(Level.FINE,"{0} | {1} | Creating CI List", new Object[]{exec,r});
             //there are no information for the execution c
             //let's see who were the leader of the last execution
             list = new LinkedList<ConsInfo>();
-            leaderInfos.put(exec, list);
 
             List<ConsInfo> before = leaderInfos.get(Long.valueOf(exec.longValue() - 1));
 
             if (before != null && before.size() > 0) {
                 //the leader for this round will be the leader of the last round of the last successful round
                 ConsInfo ci = before.get(before.size() - 1);
-                list.add(new ConsInfo(r, ci.leaderId));
-                return ci.leaderId;
+				if(ci.leaderId.equals(leader)){
+					log.log(Level.FINE,"{0} | {1} | Creating CI List", new Object[]{exec,r});
+					list.add(new ConsInfo(r, ci.leaderId));
+					leaderInfos.put(exec, list);
+					return true;
+				} else {
+					return false;
+				}
             }
         } else {
             ConsInfo info = findInfo(list, r);
@@ -179,10 +204,34 @@ public class LeaderModule {
             if (info != null) {
                 log.log(Level.FINE,"{0} | {1} | CI found - LEADER {2}", 
                         new Object[]{exec, r, info.leaderId});
+                return info.leaderId.equals(leader);
+            }
+        }
+		return false;
+    }
+	
+	
+	/**
+     * Retrieves the replica ID of the leader for the specified consensus's
+     * execution ID and round number 0
+     *
+     * @param exec consensus's execution ID
+     * @return The replica ID of the leader
+     */
+    public Integer getLeader(Long exec, Integer round) {
+        List<ConsInfo> list = leaderInfos.get(exec);
+        if (list != null) {
+           
+            ConsInfo info = findInfo(list, round);
+            log.log(Level.FINEST,"{0} | {1} | getLeader: INFOLIST existant {2}", 
+                    new Object[]{exec, round, leaderInfos.entrySet()});
+            if (info != null) {
+                log.log(Level.FINE,"{0} | {1} | CI found - LEADER {2}", 
+                        new Object[]{exec, round, info.leaderId});
                 return info.leaderId;
             }
         }
-        return null;
+		return null;
     }
 
     /**

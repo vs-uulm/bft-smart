@@ -139,10 +139,10 @@ public class PaxosAtWarService implements ConsensusService {
 			}
 		}
 		//add leaderinfo of the last checkpoint
-		lm.addLeaderInfo(Long.valueOf(lastCheckpointEid), state.lastCheckpointRound, state.lastCheckpointLeader);
+		lm.setLeaderInfo(Long.valueOf(lastCheckpointEid), state.lastCheckpointRound, state.lastCheckpointLeader);
 		//add leaderinfo for previous message batches
 		for (long eid = lastCheckpointEid + 1; eid <= lastEid; eid++) {
-			lm.addLeaderInfo(Long.valueOf(eid), state.getMessageBatch(eid).round, state.getMessageBatch(eid).leader);
+			lm.setLeaderInfo(Long.valueOf(eid), state.getMessageBatch(eid).round, state.getMessageBatch(eid).leader);
 		}
 		//deliver the state to executionmanager
 		execmng.deliverState(state);

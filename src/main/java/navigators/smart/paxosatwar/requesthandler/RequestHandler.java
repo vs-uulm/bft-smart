@@ -153,7 +153,7 @@ public class RequestHandler extends Thread {
 				leaderLock.lock();
 				
 				if (log.isLoggable(Level.FINER)) {
-					log.finer("Next leader for eid=" + (execManager.getNextExec()) + ": " + lm.getLeader(execManager.getNextExec()));
+					log.finer("Next leader for eid=" + (execManager.getNextExecID()) + ": " + lm.getLeader(execManager.getNextExecID()));
 				}
 				byte[] value = null;
 				while (!canPropose() || (value = tomlayer.createPropose()) == null){
@@ -180,8 +180,9 @@ public class RequestHandler extends Thread {
 	private boolean canPropose(){
 		boolean leader, ready;
 		//Check if i'm the leader
-		Integer nextLeader = lm.getLeader(execManager.getNextExec());
-		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
+		leader = lm.checkAndSetLeader(execManager.getNextExecID(), Round.ROUND_ZERO, conf.getProcessId());
+//		Integer nextLeader = lm.getLeader(execManager.getNextExecID());
+//		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
 		//no consensus is in execution 
 		ready = /*tomlayer.clientsManager.hasPendingRequests() && */
 				execManager.isIdle()
@@ -298,9 +299,9 @@ public class RequestHandler extends Thread {
 	private void updateLeader(Integer reqId, Long start, Integer newLeader) {
 
 		leaderLock.lock(); // Signal the TOMlayer thread, if this replica is the leader
-		lm.addLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
+		lm.setLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
 		leaderChanged = true;
-		if (lm.getLeader(execManager.getNextExec()).equals(conf.getProcessId())) {
+		if (lm.getLeader(execManager.getNextExecID()).equals(conf.getProcessId())) {
 			iAmLeader.signal();
 		}
 		leaderLock.unlock();
@@ -517,7 +518,6 @@ public class RequestHandler extends Thread {
 				lastRoundNumber = lastRound.getNumber();
 			}
 		}
-
 		return (lm.getLeader(execManager.getLastExec(), lastRoundNumber) + 1) % conf.getN();
 	}
 

@@ -605,7 +605,7 @@ public final class ExecutionManager{
 	 *
 	 * @return ID of the consensus  which will be executed next
 	 */
-	public Long getNextExec() {
+	public Long getNextExecID() {
 		try {
 			executionsLock.lock();
 			return this.nextExecution;

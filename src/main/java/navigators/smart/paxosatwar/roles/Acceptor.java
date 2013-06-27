@@ -180,7 +180,7 @@ public class Acceptor {
         
         Integer sender = msg.getSender();
         Long eid = round.getExecution().getId();
-        Integer leader = leaderModule.getLeader(eid, msg.getRound());
+//        Integer leader = leaderModule.getLeader(eid, msg.getRound());
 
         // Log reception
         if (sender != conf.getProcessId()) {
@@ -193,22 +193,22 @@ public class Acceptor {
         }
 		
 		// check if the leader is correct or unkown
-		if (!leader.equals(sender)) {
+		if (msg.getRound() == 0 && !leaderModule.checkAndSetLeader(eid,msg.getRound(),sender)) {
 			round.storedProposes.add(msg);
 			return;
 		}
 
-        handlePropose(round,  msg, leader);
+        handlePropose(round,  msg);
     }
 	
-	private void handlePropose(Round round, Propose msg, Integer leader){
+	private void handlePropose(Round round, Propose msg){
 		byte[] value = msg.getValue();
 		// Proposals in round 0 are always valid and admissible
         if (msg.getRound().equals(ROUND_ZERO)) {
             log.log(Level.FINE, "Processing propose for {0}-{1} normally", new Object[]{round.getExecution().getId(), round.getNumber()});
             executePropose(round, value);
         } else {
-            log.log(Level.FINE, "Checking propose for {0}-{1} for goodness, expected leader:{3}", new Object[]{round.getExecution().getId(), round.getNumber(),leader});
+            log.log(Level.FINE, "Checking propose for {0}-{1} for goodness", new Object[]{round.getExecution().getId(), round.getNumber()});
             checkPropose(round, msg);
         }
 	}
@@ -224,7 +224,7 @@ public class Acceptor {
 
             // check if proposer is valid leader
             if (verifier.isTheLeader(msg.getSender(), collected)) {
-                leaderModule.addLeaderInfo(eid, msg.getRound(), msg.getSender());
+                leaderModule.setLeaderInfo(eid, msg.getRound(), msg.getSender());
 
                 // Is the proposed value good according to the PaW algorithm?
                 if (msg.getValue() != null && (verifier.good(msg.getValue(), collected, msg.getRound()))) {
@@ -359,7 +359,7 @@ public class Acceptor {
 //			}
 
 			//start this execution if it is not already running
-			if (eid.intValue() == manager.getNextExec()) {
+			if (eid.intValue() == manager.getNextExecID()) {
 				manager.setInExec(eid);
 			}
 			Object deserialised = tomlayer.checkProposedValue(value);
@@ -444,7 +444,7 @@ public class Acceptor {
         //the existance of this round
         if (weakAccepted > manager.quorumF) {
 			 //start this execution if it is not already running
-            if (eid.intValue() == manager.getNextExec()) {
+            if (eid.intValue() == manager.getNextExecID()) {
                 manager.setInExec(eid);
             }
 			// We have no proposed value even though we get equal weaks for some
@@ -454,7 +454,7 @@ public class Acceptor {
 				for(Propose p:round.storedProposes){
 					if(Arrays.equals(valuehash,tomlayer.computeHash(p.getValue()))){
 						round.setpropValue(p.getValue(), valuehash);
-						handlePropose(round, p, p.getSender());
+						handlePropose(round, p);
 					}
 				}
 			}
@@ -709,25 +709,7 @@ public class Acceptor {
 
             // schedule TO if not scheduled yet
             nextRound.scheduleTimeout();
-            Integer currentNextLader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
-
-            //define the leader for the next round: (previous_leader + 1) % N
-            Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
-            
-            log.log(Level.FINEST,"{0} | {1} | new leader? {2} ({3})",
-                    new Object[]{round.getExecution(), round.getNumber(),
-                        currentNextLader,newNextLeader});
-            if (currentNextLader != newNextLeader) {
-                leaderModule.freezeRound(exec.getId(), nextRound.getNumber(), newNextLeader);
-
-                msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",
-                        new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
-                msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
-                        new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
-                if (log.isLoggable(Level.FINER)) {
-                    log.finer( round.getExecution() + " | " + round.getNumber() + " | NEW LEADER for the next round is " + newNextLeader);
-                }
-            }
+            leaderModule.freezeRound(exec.getId(), round.getNumber());
 
             //Create signed W_s and S_s for all rounds up to this one in order to send them to the new proposer.
             LinkedList<FreezeProof> proofs = new LinkedList<FreezeProof>();
@@ -799,6 +781,7 @@ public class Acceptor {
         if (!round.isFrozen()) {
             leaderModule.decided(round.getExecution().getId(),
                     leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
+			leaderModule.decided(round);
         }
         
         round.decided();
