@@ -71,7 +71,7 @@ public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
         MessageFactory messageFactory = new MessageFactory(me);
         ProofVerifier proofVerifier = new ProofVerifier(conf);
         //init leaderhandling
-        LeaderModule lm = new LeaderModule();
+        LeaderModule lm = new LeaderModule(conf.getN(),me);
 
         Acceptor acceptor = new Acceptor(cs, messageFactory, proofVerifier, lm, conf,tom);
         Proposer proposer = new Proposer(cs, messageFactory, proofVerifier, conf);

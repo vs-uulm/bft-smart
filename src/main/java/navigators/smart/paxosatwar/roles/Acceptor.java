@@ -709,7 +709,7 @@ public class Acceptor {
 
             // schedule TO if not scheduled yet
             nextRound.scheduleTimeout();
-            leaderModule.freezeRound(exec.getId(), round.getNumber());
+            Integer newNextLeader = leaderModule.freezeRound(exec.getId(), round.getNumber());
 
             //Create signed W_s and S_s for all rounds up to this one in order to send them to the new proposer.
             LinkedList<FreezeProof> proofs = new LinkedList<FreezeProof>();
@@ -779,9 +779,7 @@ public class Acceptor {
         }
         //Set next leader to be the same as this round if not frozen
         if (!round.isFrozen()) {
-            leaderModule.decided(round.getExecution().getId(),
-                    leaderModule.getLeader(round.getExecution().getId(), round.getNumber()));
-			leaderModule.decided(round);
+            leaderModule.decided(round.getExecution().getId());
         }
         
         round.decided();

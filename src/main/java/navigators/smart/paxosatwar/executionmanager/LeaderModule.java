@@ -35,6 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
+import navigators.smart.paxosatwar.roles.Acceptor;
 
 /**
  * This class manages information about the leader of each round of each
@@ -51,12 +52,17 @@ public class LeaderModule {
     // of the process that was the leader for that round
     private SortedMap<Long, List<ConsInfo>> leaderInfos = Collections.synchronizedSortedMap(new TreeMap<Long, List<ConsInfo>>());
     private final Object sync = new Object();
+	private final int n;
+	private final int me;
 
     /**
      * Creates a new instance of LeaderModule
+	 * @param n The number of replicas
      */
     @SuppressWarnings("boxing")
-    public LeaderModule() {
+    public LeaderModule(int n, int me) {
+		this.n = n;
+		this.me = me;
         setLeaderInfo(Long.valueOf(-1l), ROUND_ZERO, 0);
         setLeaderInfo(Long.valueOf(0), ROUND_ZERO, 0);
     }
@@ -85,40 +91,37 @@ public class LeaderModule {
         }
     }
 
-    public void freezeRound(final Long exec, final Integer r) {
-//		Integer currentNextLader = leaderModule.getLeader(exec.getId(), nextRound.getNumber());
-//
-//            //define the leader for the next round: (previous_leader + 1) % N
-//            Integer newNextLeader = (leaderModule.getLeader(exec.getId(), round.getNumber()) + 1) % conf.getN();
-//            
-//            log.log(Level.FINEST,"{0} | {1} | new leader? {2} ({3})",
-//                    new Object[]{round.getExecution(), round.getNumber(),
-//                        currentNextLader,newNextLeader});
-//            if (currentNextLader != newNextLeader) {
-//                leaderModule.freezeRound(exec.getId(), nextRound.getNumber(), newNextLeader);
-//
-//                msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",
-//                        new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
-//                msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
-//                        new Object[]{me, newNextLeader, exec.getId(), nextRound.getNumber()});
-//                if (log.isLoggable(Level.FINER)) {
-//                    log.finer( round.getExecution() + " | " + round.getNumber() + " | NEW LEADER for the next round is " + newNextLeader);
-//                }
-//            }
-//        List<ConsInfo> list = leaderInfos.get(exec);
-//        ConsInfo ci = findInfo(list, r);
-//        Integer oldleader = null;
-//
-//        if (ci != null) {
-//            oldleader = ci.leaderId;
-//            ci.leaderId = newLeader;
-//            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldleader});
-//        } else {
-//            log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
-//            list.add(new ConsInfo(r, newLeader));
-//        }
-//
-//        // Check later executions and set new leader
+    public Integer freezeRound(final Long exec, final Integer r) {
+		Integer oldLeader = getLeader(exec, r);
+
+		//define the leader for the next round: (previous_leader + 1) % N
+		Integer newLeader = (oldLeader +1 ) % n;
+
+		log.log(Level.FINEST,"{0} | {1} | new leader? {2} ({3})",
+				new Object[]{exec, r,
+					oldLeader,newLeader});
+
+		Acceptor.msclog.log(Level.INFO, "{0} note: new leader: {1}, {2}-{3}",
+				new Object[]{me, newLeader, exec, r});
+		Acceptor.msclog.log(Level.INFO, "ps| -t #time| 0x{0}| New leader:{1}  {2}-{3}|",
+				new Object[]{me, newLeader, exec, r});
+		if (log.isLoggable(Level.FINER)) {
+			log.finer( exec +  " | " + r + " | NEW LEADER for the next round is " + newLeader);
+		}
+		
+        List<ConsInfo> list = leaderInfos.get(exec);
+        ConsInfo ci = findInfo(list, r+1);
+
+        if (ci != null) {
+            oldLeader = ci.leaderId;
+            ci.leaderId = newLeader;
+            log.log(Level.FINE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldLeader});
+        } else {
+            log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
+            list.add(new ConsInfo(r+1, newLeader));
+        }
+
+        // Check later executions and set new leader
 //        long current_exec = exec + 1;
 //
 //        while ((list = leaderInfos.get(current_exec++)) != null) {
@@ -132,6 +135,7 @@ public class LeaderModule {
 ////                }
 //            }
 //        }
+		return newLeader;
     }
 
     /**
@@ -158,11 +162,11 @@ public class LeaderModule {
      * @param leader ID of the replica established as being the leader for the round
      * 0 of the next consensus
      */
-    public void decided(Round r) {
-		Long nextId = r.getExecution().getId() + 1;
-		//Only update leader information if none exists yet
-        if (leaderInfos.get(nextId) == null) {
-            setLeaderInfo(nextId, ROUND_ZERO, getLeader(r.getExecution().getId(),r.getNumber()));
+    public void decided(Long execId) {
+		Long nextId = execId + 1;
+		//Only update leader information of the next exec round 0 if none exists yet
+        if (leaderInfos.get(nextId) == null && leaderInfos.get(execId) != null) {
+            setLeaderInfo(nextId, ROUND_ZERO, getLeader(execId));
         }
     }
 
@@ -245,16 +249,16 @@ public class LeaderModule {
         return getLeader(exec, ROUND_ZERO);
     }
 
-    /**
-     * Retrieves the replica ID of the leader for the specified consensus's
-     * execution ID and last(current) round number
-     *
-     * @param c consensus's execution ID
-     * @return The replica ID of the leader
-     */
-    public Integer getLeader(Execution exec) {
-        return getLeader(exec.getId(), exec.getCurrentRoundNumber());
-    }
+//    /**
+//     * Retrieves the replica ID of the leader for the specified consensus's
+//     * execution ID and last(current) round number
+//     *
+//     * @param c consensus's execution ID
+//     * @return The replica ID of the leader
+//     */
+//    public Integer getLeader(Execution exec) {
+//        return getLeader(exec, exec.getCurrentRoundNumber());
+//    }
 
     /**
      * Removes a consensus that is established as being stable
