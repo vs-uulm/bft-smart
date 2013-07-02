@@ -95,13 +95,13 @@ public class LeaderModuleTest {
 		Integer r = 0;
 		Integer leader = 1;
 		
-		instance.decided(exec);
-		instance.freezeRound(exec, r);
+		instance.decided(exec,r);
+		instance.collectRound(exec, r);
 		
 		assertEquals(instance.getLeader(exec,1),leader);
 		
 		exec = 1l;
-		assertTrue(instance.checkAndSetLeader(exec, r, leader));
+		assertTrue(instance.checkLeader(exec, r, leader));
 		
 	}
 
@@ -116,7 +116,7 @@ public class LeaderModuleTest {
 		Integer leader = 0;
 		
 		// Check normal decision // leadership for 1 is set
-		instance.decided(exec);
+		instance.decided(exec,r);
 		assertEquals(instance.getLeader(1l), leader);
 
 	}
@@ -129,11 +129,10 @@ public class LeaderModuleTest {
 		System.out.println("decided gaps");
 		Long exec = 0l;
 		Integer r = 0;
-		Integer leader = 0;
 		
 		// Check decision that would introduce gaps
 		exec+=2;
-		instance.decided(exec);
+		instance.decided(exec,r);
 		assertNull(instance.getLeader(exec));
 		
 	}
@@ -152,7 +151,7 @@ public class LeaderModuleTest {
 		// then 2 is decided 
 		instance.setLeaderInfo(exec, r, leader);
 		exec = 0l;
-		instance.decided(exec);
+		instance.decided(exec,r);
 		assertNotEquals(instance.getLeader(exec+1), (Integer)0);
 	}
 
@@ -168,47 +167,16 @@ public class LeaderModuleTest {
 		
 		// Check addition of random higher value which will not be added
 		// because it would introduce a gap
-		boolean result = instance.checkAndSetLeader(exec, r, leader);
+		boolean result = instance.checkLeader(exec, r, leader);
 		assertFalse(result);
-		assertEquals(null, instance.getLeader(exec,r));
+		assertNull(instance.getLeader(exec,r));
 		
 		// Checks addition of a random value again with a different leader
 		leader = 0;
-		exec = 1l;
-		result = instance.checkAndSetLeader(exec, r, leader);
+		exec = 0l;
+		result = instance.checkLeader(exec, r, leader);
 		assertTrue(result);
 		assertEquals(leader, instance.getLeader(exec,r));
-		
-		// Checks the readdition which should work.
-		result = instance.checkAndSetLeader(exec, r, leader);
-		assertTrue(result);
-		assertEquals(leader, instance.getLeader(exec,r));
-		
-		
-		// Checks addition of an existing leader with a different leader
-		// which should fail
-		Integer newleader = 1;
-		result = instance.checkAndSetLeader(exec, r, newleader);
-		assertFalse(result);
-		assertEquals(leader, instance.getLeader(exec,r));
-		
-		
-		
-		
-		
-//		// Check addition of higher round
-//		r = 3;
-//		instance.setLeaderInfo(exec, r, leader);
-//		assertEquals(leader, instance.getLeader(exec,r));
-//		
-//		
-//		// Check addition of existant value
-//		exec = 0l;
-//		r = 0;
-//		assertEquals((Integer)0, instance.getLeader(exec));
-//		instance.setLeaderInfo(exec, r, leader);
-//		assertEquals(leader, instance.getLeader(exec));
-//		assertEquals(leader, instance.getLeader(exec,r));
 	}
 
 	/**

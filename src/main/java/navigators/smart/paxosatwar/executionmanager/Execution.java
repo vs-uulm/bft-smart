@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import navigators.smart.consensus.MeasuringConsensus;
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
+import navigators.smart.paxosatwar.messages.PaxosMessage;
 
 /**
  * This class stands for an execution of a consensus
@@ -45,14 +46,15 @@ public class Execution {
 	 *
 	 * @param manager Execution manager for this execution
 	 * @param consensus MeasuringConsensus instance to which this execution works for
+	 * @param firstleader The leader that is expected to be the first leader
 	 * @param initialTimeout Initial timeout for rounds
 	 */
 	@SuppressWarnings("rawtypes")
-	protected Execution(ExecutionManager manager, MeasuringConsensus consensus, long initialTimeout) {
+	protected Execution(ExecutionManager manager, MeasuringConsensus consensus, 
+	long initialTimeout) {
 		this.manager = manager;
 		this.consensus = consensus;
 		this.initialTimeout = initialTimeout;
-		getRound(0);
 	}
 
 	/**
@@ -84,38 +86,25 @@ public class Execution {
 	}
 
 	/**
-	 * Gets a round associated with this execution and creates it if not yet existant
+	 * Gets a round associated with this execution. The round
+	 * is created if nonexistant.
 	 *
 	 * @param number The number of the round
 	 * @return The round
 	 */
-	public Round getRound(Integer number) {
-		return getRound(number, true);
-	}
-
-	/**
-	 * Gets a round associated with this execution
-	 *
-	 * @param number The number of the round
-	 * @param create if the round is to be created if not existent
-	 * @return The round
-	 */
-	public Round getRound(Integer number, boolean create) {
-		
+	public Round getRound(Integer number ) {
 		try {
 			roundsLock.lock();
 
 			Round round = null;
-			if (!rounds.containsKey(number)
-					&& create) {
-				log.log(Level.FINER, "Creating round {0} for Execution {1}",
+			
+			round = rounds.get(number);
+			if (round == null) {
+			log.log(Level.FINER, "Creating round {0} for Execution {1}",
 						new Object[]{number, consensus.getId()});
 				round = new Round(this, number, initialTimeout);
 				rounds.put(number, round);
-
-			} else {
-				round = rounds.get(number);
-			}
+			} 
 			return round;
 		} finally {
 			roundsLock.unlock();
@@ -187,12 +176,22 @@ public class Execution {
 	public Integer getCurrentRoundNumber() {
 		return currentRound;
 	}
+	
+	public Round getCurrentRound(){
+		return getRound(currentRound);
+	}
 
 	/**
-	 * The currently processed round
+	 * Increments the currently processed round, processes all pending messages
+	 * for it.
 	 */
 	public void nextRound() {
 		currentRound = currentRound + 1;
+		Round next = getRound(currentRound);
+		//Process pending msgs for next round
+		for(PaxosMessage msg:next.pending){
+			getManager().acceptor.processMessage(msg);
+		}
 	}
 
 	/**
@@ -238,57 +237,63 @@ public class Execution {
 	/**
 	 * Informs wether or not the execution is currently active. This can
 	 * change back to true if f+1 freeze messages for the last round arrive.
-	 *
 	 * @return True if it is decided, false otherwise
 	 */
 	public boolean isActive() {
 		try {
 			roundsLock.lock();
-			boolean ret;
-			if(rounds.size() == 1){
-				Round r = getRound(0);
-				ret = r.isProposed() && !isDecided() || r.isCollected();
-				if(log.isLoggable(Level.FINEST))
-					log.log(Level.FINEST, "{0} | {1} isactive: prop: {2}, decided: {3}, collected: {4}", 
-							new Object[]{getId(),r.getNumber(),r.isProposed(),r.isDecided(),r.isCollected()});
-				if(log.isLoggable(Level.FINE))
-					log.log(Level.FINE,"{0} | {1} isactive: {2}",
-							new Object[]{getId(),r.getNumber(),ret});
-				return ret;
-			} else {
-				Iterator<Round> it = rounds.values().iterator();
-				//This set is reversed, because round sort from high to low
-				SortedSet<Round> reverseset = new TreeSet<Round>(rounds.values());
-				boolean lastdecided=false;
-				int lastid = -1;
-				for(Round r : reverseset){
-					if(log.isLoggable(Level.FINEST))
-						log.log(Level.FINEST, "{0} | {1} isactive: prop: {2}, decided: {3}, collected: {4}", 
-								new Object[]{getId(),r.getNumber(),r.isProposed(),r.isDecided(),r.isCollected()});
-					if(r.isCollected()){
-						// If we find a collected round return status of the
-						//round after this one (which is located before this round in the reverse list)
-						ret = !(lastdecided && r.getNumber()+1 == lastid);
-						if(log.isLoggable(Level.FINE))
-							log.log(Level.FINE,"{0} | {1} isactive: {2}",
-									new Object[]{getId(),r.getNumber(),ret});
-						return ret; 						
-					} else {
-						//If we find a decided round first we are done
-						if (r.isDecided()){
-							ret = false;
-							if(log.isLoggable(Level.FINE))
-								log.log(Level.FINE,"{0} | {1} isactive: {2}",
-										new Object[]{getId(),r.getNumber(),ret});
-							return ret;
-						}
-					}
-					lastdecided = r.isDecided();
-					lastid = r.getNumber();
-					// Nothing must be done here, if we find a frozen round we are done
-				}
-			}
-			return false;
+//			Round last = rounds.get(rounds.lastKey());
+//			return !last.isDecided() || last.isFrozen();
+			
+			Round r = getRound(currentRound);
+			return  !r.isDecided() && !r.firstFrozen();
+				
+			// TODO check this for optimisations
+//				
+//			boolean ret;
+//			if(rounds.size() == 1){
+//				Round r = getRound(0);
+//				ret = r.isProposed() && !isDecided() || r.isCollected();
+//				if(log.isLoggable(Level.FINEST))
+//					log.log(Level.FINEST, "{0} | {1} isactive: prop: {2}, decided: {3}, collected: {4}", 
+//							new Object[]{getId(),r.getNumber(),r.isProposed(),r.isDecided(),r.isCollected()});
+//				if(log.isLoggable(Level.FINE))
+//					log.log(Level.FINE,"{0} | {1} isactive: {2}",
+//							new Object[]{getId(),r.getNumber(),ret});
+//				return ret;
+//			} else {
+//				Iterator<Round> it = rounds.values().iterator();
+//				//This set is reversed, because round sort from high to low
+//				SortedSet<Round> reverseset = new TreeSet<Round>(rounds.values());
+//				boolean lastdecided=false;
+//				int lastid = -1;
+//				for(Round r : reverseset){
+//					if(log.isLoggable(Level.FINEST))
+//						log.log(Level.FINEST, "{0} | {1} isactive: prop: {2}, decided: {3}, collected: {4}", 
+//								new Object[]{getId(),r.getNumber(),r.isProposed(),r.isDecided(),r.isCollected()});
+//					if(r.isCollected()){
+//						// If we find a collected round return status of the
+//						//round after this one (which is located before this round in the reverse list)
+//						ret = !(lastdecided && r.getNumber()+1 == lastid);
+//						if(log.isLoggable(Level.FINE))
+//							log.log(Level.FINE,"{0} | {1} isactive: {2}",
+//									new Object[]{getId(),r.getNumber(),ret});
+//						return ret; 						
+//					} else {
+//						//If we find a decided round first we are done
+//						if (r.isDecided()){
+//							ret = false;
+//							if(log.isLoggable(Level.FINE))
+//								log.log(Level.FINE,"{0} | {1} isactive: {2}",
+//										new Object[]{getId(),r.getNumber(),ret});
+//							return ret;
+//						}
+//					}
+//					lastdecided = r.isDecided();
+//					lastid = r.getNumber();
+//					// Nothing must be done here, if we find a frozen round we are done
+//				}
+//			}
 		} finally {
 			roundsLock.unlock();
 		}
@@ -327,5 +332,10 @@ public class Execution {
 	@Override
 	public String toString() {
 		return consensus.getId().toString();
+	}
+
+	public void freeze(Round round) {
+		round.freeze();
+		nextRound();
 	}
 }

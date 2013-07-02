@@ -173,7 +173,7 @@ public class PaxosAtWarService implements ConsensusService {
 				}
 			}
 		}
-		execmng.executionFinished(cons);
+		execmng.processingFinished(cons);
 	}
 
 	@Override

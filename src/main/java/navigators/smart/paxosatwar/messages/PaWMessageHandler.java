@@ -62,7 +62,7 @@ public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
         if (sm instanceof PaxosMessage) {
             PaxosMessage paxosMsg = (PaxosMessage) sm;
             //Logger.println("(TOMMessageHandler.processData) PAXOS_MSG received: " + paxosMsg);
-            if (paxosMsg.getPaxosType() == COLLECT) {
+            if (paxosMsg.paxosType == COLLECT) {
                 //the proposer layer only handle COLLECT messages
                 proposer.deliver((Collect) paxosMsg);
             } else {

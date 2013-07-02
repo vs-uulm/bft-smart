@@ -32,15 +32,15 @@ public class MessageFactory{
     public static final int FREEZE  = 44785;
     public static final int COLLECT = 44786;
 
-    private Integer from; // Replica ID of the process which sent this message
+    private Integer sender; // Replica ID of the process which sent this message
 
     /**
      * Creates a message factory
-     * @param from Replica ID of the process which sent this message
+     * @param myID Replica ID of the process which sent this message
      */
-    public MessageFactory(Integer from) {
+    public MessageFactory(Integer myID) {
 
-        this.from = from;
+        this.sender = myID;
 
     }
 
@@ -55,7 +55,7 @@ public class MessageFactory{
     public Propose createPropose(Long id, Integer round, byte[] value,
             Proof proof) {
 
-        return new Propose(id,round, from, value, proof);
+        return new Propose(id,round, sender, value, proof);
 
     }
 
@@ -64,11 +64,12 @@ public class MessageFactory{
      * @param id Consensus's execution ID
      * @param round Round number
      * @param value Weakly accepted value
+	 * @param proposer The proposer of the value
      * @return A paxos message of the WEAK type, with the specified id, round, and value
      */
-	public VoteMessage createWeak(Long id, Integer round, byte[] value) {
+	public VoteMessage createWeak(Long id, Integer round, byte[] value, Integer proposer) {
 
-        return new VoteMessage(WEAK,id,round, from, value);
+        return new VoteMessage(WEAK,id,round, sender, value, proposer);
 
     }
 
@@ -77,11 +78,12 @@ public class MessageFactory{
      * @param id Consensus's execution ID
      * @param round Round number
      * @param value Strongly accepted value
+	 * @param proposer The proposer of the value
      * @return A paxos message of the STRONG type, with the specified id, round, and value
      */
-	public VoteMessage createStrong(Long id, Integer round, byte[] value) {
+	public VoteMessage createStrong(Long id, Integer round, byte[] value, Integer proposer) {
 
-        return new VoteMessage(STRONG,id,round, from, value);
+        return new VoteMessage(STRONG,id,round, sender, value, proposer);
 
     }
 
@@ -90,11 +92,12 @@ public class MessageFactory{
      * @param id Consensus's execution ID
      * @param round Round number
      * @param value Decided value
+	 * @param proposer The proposer of the value
      * @return A paxos message of the DECIDE type, with the specified id, round, and value
      */
-	public VoteMessage createDecide(Long id, Integer round, byte[] value) {
+	public VoteMessage createDecide(Long id, Integer round, byte[] value, Integer proposer) {
 
-         return new VoteMessage(DECIDE,id,round, from, value);
+         return new VoteMessage(DECIDE,id,round, sender, value, proposer);
 
     }
 
@@ -102,11 +105,12 @@ public class MessageFactory{
      * Creates a FREEZE message to be sent by this process
      * @param id Consensus's execution ID
      * @param round Round number
+	 * @param leader The rounds leader
      * @return A paxos message of the FREEZE type, with the specified id, and round
      */
-	public PaxosMessage createFreeze(Long id, Integer round) {
+	public PaxosMessage createFreeze(Long id, Integer round, Integer leader) {
 
-        return new PaxosMessage(FREEZE,id,round, from);
+        return new PaxosMessage(FREEZE,id,round, sender,leader);
 
     }
 
@@ -117,9 +121,9 @@ public class MessageFactory{
      * @param proof The proof to be sent by the leader for all replicas
      * @return A paxos message of the COLLECT type, with the specified id, round, and proof
      */
-    public Collect createCollect(Long id, Integer round, CollectProof proof) {
+    public Collect createCollect(Long id, Integer round, Integer proposer, CollectProof proof) {
 
-        return new Collect (id,round, from, proof);
+        return new Collect (id,round, sender, proposer, proof);
 
     }
 

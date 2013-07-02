@@ -25,8 +25,8 @@ public class VoteMessage extends PaxosMessage {
 	/**
 	 * The value of this Propose
 	 */
-	protected byte[] value;
-
+	public final byte[] value;
+	
 	/**
      * Creates a VoteMessage message
      * @param paxosType This should be MessageFactory.WEAK, .STRONG or .DECIDE
@@ -34,9 +34,11 @@ public class VoteMessage extends PaxosMessage {
      * @param round Round number
      * @param from This should be this process ID
      * @param value The proposed value 
+	 * @param proposer The proposer that proposed this value
      */
-    public VoteMessage( int paxosType, Long id,Integer round,Integer from, byte[] value){
-    	super(paxosType,id,round,from);
+    public VoteMessage( int paxosType, Long id,Integer round,Integer from, 
+			byte[] value, Integer proposer){
+    	super(paxosType,id,round,from, proposer);
         this.value = value;
     }
 	
@@ -49,6 +51,7 @@ public class VoteMessage extends PaxosMessage {
 	public void serialise(ByteBuffer out){
 		super.serialise(out);
 		SerialisationHelper.writeByteArray(value, out);
+		out.putInt(proposer);
 	}
 	
 	@Override
@@ -57,17 +60,17 @@ public class VoteMessage extends PaxosMessage {
 		return ret += 4 + (value!=null ? value.length : 0 ); // +4 (length field) + value.length
 	}
 
-	public VoteMessage(int paxosType, Long id, Integer round, Integer from) {
-		super(paxosType, id, round, from);
-	}
+//	public VoteMessage(int paxosType, Long id, Integer round, Integer from) {
+//		super(paxosType, id, round, from);
+//	}
 
-	/**
-	 * Retrieves the weakly accepted, strongly accepted, decided, or proposed value.
-	 * @return The value
-	 */
-	public byte[] getValue() {
-	    return value;
-	}
+//	/**
+//	 * Retrieves the weakly accepted, strongly accepted, decided, or proposed value.
+//	 * @return The value
+//	 */
+//	public byte[] getValue() {
+//	    return value;
+//	}
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()

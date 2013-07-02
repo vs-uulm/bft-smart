@@ -29,11 +29,11 @@ public class Collect extends PaxosMessage {
      * Creates a COLLECT message
      * @param id Consensus's execution ID
      * @param round Round number
-     * @param from This should be this process ID
+     * @param sender This should be this process ID
      * @param proof The proof to be sent by the leader for all replicas
      */
-    public Collect (Long id,Integer round,Integer from, CollectProof proof){
-    	super(MessageFactory.COLLECT,id,round,from);
+    public Collect (Long id,Integer round,Integer sender, Integer proposer, CollectProof proof){
+    	super(MessageFactory.COLLECT,id,round,sender, proposer);
         this.proof = proof;
     }
 

@@ -30,9 +30,12 @@ import navigators.smart.tom.core.messages.SystemMessage;
  */
 public class PaxosMessage extends SystemMessage {
 
-    private Long eid; //execution ID for this message 
-    private Integer round; // Round number to which this message belongs to
-    private int paxosType; // Message type
+    public final Long eid; //execution ID for this message 
+    public final Integer round; // Round number to which this message belongs to
+    public final int paxosType; // Message type
+	/** The proposer of the value */
+	public final Integer proposer;
+
 
     /**
      * Creates a paxos message.
@@ -45,7 +48,7 @@ public class PaxosMessage extends SystemMessage {
         paxosType = in.getInt();
 		eid = Long.valueOf(in.getLong());
 		round = Integer.valueOf(in.getInt());
-		
+		proposer = in.getInt();
     }
 
     /**
@@ -53,14 +56,14 @@ public class PaxosMessage extends SystemMessage {
      * @param id Consensus's execution ID
      * @param round Round number
      * @param from This should be this process ID
+	 * @param proposer The proposer that proposed this value
      */
-    public PaxosMessage(int paxosType, Long id, Integer round, Integer from) {
+    public PaxosMessage(int paxosType, Long id, Integer round, Integer from, Integer proposer) {
         super(SystemMessage.Type.PAXOS_MSG, from);
-
         this.paxosType = paxosType;
         this.eid = id;
         this.round = round;
-
+		this.proposer = proposer;
     }
 
     // Implemented method of the Externalizable interface
@@ -72,45 +75,13 @@ public class PaxosMessage extends SystemMessage {
         out.putInt(paxosType);
 		out.putLong(eid.longValue());
 		out.putInt(round.intValue());
-
+		out.putInt(proposer);
     }
     
     @Override
     public int getMsgSize(){
     	int ret = super.getMsgSize();
-    	return ret += 16; //8(number)+4 (round) +4 (paxostype) 
-    }
-    
-//
-
-    /**
-     * Retrieves the round number to which this message belongs
-     * @return Round number to which this message belongs
-     */
-    public Integer getRound() {
-
-        return round;
-
-    }
-    
-    /**
-     * Returns the consensus execution ID of this message
-     * @return Consensus execution ID of this message
-     */
-    public Long getEid() {
-
-        return eid;
-
-    }
-
-    /**
-     * Returns this message type
-     * @return This message type
-     */
-    public int getPaxosType() {
-
-        return paxosType;
-
+    	return ret += 20; //8(number)+4 (round) +4 (paxostype) +4 (Proposer)
     }
 
     /**
@@ -140,7 +111,7 @@ public class PaxosMessage extends SystemMessage {
     // Over-written method
     @Override
     public String toString() {
-        return getEid() + " | " + getRound() + " | " + getPaxosVerboseType() + " (" + getSender() + ")";
+        return eid + " | " + round + " | " + getPaxosVerboseType() + " (" + getSender() + ")";
     }
 
 	/* (non-Javadoc)

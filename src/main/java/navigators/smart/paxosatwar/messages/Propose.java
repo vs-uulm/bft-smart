@@ -49,7 +49,7 @@ public class Propose extends VoteMessage {
      * @param proof The proof to be sent by the leader for all replicas
      */
     public Propose(Long id,Integer round,Integer from, byte[] value, Proof proof){
-    	super(MessageFactory.PROPOSE,id,round,from, value);
+    	super(MessageFactory.PROPOSE,id,round,from, value, from);
         this.proof = proof;
     }
 

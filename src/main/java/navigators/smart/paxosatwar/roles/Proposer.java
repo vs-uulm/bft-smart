@@ -131,7 +131,7 @@ public class Proposer {
      * @param msg the collectReceived message
      */
     private void collectReceived(Collect msg) {
-        Execution execution = manager.getExecution(msg.getEid());
+        Execution execution = manager.getExecution(msg.eid);
         CollectProof cp = msg.getProof();
 
         // Logging outputs for logfile and message sequence chart logs
@@ -140,9 +140,9 @@ public class Proposer {
         }
         msclog.log(Level.INFO, "{0} --> {1} C{2}-{3}",
                 new Object[]{msg.getSender(), conf.getProcessId(),
-                    execution.getId(), msg.getRound()});
+                    execution.getId(), msg.round});
         String id = String.format("C%1$d-%2$d-%3$d-%4$d", msg.getSender(),
-                conf.getProcessId(), execution.getId(), msg.getRound());
+                conf.getProcessId(), execution.getId(), msg.round);
         msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 4| {2}|",
                 new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
 
@@ -151,13 +151,13 @@ public class Proposer {
             if (cp != null && verifier.validSignature(cp, msg.getSender().intValue())) {
                 if (log.isLoggable(Level.FINEST)) {
                     log.log(Level.FINEST, "{0} | {1} | COLLECT SIGNED",
-                            new Object[]{msg.getEid(), msg.getRound()});
+                            new Object[]{msg.eid, msg.round});
                 }
                 if ((cp.getProofs() != null)
                         && verifier.validCollectProof(execution.getId(),
-                        msg.getRound(), cp.getProofs()) // proofs are valid
+                        msg.round, cp.getProofs()) // proofs are valid
                         && (cp.getLeader() == conf.getProcessId())) {	// this is current leader
-                    Integer nextRoundNumber = msg.getRound() + 1;
+                    Integer nextRoundNumber = msg.round + 1;
 
                     if (log.isLoggable(Level.FINEST)) {
                         log.log(Level.FINEST, "{0} | {1} | COLLECT VALID",
@@ -177,7 +177,7 @@ public class Proposer {
                         log.warning(msg.toString() + " | No proofs provided");
                     }
                     if (!verifier.validCollectProof(execution.getId(),
-                            msg.getRound(), cp.getProofs())) {
+                            msg.round, cp.getProofs())) {
                         log.warning(msg.toString() + " | CollectProof invalid");
                     }
                     if (cp.getLeader() != conf.getProcessId()) {

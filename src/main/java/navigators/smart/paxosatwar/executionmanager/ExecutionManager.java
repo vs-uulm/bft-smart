@@ -13,7 +13,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
  * GNU General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with 
+ * SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package navigators.smart.paxosatwar.executionmanager;
@@ -89,6 +90,7 @@ public final class ExecutionManager{
     public final int quorum2F; // f * 2 replicas
     public final int quorumStrong; // ((n + f) / 2) replicas
     public final int quorumFastDecide; // ((n + 3 * f) / 2) replicas
+	public final int n; //The number of replicas
 
     private TOMLayer tomLayer; // TOM layer associated with this execution manager
     private RequestHandler requesthandler;
@@ -110,7 +112,8 @@ public final class ExecutionManager{
      * @param tom The Tomlayer that is used by this instance
      */
     public ExecutionManager(Acceptor acceptor, Proposer proposer,
-            Integer[] acceptors, int f, Integer me, long initialTimeout, TOMLayer tom, LeaderModule lm) {
+            Integer[] acceptors, int f, Integer me, long initialTimeout, 
+			TOMLayer tom, LeaderModule lm) {
         this.acceptor = acceptor;
         this.proposer = proposer;
 		this.gm = new GroupManager(acceptors,me);
@@ -119,6 +122,7 @@ public final class ExecutionManager{
         this.quorum2F = 2 * f;
         this.quorumStrong = (int) Math.ceil((acceptors.length + f) / 2);
         this.quorumFastDecide = (int) Math.ceil((acceptors.length + 3 * f) / 2);
+		this.n = acceptors.length;
         this.lm = lm;
         setTOMLayer(tom);
     }
@@ -199,7 +203,8 @@ public final class ExecutionManager{
             stoppedRound = getExecution(getInExec()).getLastRound();
             stoppedRound.cancelTimeout();
             if(log.isLoggable(Level.FINE))
-                log.fine("Stopping round " + stoppedRound.getNumber() + " of consensus " + stoppedRound.getExecution().getId());
+                log.fine("Stopping round " + stoppedRound.getNumber() 
+						+ " of consensus " + stoppedRound.getExecution().getId());
 
         }
         stoppedMsgsLock.unlock();
@@ -240,7 +245,7 @@ public final class ExecutionManager{
 		try{
 			// This lock is required to block the addition of messages during ooc processing
 			outOfContextLock.lock();
-			Long consId = msg.getEid();
+			Long consId = msg.eid;
 
 			// Old message -> discard. Do not discard messages for the last 
 			// consensus as it might still freeze.
@@ -250,46 +255,53 @@ public final class ExecutionManager{
 				return false;
 			}
 
-			boolean isRetrievingState = tomLayer.isRetrievingState();
-
-			if (isRetrievingState && log.isLoggable(Level.FINEST)) {
-				log.finest(" I'm waiting for a state and received " + msg + " at execution " + getInExec() + " last execution is " + lastExecuted);
+			//check if we are in a state transfer
+			if(handleStateTransfer(msg)){
+				return false;
 			}
 
 			boolean canProcessTheMessage = false;
 			
-			if (    // this switch is to redirect ooc messages when we are receiving a state transfer
-					isRetrievingState || 
-					// Check revival bounds -> not idle and lastmsg == -1 (revived indicator) and msgid >= revivalHighmark
-					(!(isIdle() && lastExecuted == STARTED && consId.longValue() >= (lastExecuted + revivalHighMark))
+			if ( 	// Check revival bounds -> not idle and lastmsg == -1 
+					//(revived indicator) and msgid >= revivalHighmark
+					(!(isIdle() && lastExecuted == STARTED 
+					&& consId.longValue() >= (lastExecuted + revivalHighMark))
 					// Msg is within high marks (or the is replica synchronizing)
 					&&  (consId.longValue() < (lastExecuted + paxosHighMark)))) { 
 
 				//just an optimization to avoid calling the lock in normal case
 				if(stopped) {
 					handleStopped(consId, msg);
+					return false;
 				}
 
-				if (isRetrievingState ||															// add to ooc when retrieving state
-						consId.longValue() > (lastExecuted + 1)) {						// or msg is a normal ooc msg between boundaries
+				// msg is a normal ooc msg between boundaries
+				if (consId.longValue() > (lastExecuted + 1)) {						
 					if (log.isLoggable(Level.FINER)) {
 						log.finer("Adding "+ msg +" to out of context set");
 					}
-					addOutOfContextMessage(msg);													//store it as an ahead of time message (out of context)
+					addOutOfContextMessage(msg);
 				} else {
 					if (log.isLoggable(Level.FINEST)) {
-						log.finest("Message for execution " + consId + " can be processed directly");
+						log.finest("Message for execution " + consId 
+								+ " can be processed directly");
 					}
-					canProcessTheMessage = true;													//msg should be processed normally
+					canProcessTheMessage = true;
 				}
 			} else if ((isIdle() && lastExecuted == STARTED 
-					&& consId.longValue() >= (lastExecuted + revivalHighMark))			// Replica is revived and idle TODO this is an unclear case
-					|| (consId.longValue()> 0 && consId.longValue() >= (lastExecuted + paxosHighMark))) {			// Message is beyond highmark
+					// Replica is revived and idle TODO this is an unclear case
+					&& consId.longValue() >= (lastExecuted + revivalHighMark))			
+					|| (consId.longValue()> 0 
+						// Message is beyond highmark
+						&& consId.longValue() >= (lastExecuted + paxosHighMark))) {			
 				if (log.isLoggable(Level.FINE)) {
-					log.fine(msg + " is beyond the paxos highmark, adding it to ooc set and checking if state transfer is needed");
+					log.fine(msg + " is beyond the paxos highmark, adding it to"
+							+ " ooc set and checking if state transfer is needed");
 				}
-				addOutOfContextMessage(msg);														//add to ooc 
-				tomLayer.requestStateTransfer(gm.me, getOtherAcceptors(), msg.getSender(), consId);	//request statetx to recover from idle state
+				addOutOfContextMessage(msg);
+				//request statetx to recover from idle state
+				tomLayer.requestStateTransfer(gm.me, getOtherAcceptors(),
+						msg.getSender(), consId);	
 			} else {
 				log.log(Level.WARNING, "{0} missed all statements - DISCARDING...",msg);
 			}
@@ -473,13 +485,13 @@ public final class ExecutionManager{
         outOfContextLock.lock();
         /******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
 
-		if (m.getPaxosType() == MessageFactory.PROPOSE) {
-			outOfContextProposes.put(m.getEid(), (Propose) m);
+		if (m.paxosType == MessageFactory.PROPOSE) {
+			outOfContextProposes.put(m.eid, (Propose) m);
 		} else {
-			List<PaxosMessage> messages = outOfContext.get(m.getEid());
+			List<PaxosMessage> messages = outOfContext.get(m.eid);
 			if (messages == null) {
 				messages = new LinkedList<PaxosMessage>();
-				outOfContext.put(m.getEid(), messages);
+				outOfContext.put(m.eid, messages);
 			}
 			messages.add(m);
 
@@ -502,7 +514,7 @@ public final class ExecutionManager{
         return requesthandler;
     }
 	
-	public void executionDecided(Execution e){
+	public void executionDecided(Execution e){		
 		//set this consensus as the last executed
 		setLastExec(e.getId());
 		long nextExec = e.getId()+1;
@@ -513,19 +525,19 @@ public final class ExecutionManager{
 		//verify if there is a next proposal to be executed
 		//(it only happens if the previous consensus were decided in a
 		//round > 0
-		acceptor.executeAcceptedPendent(nextExec);
-		
+//		acceptor.executeAcceptedPendent(nextExec);
+
 		// Inform tomlayer of the execution
 		tomLayer.decided(e.getConsensus());
 	}
-
+	
 	/**
 	 * This method is called when the execution of the current consensus is finished
 	 * and so it is clear that the results are stable.
 	 * 
 	 * @param cons The consensus that was finished.
 	 */
-    public void executionFinished(Consensus<?> cons) {
+    public void processingFinished(Consensus<?> cons) {
 		Execution e = executions.get(cons.getId());
 		
 		if (!e.isExecuted()){
@@ -651,6 +663,7 @@ public final class ExecutionManager{
 	 * Starts a new Execution when the requesthandler recognizes that
 	 * there are pending requests.
 	 * @param value The value to be decided on
+	 * @param leader The leader for this execution
 	 */
 	public void startNextExecution(byte[] value) {
 		try {
@@ -677,15 +690,38 @@ public final class ExecutionManager{
 			executionsLock.lock();
 			for(Execution e:executions.values()){
 				if(e.isActive()){
-					log.fine(e+" is still active");
-					return false;
+						log.fine(e+" is still active");
+						return false;
+					}
 				}
-			}
 			return true;
 		} finally {
 			executionsLock.unlock();
 		}
 //		return inExecution.equals(IDLE) 
 //					&& !getExecution(lastExecuted).isActive();
+	}
+
+	private boolean handleStateTransfer(PaxosMessage msg) {
+		boolean isRetrievingState = tomLayer.isRetrievingState();
+
+			if (isRetrievingState){
+				if (log.isLoggable(Level.FINEST)) {
+					log.finest(" I'm waiting for a state and received " + msg 
+							+ " at execution " + getInExec() + " last execution is " 
+							+ lastExecuted);
+					}
+				//just an optimization to avoid calling the lock in normal case
+				if(stopped) {
+					handleStopped(msg.eid, msg);
+				} else {
+					if (log.isLoggable(Level.FINER)) {
+						log.finer("Adding "+ msg +" to out of context set");
+					}
+					addOutOfContextMessage(msg);
+				}
+				return true;
+			}
+			return false;
 	}
 }

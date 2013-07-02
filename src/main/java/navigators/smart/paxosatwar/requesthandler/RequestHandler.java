@@ -180,7 +180,7 @@ public class RequestHandler extends Thread {
 	private boolean canPropose(){
 		boolean leader, ready;
 		//Check if i'm the leader
-		leader = lm.checkAndSetLeader(execManager.getNextExecID(), Round.ROUND_ZERO, conf.getProcessId());
+		leader = lm.checkLeader(execManager.getNextExecID(), Round.ROUND_ZERO, conf.getProcessId());
 //		Integer nextLeader = lm.getLeader(execManager.getNextExecID());
 //		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
 		//no consensus is in execution 
