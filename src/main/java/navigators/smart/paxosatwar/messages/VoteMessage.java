@@ -51,7 +51,6 @@ public class VoteMessage extends PaxosMessage {
 	public void serialise(ByteBuffer out){
 		super.serialise(out);
 		SerialisationHelper.writeByteArray(value, out);
-		out.putInt(proposer);
 	}
 	
 	@Override
