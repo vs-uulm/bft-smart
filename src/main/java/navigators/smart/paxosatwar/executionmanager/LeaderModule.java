@@ -20,12 +20,7 @@
  */
 package navigators.smart.paxosatwar.executionmanager;
 
-import java.io.ByteArrayInputStream;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,15 +38,15 @@ import navigators.smart.paxosatwar.roles.Acceptor;
  *
  * @author edualchieri
  */
-public class LeaderModule {
+public class LeaderModule implements Serializable {
     
-    private static final Logger log = Logger.getLogger(LeaderModule.class.getCanonicalName());
+    private static transient final Logger log = Logger.getLogger(LeaderModule.class.getCanonicalName());
 
     // Each value of this map is a list of all the rounds of a consensus
     // Each element of that list is a tuple which stands for a round, and the id
     // of the process that was the leader for that round
     private SortedMap<Long, List<ConsInfo>> leaderInfos = Collections.synchronizedSortedMap(new TreeMap<Long, List<ConsInfo>>());
-    private final Object sync = new Object();
+    private transient final Object sync = new Object();
 	private final int n;
 	private final int me;
 
@@ -122,6 +117,16 @@ public class LeaderModule {
 			log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
 			list.add(new ConsInfo(r+1, newLeader));
 		}
+		
+		long nextexec = exec;
+		
+		while((list = leaderInfos.get(++nextexec))!= null){
+			for(ConsInfo cinfo:list){
+				cinfo.leaderId = newLeader%n;
+				newLeader ++;
+			}
+			newLeader --; // The leader stays the same as the last round for the next execution
+		}
 
 		return newLeader;
     }
@@ -150,18 +155,18 @@ public class LeaderModule {
      * @param leader ID of the replica established as being the leader for the round
      * 0 of the next consensus
      */
-    public void decided(Long execId, Integer round) {
-		Long nextId = execId + 1;
-		//Only update leader information of the next exec round 0 if none exists yet
-		// TODO check this if we need to update this more than once?
-		Integer goodleader = getLeader(execId, round);
-//        if (leaderInfos.get(nextId) == null && leaderInfos.get(execId) != null) {
-            setLeaderInfo(nextId, ROUND_ZERO, goodleader);
-			if(getLeader(nextId,1) != null){
-				throw new RuntimeException("Secound round should not have started");
-			}
-//        }
-    }
+//    public void decided(Long execId, Integer round) {
+//		Long nextId = execId + 1;
+//		//Only update leader information of the next exec round 0 if none exists yet
+//		// TODO check this if we need to update this more than once?
+//		Integer goodleader = getLeader(execId, round);
+////        if (leaderInfos.get(nextId) == null && leaderInfos.get(execId) != null) {
+//            setLeaderInfo(nextId, ROUND_ZERO, goodleader);
+//			if(getLeader(nextId,1) != null){
+//				throw new RuntimeException("Secound round should not have started");
+//			}
+////        }
+//    }
 
     /**
      * Checks if the given leader is the correct leader for this round.
@@ -173,20 +178,43 @@ public class LeaderModule {
 	 * @param leader The leader that is checked
      * @return true if its the correct leader, false otherwise
      */
-    public boolean checkLeader(Long exec, Integer r, Integer leader) {
-        List<ConsInfo> list = leaderInfos.get(exec);
-        if (list != null) {
-            ConsInfo info = findInfo(list, r);
-            log.log(Level.FINEST,"{0} | {1} | INFOLIST existant {2}", 
-                    new Object[]{exec, r, leaderInfos.entrySet()});
-            if (info != null) {
-                log.log(Level.FINE,"{0} | {1} | CI found - LEADER {2}", 
-                        new Object[]{exec, r, info.leaderId});
-                return info.leaderId.equals(leader);
-            }
-        }
+   public boolean checkLeader(Long exec, Integer r, Integer leader) {
+		List<ConsInfo> list = leaderInfos.get(exec);
+		if (list != null) {
+			ConsInfo info = findInfo(list, r);
+			log.log(Level.FINEST, "{0} | {1} | INFOLIST existant {2}",
+					new Object[]{exec, r, leaderInfos.entrySet()});
+			if (info != null) {
+				log.log(Level.FINE, "{0} | {1} | CI found - LEADER {2}",
+						new Object[]{exec, r, info.leaderId});
+				return info.leaderId.equals(leader);
+			}
+		} else {
+			if ((list = leaderInfos.get(exec - 1)) != null) {
+				ConsInfo info = list.get(list.size() - 1);
+				return info.leaderId.equals(leader);
+			}
+		}
 		//We did not decide on the previous execution yet, we have to wait... 
 		return false;
+	}
+	
+	/**
+     * Checks if the given leader is the correct leader for this round.
+	 * If there is another designated leader
+	 * false is returned. Otherwise the leader is set as leader for this round.
+     *
+     * @param exec consensus's execution ID
+     * @param r Round number for the specified consensus
+	 * @param leader The leader that is checked
+     * @return true if its the correct leader, false otherwise
+     */
+    public boolean checkAndSetLeader(Long exec, Integer r, Integer leader) {
+       if(checkLeader(exec, r, leader)){
+		   setLeaderInfo(exec, r, leader);
+		   return true;
+	   }
+	   return false;
     }
 	
 	
@@ -271,8 +299,9 @@ public class LeaderModule {
     }
 
     /**
-     * Removes all stable consensusinfos older than c *
-     */
+     * Removes all stable consensusinfos older than and including c 
+	 * @param c The newest consensus to remove
+	 */
     public void removeAllStableConsenusInfo(Long c) {
         Long next = Long.valueOf(c.longValue() + 1);
 
@@ -333,6 +362,8 @@ public class LeaderModule {
             return bos.toByteArray();
         } catch (IOException e) {
             // cannot happen with bytearray outputstream
+			System.out.println("Error! ");
+			e.printStackTrace();
         }
         return null;
     }
@@ -353,7 +384,7 @@ public class LeaderModule {
      * This class represents a tuple formed by a round number and the replica ID
      * of that round's leader
      */
-    private class ConsInfo {
+    private class ConsInfo implements Serializable{
 
         public Integer round;
         public Integer leaderId;
@@ -368,6 +399,7 @@ public class LeaderModule {
             this.leaderId = l;
         }
         
+		@Override
         public String toString() {
             return "R "+round+" | L "+leaderId;
         }

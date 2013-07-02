@@ -86,80 +86,74 @@ public class LeaderModuleTest {
 	}
 
 	/**
-	 * Test of freezeRound method, of class LeaderModule.
+	 * Test of a collect, the leader of the next round shall be set accordingly.
 	 */
 	@Test
-	public void testFreezeRound() {
-		System.out.println("freezeRound");
+	public void testCollectRound() {
 		Long exec = 0l;
 		Integer r = 0;
 		Integer leader = 1;
 		
-		instance.decided(exec,r);
 		instance.collectRound(exec, r);
 		
 		assertEquals(instance.getLeader(exec,1),leader);
-		
-		exec = 1l;
-		assertTrue(instance.checkLeader(exec, r, leader));
-		
 	}
 
-	/**
-	 * Test of decided method, of class LeaderModule.
-	 */
-	@Test
-	public void testDecided() {
-		System.out.println("decided");
-		Long exec = 0l;
-		Integer r = 0;
-		Integer leader = 0;
-		
-		// Check normal decision // leadership for 1 is set
-		instance.decided(exec,r);
-		assertEquals(instance.getLeader(1l), leader);
-
-	}
+//	/**
+//	 * Test of decided method, of class LeaderModule.
+//	 */
+//	@Test
+//	public void testDecided() {
+//		System.out.println("decided");
+//		Long exec = 0l;
+//		Integer r = 0;
+//		Integer leader = 0;
+//		
+//		// Check normal decision // leadership for 1 is set
+//		instance.decided(exec,r);
+//		assertEquals(instance.getLeader(1l), leader);
+//
+//	}
 	
-	/**
-	 * Test of decided method, of class LeaderModule.
-	 */
-	@Test
-	public void testDecided_gaps(){
-		System.out.println("decided gaps");
-		Long exec = 0l;
-		Integer r = 0;
-		
-		// Check decision that would introduce gaps
-		exec+=2;
-		instance.decided(exec,r);
-		assertNull(instance.getLeader(exec));
-		
-	}
+//	/**
+//	 * Test of decided method, of class LeaderModule.
+//	 */
+//	@Test
+//	public void testDecided_gaps(){
+//		System.out.println("decided gaps");
+//		Long exec = 0l;
+//		Integer r = 0;
+//		
+//		// Check decision that would introduce gaps
+//		exec+=2;
+//		instance.decided(exec,r);
+//		assertNull(instance.getLeader(exec));
+//		
+//	}
 	
-	/**
-	 * Test of decided method, of class LeaderModule.
-	 */
-	@Test
-	public void testDecided_existantLeader(){
-		System.out.println("decided existant leader");
-		Long exec = 1l;
-		Integer r = 0;
-		Integer leader = 3;
-		
-		// Check decision that exists, first the leader for 2 is set to 3,
-		// then 2 is decided 
-		instance.setLeaderInfo(exec, r, leader);
-		exec = 0l;
-		instance.decided(exec,r);
-		assertNotEquals(instance.getLeader(exec+1), (Integer)0);
-	}
+//	/**
+//	 * Test of decided method, of class LeaderModule.
+//	 */
+//	@Test
+//	public void testDecided_existantLeader(){
+//		System.out.println("decided existant leader");
+//		Long exec = 1l;
+//		Integer r = 0;
+//		Integer leader = 3;
+//		
+//		// Check decision that exists, first the leader for 2 is set to 3,
+//		// then 2 is decided 
+//		instance.setLeaderInfo(exec, r, leader);
+//		exec = 0l;
+//		instance.decided(exec,r);
+//		assertNotEquals(instance.getLeader(exec+1), (Integer)0);
+//	}
 
 	/**
 	 * Test of checkAndSetLeader method, of class LeaderModule.
 	 */
 	@Test
-	public void testCheckAndSetLeader() {
+	public void testCheckLeader() {
 		System.out.println("checkAndSetLeader");
 		Long exec = 5l;
 		Integer r = 0;
@@ -175,6 +169,30 @@ public class LeaderModuleTest {
 		leader = 0;
 		exec = 0l;
 		result = instance.checkLeader(exec, r, leader);
+		assertTrue(result);
+		assertEquals(leader, instance.getLeader(exec,r));
+	}
+	
+	/**
+	 * Test of checkAndSetLeader method, of class LeaderModule.
+	 */
+	@Test
+	public void testCheckandSetLeader() {
+		System.out.println("checkAndSetLeader");
+		Long exec = 5l;
+		Integer r = 0;
+		Integer leader = 3;
+		
+		// Check addition of random higher value which will not be added
+		// because it would introduce a gap
+		boolean result = instance.checkAndSetLeader(exec, r, leader);
+		assertFalse(result);
+		assertNull(instance.getLeader(exec,r));
+		
+		// Checks addition of a random value again with a different leader
+		leader = 0;
+		exec = 1l;
+		result = instance.checkAndSetLeader(exec, r, leader);
 		assertTrue(result);
 		assertEquals(leader, instance.getLeader(exec,r));
 	}
@@ -217,10 +235,9 @@ public class LeaderModuleTest {
 	@Test
 	public void testRemoveStableConsenusInfo() {
 		System.out.println("removeStableConsenusInfo");
-		Long c = null;
+		Long c = -1l;
 		instance.removeStableConsenusInfo(c);
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
+		assertNull(instance.getLeader(-1l));
 	}
 
 	/**
@@ -229,10 +246,14 @@ public class LeaderModuleTest {
 	@Test
 	public void testRemoveAllStableConsenusInfo() {
 		System.out.println("removeAllStableConsenusInfo");
-		Long c = null;
-		instance.removeAllStableConsenusInfo(c);
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
+		
+		instance.checkAndSetLeader(1l, 0, 0);
+		
+		instance.removeAllStableConsenusInfo(0l);
+		
+		assertNull(instance.getLeader(0l));
+		assertNull(instance.getLeader(-1l));
+		assertEquals(instance.getLeader(1l),(Integer)0);
 	}
 
 	/**
@@ -240,36 +261,36 @@ public class LeaderModuleTest {
 	 */
 	@Test
 	public void testRemoveMultipleStableConsenusInfos() {
-		System.out.println("removeMultipleStableConsenusInfos");
-		Long cStart = null;
-		Long cEnd = null;
-		instance.removeMultipleStableConsenusInfos(cStart, cEnd);
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
+		instance.checkAndSetLeader(1l, 0, 0);
+		instance.checkAndSetLeader(2l, 0, 0);
+		
+		instance.removeMultipleStableConsenusInfos(0l, 1l);
+		
+		assertNull(instance.getLeader(0l));
+		assertNull(instance.getLeader(1l));
+		assertEquals(instance.getLeader(2l),(Integer)0);
+		assertEquals(instance.getLeader(-1l),(Integer)0);
+		
+		
+		
 	}
 
 	/**
 	 * Test of getState method, of class LeaderModule.
 	 */
 	@Test
-	public void testGetState() {
+	public void testGetandSetState() throws ClassNotFoundException {
 		System.out.println("getState");
-		byte[] expResult = null;
+		instance.collectRound(0l, 0);
+		
 		byte[] result = instance.getState();
-		assertEquals(expResult, result);
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
+		
+		instance = new LeaderModule(4, 0);
+		instance.setState(result);
+		assertTrue(instance.checkLeader(0l, 1, 1));
+		
 	}
 
-	/**
-	 * Test of setState method, of class LeaderModule.
-	 */
-	@Test
-	public void testSetState() throws Exception {
-		System.out.println("setState");
-		byte[] state = null;
-		instance.setState(state);
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
-	}
+	
 }
+

@@ -195,23 +195,31 @@ public class Acceptor {
                     new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
         }
 		
-		// check if the leader is correct or unkown
-		if (msg.round == 0 && !leaderModule.checkLeader(eid,msg.round,sender)) {
-			round.storedProposes.add(msg);
-			return;
-		}
 
         handlePropose(round,  msg);
     }
 	
 	private void handlePropose(Round round, Propose msg){
-		byte[] value = msg.value;
-		// Proposals in round 0 are always valid and admissible
+		// Proposals in round 0 are not always... valid and admissible
         if (msg.round.equals(ROUND_ZERO)) {
-            log.log(Level.FINE, "Processing propose for {0}-{1} normally", new Object[]{round.getExecution().getId(), round.getNumber()});
-            executePropose(round, msg);
+			//If we got f or more weaks for this proposal, lets stick to its leader.
+			if(round.countWeak(msg.value)>=manager.quorumF){
+				leaderModule.setLeaderInfo(msg.eid, msg.round, msg.proposer);
+			}
+			// check if the leader is correct or unkown
+			if ( leaderModule.checkAndSetLeader(msg.eid,msg.round,msg.getSender())) {
+				log.log(Level.FINE, "Processing propose for {0}-{1} normally", 
+						new Object[]{round.getExecution().getId(), round.getNumber()});
+				executePropose(round, msg);
+			} else {
+				log.log(Level.FINE, "Storing propose for {0}-{1} from invalid leader", 
+						new Object[]{round.getExecution().getId(), round.getNumber()});
+				round.storedProposes.add(msg);
+				return;
+			}
         } else {
-            log.log(Level.FINE, "Checking propose for {0}-{1} for goodness", new Object[]{round.getExecution().getId(), round.getNumber()});
+            log.log(Level.FINE, "Checking propose for {0}-{1} for goodness", 
+					new Object[]{round.getExecution().getId(), round.getNumber()});
             checkPropose(round, msg);
         }
 	}
@@ -503,7 +511,7 @@ public class Acceptor {
      */
     private void checkSendStrong(final Long eid, final Round round, 
 			final VoteMessage msg) {
-		int weakAccepted = round.countWeak(msg.proposer, msg.value);
+		int weakAccepted = round.countWeak(msg.value);
         // shall I send a STRONG message?
         if (weakAccepted > manager.quorumStrong && 
             !round.isStrongSetted(me.intValue()) &&
@@ -574,7 +582,7 @@ public class Acceptor {
 	 * @param strongAccepted The number of accepted values
      */
     private void computeStrong(Long eid, Round round, VoteMessage msg) {
-		int strongAccepted = round.countStrong(msg.proposer, msg.value);
+		int strongAccepted = round.countStrong(msg.value);
 
         if (log.isLoggable(Level.FINER)) {
             log.finer( eid + " | " + round.getNumber() + " | " + strongAccepted
@@ -602,7 +610,7 @@ public class Acceptor {
         Long eid = round.getExecution().getId();
         round.setDecide(decide);
 
-        if (round.countDecide(decide.proposer, decide.value) > manager.quorumF && !round.isDecided()) {
+        if (round.countDecide(decide.value) > manager.quorumF && !round.isDecided()) {
             if (log.isLoggable(Level.FINER)) {
                 log.fine( eid + " | " + round.getNumber() + " | DECIDE MSG DECIDE");
             }
@@ -695,7 +703,8 @@ public class Acceptor {
                 }
             }
             communication.send(manager.getAcceptors(),
-                    factory.createFreeze(round.getExecution().getId(), round.getNumber(),leaderModule.getLeader(round.getExecution().getId(), round.getNumber())));
+                    factory.createFreeze(round.getExecution().getId(), 
+					round.getNumber(),leaderModule.getLeader(round.getExecution().getId(), round.getNumber())));
         }
     }
 
@@ -809,10 +818,10 @@ public class Acceptor {
             round.setDecide(decide);
             communication.send(manager.getOtherAcceptors(), decide);
         }
-        //Set next leader to be the same as this round if not collected
-        if (!round.isCollected()) {
-            leaderModule.decided(round.getExecution().getId(),round.getNumber());
-        }
+//        //Set next leader to be the same as this round if not collected
+//        if (!round.isCollected()) {
+//            leaderModule.decided(round.getExecution().getId(),round.getNumber());
+//        }
         
         round.decided();
       

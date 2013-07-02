@@ -29,7 +29,7 @@ public class PaxosMessageTest {
 	
 	@Test
 	public void testSerialiseFreeze() {
-		PaxosMessage msg = new PaxosMessage(MessageFactory.FREEZE,0l,0,0);
+		PaxosMessage msg = new PaxosMessage(MessageFactory.FREEZE,0l,0,0,0);
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);
 		buf.rewind();
@@ -39,7 +39,7 @@ public class PaxosMessageTest {
 	
 		@Test
 	public void testSerialiseWeakStrongDecide() {
-		PaxosMessage msg = new VoteMessage(MessageFactory.WEAK, 0l, 0, 0,TestHelper.createTestByte());
+		PaxosMessage msg = new VoteMessage(MessageFactory.WEAK, 0l, 0, 0,TestHelper.createTestByte(),0);
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);
 		buf.rewind();
@@ -86,7 +86,7 @@ public class PaxosMessageTest {
 		FreezeProof freeze = new FreezeProof(0, 1l, 1,  TestHelper.createTestByte(),true,true,false);
 		LinkedList<FreezeProof> freezes = new LinkedList<FreezeProof>();
 		freezes.add(freeze);
-		Collect msg = new Collect(0l,0,0, new CollectProof(freezes, 1));
+		Collect msg = new Collect(0l,0,0,0, new CollectProof(freezes, 1));
 		msg.getProof().setSignature(TestHelper.createTestByte());
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);
@@ -96,7 +96,7 @@ public class PaxosMessageTest {
 		
 		//Test with empty freezes list
 		freezes.clear();
-		msg = new Collect(0l,0,0, new CollectProof(freezes, 1));
+		msg = new Collect(0l,0,0,0, new CollectProof(freezes, 1));
 		msg.getProof().setSignature(TestHelper.createTestByte());
 		buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);
@@ -120,7 +120,7 @@ public class PaxosMessageTest {
 		FreezeProof freeze = new FreezeProof(0, 1l, 1, test, true,true,false);
 		LinkedList<FreezeProof> freezes = new LinkedList<FreezeProof>();
 		freezes.add(freeze);
-		Collect msg = new Collect(0l,0,0, new CollectProof(freezes, 1));
+		Collect msg = new Collect(0l,0,0,0, new CollectProof(freezes, 1));
 		msg.getProof().setSignature(TestHelper.createTestByte());
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);

@@ -153,7 +153,11 @@ public class Round implements Comparable<Round> {
 	 * @return The proposed value if set, null otherwise
 	 */
 	public byte[] getPropValue() {
-		return p.value;
+		if(p!=null){
+			return p.value;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -448,15 +452,15 @@ public class Round implements Comparable<Round> {
             return freeze.size();
 	}
 
-	public int countWeak(Integer leader, byte[] value) {
+	public int countWeak(byte[] value) {
 		return getCount(weakcount, value);
 	}
 
-	public int countStrong(Integer leader, byte[] value) {
+	public int countStrong( byte[] value) {
 		return getCount(strongcount, value);
 	}
 
-	public int countDecide(Integer leader, byte[] value) {
+	public int countDecide( byte[] value) {
 		return getCount(decidedcount, value);
 	}
 
