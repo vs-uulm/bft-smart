@@ -57,7 +57,7 @@ public class VoteMessage extends PaxosMessage {
 	@Override
 	public int getMsgSize(){
 		int ret = super.getMsgSize();
-		return ret += 4 + 4 + (value!=null ? value.length : 0 ); // +4 (length field) + value.length
+		return ret += 4 + (value!=null ? value.length : 0 ); // +4 (length field) + value.length
 	}
 
 //	public VoteMessage(int paxosType, Long id, Integer round, Integer from) {

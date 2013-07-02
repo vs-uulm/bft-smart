@@ -246,7 +246,7 @@ public class Execution {
 //			return !last.isDecided() || last.isFrozen();
 			
 			Round r = getRound(currentRound);
-			return  !r.isDecided() && !r.firstFrozen();
+			return  r.isProposed() && !r.isDecided(); // && !r.firstFrozen();
 				
 			// TODO check this for optimisations
 //				
