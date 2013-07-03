@@ -224,12 +224,13 @@ public class Acceptor {
 	private void handlePropose(Round round, Propose propose){
 		// Proposals in round 0 are not always... valid and admissible
         if (propose.round.equals(ROUND_ZERO)) {
-			//If we got f or more weaks for this proposal, lets stick to its leader.
-			if(round.countWeak(propose.value) > manager.quorumF){
-				leaderModule.setLeaderInfo(propose.eid, propose.round, propose.getSender());
-			}
-			// check if the leader is correct or unkown
-			if ( leaderModule.checkAndSetLeader(propose.eid,propose.round,propose.getSender())) {
+			
+			/*
+			 * check if the leader is correct or unkown  or If we got f or more 
+			 * weaks for this proposal, lets stick to its leader.
+			 */
+			if ( leaderModule.checkAndSetLeader(propose.eid,propose.round,propose.getSender())
+					|| round.countWeak(propose.value) > manager.quorumF) {
 				log.log(Level.FINE, "Processing propose for {0}-{1} normally", 
 						new Object[]{round.getExecution().getId(), round.getNumber()});
 				executePropose(round, propose);
@@ -499,7 +500,13 @@ public class Acceptor {
 			// a freeze that matches
 			if(round.getPropValue() == null){
 				for(Propose p:round.storedProposes){
+					log.log(Level.FINER, "{0} | {1} checking propose from {2} "
+							+ "for equality with the weaks", 
+							new Object[]{eid,round.getNumber(),p.getSender()});
 					if(Arrays.equals(msg.value,tomlayer.computeHash(p.value))){
+						log.log(Level.FINER, "{0} | {1} Popose from {2} "
+							+ "matches waks, processing...", 
+							new Object[]{eid,round.getNumber(),p.getSender()});
 						round.setPropose( p, msg.value);
 						handlePropose(round, p);
 					}
