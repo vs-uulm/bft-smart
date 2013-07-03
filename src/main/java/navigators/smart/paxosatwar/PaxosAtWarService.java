@@ -146,6 +146,7 @@ public class PaxosAtWarService implements ConsensusService {
 		}
 		//deliver the state to executionmanager
 		execmng.deliverState(state);
+		lm.removeAllStableConsenusInfo(state.lastEid-3);
 		//check if we need to propose
 		execmng.getRequestHandler().notifyChangedConditions();
 	}
@@ -174,6 +175,8 @@ public class PaxosAtWarService implements ConsensusService {
 			}
 		}
 		execmng.processingFinished(cons);
+		Long stableConsensus = cons.getId().longValue() - 3;
+        lm.removeStableConsenusInfo(stableConsensus);
 	}
 
 	@Override

@@ -21,14 +21,9 @@
 package navigators.smart.paxosatwar.executionmanager;
 
 import java.io.*;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 import navigators.smart.paxosatwar.roles.Acceptor;
 
@@ -36,16 +31,21 @@ import navigators.smart.paxosatwar.roles.Acceptor;
  * This class manages information about the leader of each round of each
  * consensus
  *
- * @author edualchieri
+ * @author Eduardo Alchieri
+ * @author Christian Spann
  */
-public class LeaderModule implements Serializable {
+public class LeaderModule {
     
     private static transient final Logger log = Logger.getLogger(LeaderModule.class.getCanonicalName());
 
-    // Each value of this map is a list of all the rounds of a consensus
-    // Each element of that list is a tuple which stands for a round, and the id
-    // of the process that was the leader for that round
-    private SortedMap<Long, List<ConsInfo>> leaderInfos = Collections.synchronizedSortedMap(new TreeMap<Long, List<ConsInfo>>());
+    /*
+	 * Each value of this map is a list of all the rounds of a consensus
+     * Each element of that list is a tuple which stands for a round, and the id
+     * of the process that was the leader for that round
+	 */
+    private SortedMap<Long, List<ConsInfo>> leaderInfos = 
+			Collections.synchronizedSortedMap(new TreeMap<Long, List<ConsInfo>>());
+	private transient ExecutionManager manager;
     private transient final Object sync = new Object();
 	private final int n;
 	private final int me;
@@ -61,6 +61,17 @@ public class LeaderModule implements Serializable {
         setLeaderInfo(Long.valueOf(-1l), ROUND_ZERO, 0);
         setLeaderInfo(Long.valueOf(0), ROUND_ZERO, 0);
     }
+	
+	/**
+	 * Sets a reference to the executionmanager in order to find active executions
+	 * that require a ping when the leader of round zero changed.
+	 * 
+	 * @param manager 
+	 */
+	public void setExecManager(ExecutionManager manager){
+		this.manager = manager;
+	}
+
 
     /**
      * Adds or updates information about a leader.
@@ -113,19 +124,26 @@ public class LeaderModule implements Serializable {
 			oldLeader = ci.leaderId;
 			ci.leaderId = newLeader;
 			log.log(Level.SEVERE,"{0} | {1} | round exists - NEW LEADER {2} ({3})", new Object[]{exec,r,newLeader,oldLeader});
+			
 		} else {
 			log.log(Level.FINE,"{0} | {1} | SET LEADER {2}", new Object[]{exec,r,newLeader});
 			list.add(new ConsInfo(r+1, newLeader));
 		}
 		
-		long nextexec = exec;
+		long tmpexec = exec+1;
+		Integer tmpleader = newLeader;
 		
-		while((list = leaderInfos.get(++nextexec))!= null){
+		while((list = leaderInfos.get(tmpexec))!= null){
 			for(ConsInfo cinfo:list){
-				cinfo.leaderId = newLeader%n;
-				newLeader ++;
+				cinfo.leaderId = tmpleader%n;
+				if(cinfo.round == 0){
+					manager.getExecution(tmpexec).notifyNewLeader(cinfo.leaderId);
+				}
+				tmpleader ++;
+				log.warning("{0} | {1} Changing leaderinfo for a round > 1 - should not happen!");
 			}
-			newLeader --; // The leader stays the same as the last round for the next execution
+			tmpexec ++;
+			tmpleader --; // The leader stays the same as the last round for the next execution
 		}
 
 		return newLeader;
@@ -377,31 +395,6 @@ public class LeaderModule implements Serializable {
             leaderInfos = (SortedMap<Long, List<ConsInfo>>) ois.readObject();
         } catch (IOException e) {
             //cannot happen with bais
-        }
-    }
-
-    /**
-     * This class represents a tuple formed by a round number and the replica ID
-     * of that round's leader
-     */
-    private class ConsInfo implements Serializable{
-
-        public Integer round;
-        public Integer leaderId;
-
-        public ConsInfo(Integer l) {
-            this.round = ROUND_ZERO;
-            this.leaderId = l;
-        }
-
-        public ConsInfo(Integer round, Integer l) {
-            this.round = round;
-            this.leaderId = l;
-        }
-        
-		@Override
-        public String toString() {
-            return "R "+round+" | L "+leaderId;
         }
     }
 }

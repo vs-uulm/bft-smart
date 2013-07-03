@@ -34,11 +34,10 @@ public class VoteMessage extends PaxosMessage {
      * @param round Round number
      * @param from This should be this process ID
      * @param value The proposed value 
-	 * @param proposer The proposer that proposed this value
      */
     public VoteMessage( int paxosType, Long id,Integer round,Integer from, 
-			byte[] value, Integer proposer){
-    	super(paxosType,id,round,from, proposer);
+			byte[] value){
+    	super(paxosType,id,round,from);
         this.value = value;
     }
 	

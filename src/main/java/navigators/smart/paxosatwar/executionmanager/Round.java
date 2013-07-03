@@ -54,7 +54,7 @@ public class Round implements Comparable<Round> {
 	private boolean collected = false;			// indicates if a collect message for this round was already sent
 	private long timeout;						// duration of the timeout
 	private boolean isTimeout = false;			// Was a timeout sent for this round?
-	private boolean firstfrozen = false;			// indicates if this round was frozen before decision from its execution
+//	private boolean firstfrozen = false;			// indicates if this round was frozen before decision from its execution
 	
 	private Propose p = null;
 	private byte[] propValueHash = null;		// proposed value hash
@@ -172,7 +172,11 @@ public class Round implements Comparable<Round> {
 	 * Returns the proposer of the accepted proposal
 	 */
 	public Integer getProposer() {
-		return p.proposer;
+		if(p!=null){
+			return p.getSender();
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -184,7 +188,7 @@ public class Round implements Comparable<Round> {
 	public void setCollectProof(int acceptor, CollectProof proof) {
 		if (proofs == null) {
 			proofs = new CollectProof[replicas];
-			Arrays.fill(proofs, null);
+//			Arrays.fill(proofs, null);
 		}
 
 		proofs[acceptor] = proof;
@@ -423,12 +427,12 @@ public class Round implements Comparable<Round> {
 	 * Establishes that this round is frozen
 	 */
 	public void freeze() {
-		if(!frozen){
+//		if(!frozen){
 			frozen = true;
-			if(!decided){
-				firstfrozen = true;
-			}
-		}
+//			if(!decided){
+//				firstfrozen = true;
+//			}
+//		}
 	}
 
 	/**
@@ -623,9 +627,9 @@ public class Round implements Comparable<Round> {
 	 * and no later round started. This happens when a single replica
 	 * gets frozen.
 	 */
-	public boolean firstFrozen(){
-		return firstfrozen;
-	}
+//	public boolean firstFrozen(){
+//		return firstfrozen;
+//	}
 	
 
 	/**

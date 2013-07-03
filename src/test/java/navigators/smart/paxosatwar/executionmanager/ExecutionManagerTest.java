@@ -64,7 +64,7 @@ public class ExecutionManagerTest {
 		when(tom.getConf()).thenReturn(conf);
 		when(conf.getPaxosHighMark()).thenReturn(100);
 		when(conf.getRevivalHighMark()).thenReturn(10);
-		mng = new ExecutionManager(acceptor, proposer, acceptors, f, me, initialTimeout, tom, lm);
+		mng = new ExecutionManager(acceptor, proposer, acceptors, f, me, initialTimeout, tom);
 		mng.setRequestHandler(handlr);
 	}
 
@@ -152,7 +152,7 @@ public class ExecutionManagerTest {
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0],0)));
+		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
 	}
 
@@ -166,7 +166,7 @@ public class ExecutionManagerTest {
 		assertFalse(mng.thereArePendentMessages(1l));
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0],0)));
+		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
 		mng.removeExecution(2l);
 		assertFalse(mng.thereArePendentMessages(2l));
@@ -181,7 +181,7 @@ public class ExecutionManagerTest {
 		
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0],0)));
+		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
 		mng.removeOutOfContexts(0);
 		assertTrue(mng.thereArePendentMessages(1l));
@@ -201,7 +201,7 @@ public class ExecutionManagerTest {
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
 		PaxosMessage msg = new Propose( 1l, 0, 1, null, null);
-		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1l, 0, 1,new byte[0],0);
+		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1l, 0, 1,new byte[0]);
 		assertFalse(mng.checkLimits(msg));
 		assertFalse(mng.checkLimits(weak));
 		exec = mng.getExecution(1l);

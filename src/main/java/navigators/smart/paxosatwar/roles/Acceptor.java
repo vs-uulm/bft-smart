@@ -122,7 +122,9 @@ public class Acceptor {
     /**
      * Called when a paxos message is received or when a out of context message
      * must be processed. It processes the received messsage acording to its
-     * type
+     * type. It also checks if the current round number is less than this round,
+	 * if so, the message is still not processed. This prevents malicious
+	 * replicas from exploiting the round number space unnecessary.
      *
      * @param msg The message to be processed
      */
@@ -199,31 +201,56 @@ public class Acceptor {
         handlePropose(round,  msg);
     }
 	
-	private void handlePropose(Round round, Propose msg){
+	/**
+	 * Handles a propose message for the given round. If the round is 0 several
+	 * options are present.
+	 * 
+	 * 1. If the number of weaks received for the propose is > f, we accept 
+	 * this propose as one correct acceptor did so either. This enables
+	 * replicas that froze the last round alone to join the normal execution path
+	 * again. It does not violate safety as the leader will either succeed with 
+	 * this proposal or a new leader will choose a safe proposal and start
+	 * round 1
+	 * 
+	 * If the weak count is still less than f but the leader appears to be valid,
+	 * we also accept this proposal. Remember that the leader can become invalid
+	 * at any time due to a timeout in the previous execution. If we got not
+	 * enough weaks and the leader does not fit, we store the proposal for
+	 * later checking.
+	 * 
+	 * @param round The round that this propose is for
+	 * @param propose The actual propose message
+	 */
+	private void handlePropose(Round round, Propose propose){
 		// Proposals in round 0 are not always... valid and admissible
-        if (msg.round.equals(ROUND_ZERO)) {
+        if (propose.round.equals(ROUND_ZERO)) {
 			//If we got f or more weaks for this proposal, lets stick to its leader.
-			if(round.countWeak(msg.value)>=manager.quorumF){
-				leaderModule.setLeaderInfo(msg.eid, msg.round, msg.proposer);
+			if(round.countWeak(propose.value) > manager.quorumF){
+				leaderModule.setLeaderInfo(propose.eid, propose.round, propose.getSender());
 			}
 			// check if the leader is correct or unkown
-			if ( leaderModule.checkAndSetLeader(msg.eid,msg.round,msg.getSender())) {
+			if ( leaderModule.checkAndSetLeader(propose.eid,propose.round,propose.getSender())) {
 				log.log(Level.FINE, "Processing propose for {0}-{1} normally", 
 						new Object[]{round.getExecution().getId(), round.getNumber()});
-				executePropose(round, msg);
+				executePropose(round, propose);
 			} else {
 				log.log(Level.FINE, "Storing propose for {0}-{1} from invalid leader", 
 						new Object[]{round.getExecution().getId(), round.getNumber()});
-				round.storedProposes.add(msg);
+				round.storedProposes.add(propose);
 				return;
 			}
         } else {
             log.log(Level.FINE, "Checking propose for {0}-{1} for goodness", 
 					new Object[]{round.getExecution().getId(), round.getNumber()});
-            checkPropose(round, msg);
+            checkPropose(round, propose);
         }
 	}
 
+	/*
+	 * Checks a propose message for rounds > 1 for correctness. If they
+	 * are correct and the proposed value is not null, they are processed 
+	 * normally, otherwise they are denied.
+	 */
     private void checkPropose(Round round, Propose msg) {
         Proof proof = msg.getProof();
         Long eid = round.getExecution().getId();
@@ -390,7 +417,7 @@ public class Acceptor {
 			if (log.isLoggable(Level.FINER)) {
 				log.finer(eid + " | " + round.getNumber() + " | sending WEAK");
 			}
-			VoteMessage weak = factory.createWeak(eid, round.getNumber(), p.value, p.proposer);
+			VoteMessage weak = factory.createWeak(eid, round.getNumber(), p.value);
 			int weakcount = round.setWeak(weak);		//set myself as weak acceptor
 			communication.send(manager.getOtherAcceptors(),weak);
 			computeWeak(eid, round, weak, weakcount);		//compute weak if i just sent a weak
@@ -483,7 +510,7 @@ public class Acceptor {
 //			if(lastround.countFreeze() <= manager.quorumF){
 //				
 //			}
-			if(msg.proposer != me){
+			if(round.getProposer() == null || round.getProposer() != me){
 				round.scheduleTimeout();
 			}
         }
@@ -517,7 +544,7 @@ public class Acceptor {
             !round.isStrongSetted(me.intValue()) &&
 				! round.isFrozen() &&
 				round.isProposed()) {
-			VoteMessage strong = factory.createStrong(eid, round.getNumber(), round.getPropValueHash(), round.getProposer());
+			VoteMessage strong = factory.createStrong(eid, round.getNumber(), round.getPropValueHash());
 			round.setStrong(strong);
 			communication.send(manager.getOtherAcceptors(), strong);
 			
@@ -704,7 +731,7 @@ public class Acceptor {
             }
             communication.send(manager.getAcceptors(),
                     factory.createFreeze(round.getExecution().getId(), 
-					round.getNumber(),leaderModule.getLeader(round.getExecution().getId(), round.getNumber())));
+					round.getNumber()));
         }
     }
 
@@ -725,7 +752,10 @@ public class Acceptor {
     /**
      * Invoked when a timeout for a round is triggered, or when a FREEZE message
      * is received. Computes wether or not to locally freeze this round
-     * according to the standard PaW specification
+     * according to the standard PaW specification. If the round is
+	 * frozen by f+1 acceptors including ourselves we send a collectproof 
+	 * to the designated new leader. This leader might change after we froze
+	 * the round due to freezes in rounds lower than this one.
      *
      * @param round Round of the receives message
      * @param value Value sent in the message
@@ -746,12 +776,24 @@ public class Acceptor {
 //            exec.nextRound();	//Set active round to next round
 
             Integer newNextLeader = leaderModule.collectRound(exec.getId(), round.getNumber());
-            // schedule TO if not scheduled yet
+            
+			/* 
+			 * schedule timeout of the next round if not scheduled yet and
+			 * if i am not the leader. This is because I am honest to myself.
+			 * This optimisation would not apply if the proposer is some
+			 * separate replica that might fail. But still this would not
+			 * directly violate safety as long as I am the only one that "fails"
+			 * in that manner. 
+			 */
 			if(newNextLeader != me){
 				nextRound.scheduleTimeout();
 			}
 
-            //Create signed W_s and S_s for all rounds up to this one in order to send them to the new proposer.
+            /* 
+			 * Create signed W_s and S_s for all rounds up to this one in order 
+			 * to send them to the new proposer. This proof is constant, as
+			 * we do not send messages after we freeze a round.
+			 */
             LinkedList<FreezeProof> proofs = new LinkedList<FreezeProof>();
             for (Round r : exec.getRounds()) {
                 if (r.getNumber() < nextRound.getNumber()) {	// add only smaller rounds
@@ -760,7 +802,6 @@ public class Acceptor {
             }
 
             CollectProof clProof = new CollectProof(proofs, newNextLeader);
-
             verifier.sign(clProof);
 			
             msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), 
@@ -772,8 +813,10 @@ public class Acceptor {
 						+ " 4| {2}|", new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
 			}
 			
-            communication.send(new Integer[]{newNextLeader},
-                    factory.createCollect(exec.getId(), round.getNumber(), leaderModule.getLeader(exec.getId(), round.getNumber()), clProof));
+			round.setCollectProof(me, clProof);
+			
+            sendCollect(round, newNextLeader);
+			
 			return true;
         } else {
             log.log(Level.FINEST,"{0} | {1} | nothing to do - freezes: {2} collected: {3}",
@@ -814,7 +857,7 @@ public class Acceptor {
 		}
 
         if (conf.isDecideMessagesEnabled()) {
-			VoteMessage decide = factory.createDecide(eid, round.getNumber(), msg.value, msg.proposer);
+			VoteMessage decide = factory.createDecide(eid, round.getNumber(), msg.value);
             round.setDecide(decide);
             communication.send(manager.getOtherAcceptors(), decide);
         }
@@ -827,21 +870,39 @@ public class Acceptor {
       
     }
 
+	/**
+	 * Sends a collect message to this designated new leader. The collectproof
+	 * is stored in the collectproof array of the round and created when
+	 * the round is collected.
+	 * 
+	 * @param leaderId The id of the receiver of the collect message
+	 * @param r The round to send the collect for.
+	 */
+	public void sendCollect(Round r, Integer leaderId) {
+		if(!r.isCollected()){
+			throw new IllegalStateException("Illegal sending of collect message,"
+					+ "the round was not yet collected");
+		}
+		communication.send(new Integer[]{leaderId},
+                    factory.createCollect(r.getExecution().getId(), 
+				r.getNumber(), r.proofs[me]));
+	}
+
     /**
      * This class is a data structure for a propose that was accepted
      */
-    private class AcceptedPropose {
-
-        public Long eid;
-        public Integer r;
-        public Propose propose;
-        public Proof p;
-
-        public AcceptedPropose(Long eid, Integer r, Propose value, Proof p) {
-            this.eid = eid;
-            this.r = r;
-            this.propose = value;
-            this.p = p;
-        }
-    }
+//    private class AcceptedPropose {
+//
+//        public Long eid;
+//        public Integer r;
+//        public Propose propose;
+//        public Proof p;
+//
+//        public AcceptedPropose(Long eid, Integer r, Propose value, Proof p) {
+//            this.eid = eid;
+//            this.r = r;
+//            this.propose = value;
+//            this.p = p;
+//        }
+//    }
 }

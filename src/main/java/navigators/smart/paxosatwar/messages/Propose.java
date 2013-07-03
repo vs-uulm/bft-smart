@@ -44,14 +44,14 @@ public class Propose extends VoteMessage {
      * @param paxosType This should be MessageFactory.COLLECT or MessageFactory.PROPOSE
      * @param id Consensus's execution ID
      * @param round Round number
-     * @param from This should be this process ID
+     * @param sender This should be this process ID
      * @param value The proposed value 
      * @param proof The proof to be sent by the leader for all replicas
      */
-    public Propose(Long id,Integer round,Integer from, byte[] value, Proof proof){
-    	super(MessageFactory.PROPOSE,id,round,from, value, from);
-        this.proof = proof;
-    }
+    public Propose(Long id, Integer round, Integer sender, byte[] value, Proof proof) {
+		super(MessageFactory.PROPOSE, id, round, sender, value);
+		this.proof = proof;
+	}
 
 	/**
      * Returns the proof associated with a PROPOSE or COLLECT message

@@ -55,7 +55,7 @@ public final class ExecutionManager{
 	
 	private static final Logger log = Logger.getLogger(ExecutionManager.class.getCanonicalName());
 
-    private LeaderModule lm;
+//    private LeaderModule lm;
 	
 	/**
 	 * The id of the consensus being executed (or -1 if there is none)
@@ -113,7 +113,7 @@ public final class ExecutionManager{
      */
     public ExecutionManager(Acceptor acceptor, Proposer proposer,
             Integer[] acceptors, int f, Integer me, long initialTimeout, 
-			TOMLayer tom, LeaderModule lm) {
+			TOMLayer tom) {
         this.acceptor = acceptor;
         this.proposer = proposer;
 		this.gm = new GroupManager(acceptors,me);
@@ -123,7 +123,6 @@ public final class ExecutionManager{
         this.quorumStrong = (int) Math.ceil((acceptors.length + f) / 2);
         this.quorumFastDecide = (int) Math.ceil((acceptors.length + 3 * f) / 2);
 		this.n = acceptors.length;
-        this.lm = lm;
         setTOMLayer(tom);
     }
 
@@ -546,7 +545,6 @@ public final class ExecutionManager{
             //be removed from the leaderManager and the executionManager
             if (cons.getId().longValue() > 2) {
 				Long stableConsensus = cons.getId().longValue() - 3;
-                lm.removeStableConsenusInfo(stableConsensus);
                 removeExecution(stableConsensus);
             }
 		}
@@ -571,7 +569,7 @@ public final class ExecutionManager{
             	}
             }
             executionsLock.unlock();
-            lm.removeAllStableConsenusInfo(stableConsensus);
+            
             removeOutOfContexts(stableConsensus);
         }
 

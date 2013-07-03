@@ -181,18 +181,6 @@ public class Execution {
 		return getRound(currentRound);
 	}
 
-	/**
-	 * Increments the currently processed round, processes all pending messages
-	 * for it.
-	 */
-	public void nextRound() {
-		currentRound = currentRound + 1;
-		Round next = getRound(currentRound);
-		//Process pending msgs for next round
-		for(PaxosMessage msg:next.pending){
-			getManager().acceptor.processMessage(msg);
-		}
-	}
 
 	/**
 	 * Informs wether or not the execution is decided
@@ -237,7 +225,17 @@ public class Execution {
 	/**
 	 * Informs wether or not the execution is currently active. This can
 	 * change back to true if f+1 freeze messages for the last round arrive.
-	 * @return True if it is decided, false otherwise
+	 * The current round is immediately increased by one if the round is frozen,
+	 * so it becomes active right away when it is not decided. This prevents
+	 * the case, that when a round is decided after it is frozen, the execution
+	 * might appear as finished but is still active because a new round might
+	 * come up. Still this cannot violate safety. 
+	 * <strong>Important</strong>The designated leader of the
+	 * next round cannot freeze itself, because it would
+	 * have to restart its propose if it would freeze its own leadership round.
+	 * Even though, no deadlock can arise, because the client would then suspect
+	 * the leader and the other replicas would find out this finally.
+	 * @return True if this execution is decided and not frozen, false otherwise
 	 */
 	public boolean isActive() {
 		try {
@@ -336,6 +334,32 @@ public class Execution {
 
 	public void freeze(Round round) {
 		round.freeze();
-		nextRound();
+		currentRound = currentRound + 1;
+		Round next = getRound(currentRound);
+		//Process pending msgs for next round
+		for(PaxosMessage msg:next.pending){
+			getManager().acceptor.processMessage(msg);
+		}
+	}
+
+	/**
+	 * Notifies this execution that the leader for round 0 has changed.
+	 * This implies that this replica might have to send the collect message
+	 * to the new leader again.
+	 * 
+	 * @param leaderId The newly selected leader.
+	 */
+	void notifyNewLeader(Integer leaderId) {
+		Round r = getCurrentRound();
+		// Safety check
+		if(r.getNumber() == 0){
+			// Send a collect message only when collected
+			if(r.isCollected()){
+				getManager().acceptor.sendCollect(r, leaderId);
+			}
+		} else {
+			log.severe("Got notified about new leader, but the round "
+					+ "is not zero, so this should not happen ");
+		}
 	}
 }

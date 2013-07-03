@@ -15,7 +15,6 @@
  */
 package navigators.smart.paxosatwar.messages;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class Collect extends PaxosMessage {
@@ -32,8 +31,8 @@ public class Collect extends PaxosMessage {
      * @param sender This should be this process ID
      * @param proof The proof to be sent by the leader for all replicas
      */
-    public Collect (Long id,Integer round,Integer sender, Integer proposer, CollectProof proof){
-    	super(MessageFactory.COLLECT,id,round,sender, proposer);
+    public Collect (Long id,Integer round,Integer sender, CollectProof proof){
+    	super(MessageFactory.COLLECT,id,round,sender);
         this.proof = proof;
     }
 

@@ -33,12 +33,10 @@ public class PaxosMessage extends SystemMessage {
     public final Long eid; //execution ID for this message 
     public final Integer round; // Round number to which this message belongs to
     public final int paxosType; // Message type
-	/** The proposer of the value */
-	public final Integer proposer;
 
 
     /**
-     * Creates a paxos message.
+     * Creates a paxos message from the given bytebuffer
      * @param in 
      * @throws IOException
      */
@@ -48,22 +46,19 @@ public class PaxosMessage extends SystemMessage {
         paxosType = in.getInt();
 		eid = Long.valueOf(in.getLong());
 		round = Integer.valueOf(in.getInt());
-		proposer = in.getInt();
     }
 
     /**
      * @param paxosType This should be MessageFactory.FREEYE
      * @param id Consensus's execution ID
      * @param round Round number
-     * @param from This should be this process ID
-	 * @param proposer The proposer that proposed this value
+     * @param sender This should be this process ID
      */
-    public PaxosMessage(int paxosType, Long id, Integer round, Integer from, Integer proposer) {
-        super(SystemMessage.Type.PAXOS_MSG, from);
+    public PaxosMessage(int paxosType, Long id, Integer round, Integer sender) {
+        super(SystemMessage.Type.PAXOS_MSG, sender);
         this.paxosType = paxosType;
         this.eid = id;
         this.round = round;
-		this.proposer = proposer;
     }
 
     // Implemented method of the Externalizable interface
@@ -75,13 +70,12 @@ public class PaxosMessage extends SystemMessage {
         out.putInt(paxosType);
 		out.putLong(eid.longValue());
 		out.putInt(round.intValue());
-		out.putInt(proposer);
     }
     
     @Override
     public int getMsgSize(){
     	int ret = super.getMsgSize();
-    	return ret += 20; //8(number)+4 (round) +4 (paxostype) +4 (Proposer)
+    	return ret += 16; //8(number)+4 (round) +4 (paxostype)
     }
 
     /**

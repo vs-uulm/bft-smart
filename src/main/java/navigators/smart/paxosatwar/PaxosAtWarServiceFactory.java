@@ -32,7 +32,9 @@ import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.util.TOMConfiguration;
 
 /**
- *
+ * This class creates an instance of the Paxos at War algorithm specified
+ * in the respective paper with some modifications.
+ * 
  * @author Christian Spann 
  */
 public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
@@ -77,7 +79,8 @@ public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
         Proposer proposer = new Proposer(cs, messageFactory, proofVerifier, conf);
 
         ExecutionManager manager = new ExecutionManager(acceptor, proposer,
-                group, conf.getF(), me, conf.getFreezeInitialTimeout(),tom,lm);
+                group, conf.getF(), me, conf.getFreezeInitialTimeout(),tom);
+		lm.setExecManager(manager);
         RequestHandler req = new RequestHandler(cs, manager, lm, proofVerifier, conf,tom);
         req.start();
         //init message handling threads

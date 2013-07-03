@@ -64,12 +64,11 @@ public class MessageFactory{
      * @param id Consensus's execution ID
      * @param round Round number
      * @param value Weakly accepted value
-	 * @param proposer The proposer of the value
      * @return A paxos message of the WEAK type, with the specified id, round, and value
      */
-	public VoteMessage createWeak(Long id, Integer round, byte[] value, Integer proposer) {
+	public VoteMessage createWeak(Long id, Integer round, byte[] value) {
 
-        return new VoteMessage(WEAK,id,round, sender, value, proposer);
+        return new VoteMessage(WEAK,id,round, sender, value);
 
     }
 
@@ -78,12 +77,11 @@ public class MessageFactory{
      * @param id Consensus's execution ID
      * @param round Round number
      * @param value Strongly accepted value
-	 * @param proposer The proposer of the value
      * @return A paxos message of the STRONG type, with the specified id, round, and value
      */
-	public VoteMessage createStrong(Long id, Integer round, byte[] value, Integer proposer) {
+	public VoteMessage createStrong(Long id, Integer round, byte[] value) {
 
-        return new VoteMessage(STRONG,id,round, sender, value, proposer);
+        return new VoteMessage(STRONG,id,round, sender, value);
 
     }
 
@@ -92,26 +90,20 @@ public class MessageFactory{
      * @param id Consensus's execution ID
      * @param round Round number
      * @param value Decided value
-	 * @param proposer The proposer of the value
      * @return A paxos message of the DECIDE type, with the specified id, round, and value
      */
-	public VoteMessage createDecide(Long id, Integer round, byte[] value, Integer proposer) {
-
-         return new VoteMessage(DECIDE,id,round, sender, value, proposer);
-
+	public VoteMessage createDecide(Long id, Integer round, byte[] value) {
+         return new VoteMessage(DECIDE,id,round, sender, value);
     }
 
     /**
      * Creates a FREEZE message to be sent by this process
      * @param id Consensus's execution ID
      * @param round Round number
-	 * @param leader The rounds leader
      * @return A paxos message of the FREEZE type, with the specified id, and round
      */
-	public PaxosMessage createFreeze(Long id, Integer round, Integer leader) {
-
-        return new PaxosMessage(FREEZE,id,round, sender,leader);
-
+	public PaxosMessage createFreeze(Long id, Integer round) {
+        return new PaxosMessage(FREEZE,id,round, sender);
     }
 
     /**
@@ -121,9 +113,9 @@ public class MessageFactory{
      * @param proof The proof to be sent by the leader for all replicas
      * @return A paxos message of the COLLECT type, with the specified id, round, and proof
      */
-    public Collect createCollect(Long id, Integer round, Integer proposer, CollectProof proof) {
+    public Collect createCollect(Long id, Integer round, CollectProof proof) {
 
-        return new Collect (id,round, sender, proposer, proof);
+        return new Collect (id,round, sender, proof);
 
     }
 
