@@ -86,7 +86,6 @@ public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
         //init message handling threads
         //set backlinks
         acceptor.setManager(manager);
-        acceptor.setRequesthandler(req);
         proposer.setManager(manager);
         manager.setRequestHandler(req);
 

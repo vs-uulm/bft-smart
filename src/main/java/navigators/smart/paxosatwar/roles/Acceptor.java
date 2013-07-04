@@ -54,9 +54,7 @@ public class Acceptor {
     private final ProofVerifier verifier; // Verifier for proofs
     private final ServerCommunicationSystem communication; // Replicas comunication system
     private final LeaderModule leaderModule; // Manager for information about leaders
-    private RequestHandler requesthandler; // requesthandler
     private final TOMLayer tomlayer;
-//    private AcceptedPropose nextProp = null; // next value to be proposed
     private final TOMConfiguration conf; // TOM configuration
 
     /**
@@ -95,15 +93,6 @@ public class Acceptor {
      */
     public void setManager(ExecutionManager manager) {
         this.manager = manager;
-    }
-
-    /**
-     * Sets the TOM layer for this acceptor
-     *
-     * @param tom TOM layer for this acceptor
-     */
-    public void setRequesthandler(RequestHandler tom) {
-        this.requesthandler = tom;
     }
 
     /**
@@ -378,7 +367,7 @@ public class Acceptor {
             log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE with value "+Arrays.toString(p.value));
         }
 		
-		if(!round.isProposed()){
+		if(!round.hasPropose()){
 			round.scheduleTimeout();
 			byte[] hash = null;
 			if (round.getPropValue() == null) {
@@ -386,7 +375,6 @@ public class Acceptor {
 				round.setPropose(p, hash);
 			} else {
 				throw new RuntimeException("This propose should not be set twice");
-//				hash = round.getPropValueHash();
 			}
 			
 			if (log.isLoggable(Level.FINEST)) {
@@ -478,10 +466,10 @@ public class Acceptor {
      * 
 	 * @param eid The id of the execution of this message
      * @param round Round of the receives message
-     * @param msg Value sent in the message
+     * @param weak Value sent in the message
 	 * @param weakAccepted  The number of accepted values
      */
-    private void computeWeak(final Long eid, final Round round, final VoteMessage msg, final int weakAccepted) {
+    private void computeWeak(final Long eid, final Round round, final VoteMessage weak, final int weakAccepted) {
 
         if (log.isLoggable(Level.FINER)) {
             log.finer( eid + " | " + round.getNumber() + " | " + weakAccepted
@@ -500,14 +488,20 @@ public class Acceptor {
 			// a freeze that matches
 			if(round.getPropValue() == null){
 				for(Propose p:round.storedProposes){
-					log.log(Level.FINER, "{0} | {1} checking propose from {2} "
-							+ "for equality with the weaks", 
-							new Object[]{eid,round.getNumber(),p.getSender()});
-					if(Arrays.equals(msg.value,tomlayer.computeHash(p.value))){
+					if(log.isLoggable(Level.FINER)){
+						log.log(Level.FINER, "{0} | {1} checking propose from {2} "
+								+ "for equality with the weaks", 
+								new Object[]{eid,round.getNumber(),p.getSender()});
+						if(log.isLoggable(Level.FINEST)){
+							log.log(Level.FINEST,"Weak: {0}",Arrays.toString(weak.value));
+							log.log(Level.FINEST,"Prophash: {0}",tomlayer.computeHash(p.value));
+						}
+					}
+					if(Arrays.equals(weak.value,tomlayer.computeHash(p.value))){
 						log.log(Level.FINER, "{0} | {1} Popose from {2} "
 							+ "matches waks, processing...", 
 							new Object[]{eid,round.getNumber(),p.getSender()});
-						round.setPropose( p, msg.value);
+						round.setPropose( p, weak.value);
 						handlePropose(round, p);
 					}
 				}
@@ -527,12 +521,12 @@ public class Acceptor {
             if (log.isLoggable(Level.FINE)) {
                 log.fine( eid + " | " + round.getNumber() + " | DECIDE (WEAK)");
             }
-            decide(eid, round, msg);
+            decide(eid, round, weak);
         }
 
-        checkSendStrong(eid, round, msg);
+        checkSendStrong(eid, round, weak);
         
-        computeStrong(eid, round, msg);
+        computeStrong(eid, round, weak);
     }
 
     /**
@@ -550,7 +544,7 @@ public class Acceptor {
         if (weakAccepted > manager.quorumStrong && 
             !round.isStrongSetted(me.intValue()) &&
 				! round.isFrozen() &&
-				round.isProposed()) {
+				round.hasPropose()) {
 			VoteMessage strong = factory.createStrong(eid, round.getNumber(), round.getPropValueHash());
 			round.setStrong(strong);
 			communication.send(manager.getOtherAcceptors(), strong);

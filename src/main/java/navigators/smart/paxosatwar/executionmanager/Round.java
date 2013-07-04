@@ -54,7 +54,7 @@ public class Round implements Comparable<Round> {
 	private boolean collected = false;			// indicates if a collect message for this round was already sent
 	private long timeout;						// duration of the timeout
 	private boolean isTimeout = false;			// Was a timeout sent for this round?
-//	private boolean firstfrozen = false;			// indicates if this round was frozen before decision from its execution
+	private boolean proposed = false;			// indicates if this round was proposed in order to prevent the immediate start of a new round.
 	
 	private Propose p = null;
 	private byte[] propValueHash = null;		// proposed value hash
@@ -147,6 +147,14 @@ public class Round implements Comparable<Round> {
 		this.p = p;
 		this.propValueHash = propValueHash;
 	}
+	
+	/**
+	 * 
+	 * @return true if a propose was received, false otherwise.
+	 */
+	public boolean hasPropose(){
+		return p != null;
+	}
 
 	/**
 	 *
@@ -188,9 +196,7 @@ public class Round implements Comparable<Round> {
 	public void setCollectProof(int acceptor, CollectProof proof) {
 		if (proofs == null) {
 			proofs = new CollectProof[replicas];
-//			Arrays.fill(proofs, null);
 		}
-
 		proofs[acceptor] = proof;
 	}
 
@@ -285,25 +291,6 @@ public class Round implements Comparable<Round> {
 	}
 
 	/**
-	 * Retrives the weakly accepted value from the specified replica
-	 *
-	 * @param acceptor The replica ID
-	 * @return The value weakly accepted from the specified replica
-	 */
-//	public byte[] getWeak(int acceptor) {
-//		return this.weak[acceptor];
-//	}
-
-	/**
-	 * Retrives all weakly accepted value from all replicas
-	 *
-	 * @return The values weakly accepted from all replicas
-	 */
-//	public byte[][] getWeak() {
-//		return this.weak;
-//	}
-
-	/**
 	 * Sets the weakly accepted value from the specified replica
 	 *
 	 * @param weak The weak message that we got
@@ -326,25 +313,6 @@ public class Round implements Comparable<Round> {
 			return getCount(weakcount, weak.value);
 		}
 	}
-
-//	/**
-//	 * Retrives the strongly accepted value from the specified replica
-//	 *
-//	 * @param acceptor The replica ID
-//	 * @return The value strongly accepted from the specified replica
-//	 */
-//	public byte[] getStrong(int acceptor) {
-//		return strong[acceptor];
-//	}
-
-//	/**
-//	 * Retrives all strongly accepted values from all replicas
-//	 *
-//	 * @return The values strongly accepted from all replicas
-//	 */
-//	public byte[][] getStrong() {
-//		return strong;
-//	}
 
 	/**
 	 * Sets the strongly accepted value from the specified replica
@@ -427,12 +395,7 @@ public class Round implements Comparable<Round> {
 	 * Establishes that this round is frozen
 	 */
 	public void freeze() {
-//		if(!frozen){
-			frozen = true;
-//			if(!decided){
-//				firstfrozen = true;
-//			}
-//		}
+		frozen = true;
 	}
 
 	/**
@@ -603,34 +566,13 @@ public class Round implements Comparable<Round> {
 		execution.decided(this);
 	}
 
-//	/**
-//	 * Indicates if this round is still active and further processing will happen
-//	 * befor the corresponding execution will be done.
-//	 * 
-//	 * @return true if frozen and not removed or collected,
-//	 * or proposed not decided, false otherwise
-//	 */
-//	public boolean isActive() {
-//		return (proposed && !decided) || frozen && (!removed || collected);
-//	}
-	
-//	/**
-//	 * Sets this round to removed. This is called when the next
-//	 * execution gets decided.
-//	 */
-//	public void setRemoved(){
-//		firstfrozen = true;
-//	}
-	
-	/** 
-	 * Indicates if this round is inactive even though it is frozen
-	 * and no later round started. This happens when a single replica
-	 * gets frozen.
+	/**
+	 * Set this round to be proposed which means that a propose message is underways.
+	 * 
 	 */
-//	public boolean firstFrozen(){
-//		return firstfrozen;
-//	}
-	
+	public void setProposed() {
+		proposed = true;
+	}
 
 	/**
 	 * Indicates if a proposal for this round was already sent.
@@ -638,7 +580,7 @@ public class Round implements Comparable<Round> {
 	 * @return true if a proposal was sent false otherwise
 	 */
 	public boolean isProposed() {
-		return p != null;
+		return proposed;
 	}
 	
 	/**
