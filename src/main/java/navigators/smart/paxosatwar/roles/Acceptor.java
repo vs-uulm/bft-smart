@@ -430,7 +430,7 @@ public class Acceptor {
 				}
 			}
 		} else {
-			log.fine("Not sending weak, already sent earlier");
+			log.fine("Not sending weak, already sent earlier or round frozen");
 		}
 	}
 
@@ -501,7 +501,7 @@ public class Acceptor {
 						log.log(Level.FINER, "{0} | {1} Popose from {2} "
 							+ "matches waks, processing...", 
 							new Object[]{eid,round.getNumber(),p.getSender()});
-						round.setPropose( p, weak.value);
+//						round.setPropose( p, weak.value);
 						handlePropose(round, p);
 					}
 				}
