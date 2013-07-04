@@ -109,7 +109,7 @@ public class Proposer {
         }
 		Round r = manager.getExecution(eid).getRound(Round.ROUND_ZERO);
 		r.setProposed();
-        communication.send(manager.getOtherAcceptors(),
+        communication.send(manager.getAcceptors(),
                 factory.createPropose(eid, Round.ROUND_ZERO, value, null));
     }
 

@@ -24,6 +24,7 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
 import navigators.smart.paxosatwar.roles.Acceptor;
 
@@ -97,9 +98,35 @@ public class LeaderModule {
         }
     }
 
+    /**
+     * Sets and returns the leader for the round after the specified one regarding
+     * to the desired rotation scheme for leaders. Currently the next one modulo
+     * n is chosen.
+     * @param exec The execution where the round is frozen
+     * @param r The round that is frozen by more than f+1 replicas
+     * @return The leader of the next round.
+     * @throws A <code>RuntimeException</code> if we do not find a valid old round
+     * number
+     */
     public Integer collectRound(final Long exec, final Integer r) {
 		Integer oldLeader = getLeader(exec, r);
 		Integer newLeader = null;
+		
+		/*
+		 * If we did not yet set the leader for this round, get it from the
+		 * last active round of the previous execution. There must be
+		 * at least one round started, otherwise the messages triggering
+		 * this collect would not be delivered to this execution.
+		 */
+		if(oldLeader == null){
+			Integer lastround = manager.getExecution(exec-1).getLastRound().getNumber();
+			oldLeader = getLeader(exec-1,lastround);
+			if(oldLeader == null){
+				throw new RuntimeException("We did not find a leader in the "
+						+ "previous round, exiting as this should not happen... "
+						+ "at least I think that it shouldnt...");
+			}
+		}
 		
 
 		//define the leader for the next round: (previous_leader + 1) % N
@@ -255,6 +282,9 @@ public class LeaderModule {
                         new Object[]{exec, round, info.leaderId});
                 return info.leaderId;
             }
+        } else {
+        	log.log(Level.FINEST,"{0} | {1} | getLeader: INFOLIST for exec {0} not found", 
+                    new Object[]{exec, round});
         }
 		return null;
     }
