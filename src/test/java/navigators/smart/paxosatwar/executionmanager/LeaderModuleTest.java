@@ -176,26 +176,26 @@ public class LeaderModuleTest {
 	/**
 	 * Test of checkAndSetLeader method, of class LeaderModule.
 	 */
-	@Test
-	public void testCheckandSetLeader() {
-		System.out.println("checkAndSetLeader");
-		Long exec = 5l;
-		Integer r = 0;
-		Integer leader = 3;
-		
-		// Check addition of random higher value which will not be added
-		// because it would introduce a gap
-		boolean result = instance.checkAndSetLeader(exec, r, leader);
-		assertFalse(result);
-		assertNull(instance.getLeader(exec,r));
-		
-		// Checks addition of a random value again with a different leader
-		leader = 0;
-		exec = 1l;
-		result = instance.checkAndSetLeader(exec, r, leader);
-		assertTrue(result);
-		assertEquals(leader, instance.getLeader(exec,r));
-	}
+//	@Test
+//	public void testCheckandSetLeader() {
+//		System.out.println("checkAndSetLeader");
+//		Long exec = 5l;
+//		Integer r = 0;
+//		Integer leader = 3;
+//		
+//		// Check addition of random higher value which will not be added
+//		// because it would introduce a gap
+//		boolean result = instance.checkAndSetLeader(exec, r, leader);
+//		assertFalse(result);
+//		assertNull(instance.getLeader(exec,r));
+//		
+//		// Checks addition of a random value again with a different leader
+//		leader = 0;
+//		exec = 1l;
+//		result = instance.checkAndSetLeader(exec, r, leader);
+//		assertTrue(result);
+//		assertEquals(leader, instance.getLeader(exec,r));
+//	}
 
 	/**
 	 * Test of getLeader method, of class LeaderModule.
@@ -247,7 +247,7 @@ public class LeaderModuleTest {
 	public void testRemoveAllStableConsenusInfo() {
 		System.out.println("removeAllStableConsenusInfo");
 		
-		instance.checkAndSetLeader(1l, 0, 0);
+		instance.setLeaderInfo(1l, 0, 0);
 		
 		instance.removeAllStableConsenusInfo(0l);
 		
@@ -261,8 +261,8 @@ public class LeaderModuleTest {
 	 */
 	@Test
 	public void testRemoveMultipleStableConsenusInfos() {
-		instance.checkAndSetLeader(1l, 0, 0);
-		instance.checkAndSetLeader(2l, 0, 0);
+		instance.setLeaderInfo(1l, 0, 0);
+		instance.setLeaderInfo(2l, 0, 0);
 		
 		instance.removeMultipleStableConsenusInfos(0l, 1l);
 		

@@ -48,14 +48,15 @@ public class MessageFactory{
      * Creates a PROPOSE message to be sent by this process
      * @param id Consensus's execution ID
      * @param round Round number
+	 * @param leader The leader that initially proposed this.
      * @param value Proposed value
      * @param proof Proofs from other replicas
      * @return A paxos message of the PROPOSE type, with the specified id, round, value, and proof
      */
-    public Propose createPropose(Long id, Integer round, byte[] value,
+    public Propose createPropose(Long id, Integer round, Integer leader, byte[] value,
             Proof proof) {
 
-        return new Propose(id,round, sender, value, proof);
+        return new Propose(id,round, sender, leader, value, proof);
 
     }
 

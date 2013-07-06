@@ -110,7 +110,7 @@ public class Proposer {
 		Round r = manager.getExecution(eid).getRound(Round.ROUND_ZERO);
 		r.setProposed();
         communication.send(manager.getAcceptors(),
-                factory.createPropose(eid, Round.ROUND_ZERO, value, null));
+                factory.createPropose(eid, Round.ROUND_ZERO, conf.getProcessId(), value, null));
     }
 
     /**
@@ -234,9 +234,13 @@ public class Proposer {
                         new Object[]{conf.getProcessId(), Math.abs(id.hashCode()), id});
             }
         }
+		// TODO check if we need to calculate this
+		Integer prevleader = (round.getProposer() == 0) 
+				? conf.getProcessId() : round.getProposer();
+		
         //Send propose
         communication.send(manager.getAcceptors(),
-                factory.createPropose(execution.getId(), round.getNumber(),
-                inProp, new Proof(round.proofs)));
+                factory.createPropose(execution.getId(), round.getNumber(), 
+				prevleader, inProp, new Proof(round.proofs)));
     }
 }

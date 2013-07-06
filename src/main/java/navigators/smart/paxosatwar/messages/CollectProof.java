@@ -35,6 +35,9 @@ public final class CollectProof {
 
     // The new leader id
     private final Integer newLeader;
+	
+	// The initial proposer id
+	public final Integer proposer;
 
     private byte[] signature;
 
@@ -43,16 +46,17 @@ public final class CollectProof {
     /**
      * Creates a new instance of CollectProof
      * @param proofIn Proofs to freezed consensus
-     * @param proofNext Proofs to next consensus, if have next - after the freezed one
+     * @param proposer The proposer of this value.
      * @param newLeader The new leader id
      */
-    public CollectProof(LinkedList<FreezeProof> proofIn, Integer newLeader) {
+    public CollectProof(LinkedList<FreezeProof> proofIn, Integer newLeader, 
+			Integer proposer) {
 		if(proofIn == null){
 			throw new NullPointerException("Null freezeprooflist not allowed");
 		}
         this.proofIn = proofIn;
         this.newLeader = newLeader;
-
+		this.proposer = proposer;
     }
     
     /**
@@ -82,6 +86,7 @@ public final class CollectProof {
 			proofIn.add(new FreezeProof(in));
 		}
 		newLeader = in.getInt();
+		proposer = in.getInt();
 		signature = SerialisationHelper.readByteArray(in);
 		
 	}
@@ -109,6 +114,7 @@ public final class CollectProof {
 		}
 		return size	
 				+ 4 // newleader
+				+ 4 // proposer
 				+ 4; //Number of proofs
 	}
 
@@ -121,9 +127,9 @@ public final class CollectProof {
 			for(FreezeProof p:proofIn){
 				p.serialise(buf);
 			}
-			
 				
             buf.putInt(newLeader.intValue());
+			buf.putInt(proposer);
             serialisedForm = buf.array();
         }
         return serialisedForm;

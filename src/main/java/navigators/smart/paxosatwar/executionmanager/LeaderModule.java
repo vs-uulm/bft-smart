@@ -118,17 +118,20 @@ public class LeaderModule {
 		 * at least one round started, otherwise the messages triggering
 		 * this collect would not be delivered to this execution.
 		 * We then set this leader for this round until we receive updated
-		 * information.
+		 * information. TODO check this
 		 */
 		if(oldLeader == null){
-			
-			oldLeader = leaderInfos.get(exec-1).getLast().leaderId;
-			if(oldLeader == null){
-				throw new RuntimeException("We did not find a leader in the "
-						+ "previous round, exiting as this should not happen... "
+				throw new RuntimeException("We did not set a leader in the "
+						+ "current round, exiting as this should not happen... "
 						+ "at least I think that it shouldnt...");
-			}
-			checkAndSetLeader(exec, r, oldLeader);
+			
+//			oldLeader = leaderInfos.get(exec-1).getLast().leaderId;
+//			if(oldLeader == null){
+//				throw new RuntimeException("We did not find a leader in the "
+//						+ "previous round, exiting as this should not happen... "
+//						+ "at least I think that it shouldnt...");
+//			}
+//			checkAndSetLeader(exec, r, oldLeader);
 		}
 		
 
@@ -160,21 +163,21 @@ public class LeaderModule {
 			list.add(new ConsInfo(r+1, newLeader));
 		}
 		
-		long tmpexec = exec+1;
-		Integer tmpleader = newLeader;
-		
-		while((list = leaderInfos.get(tmpexec))!= null){
-			for(ConsInfo cinfo:list){
-				cinfo.leaderId = tmpleader%n;
-//				if(cinfo.round == 0){
-					manager.getExecution(tmpexec).notifyNewLeader(cinfo.leaderId);
-//				}
-				tmpleader ++;
-				log.warning("{0} | {1} Changing leaderinfo for a round > 1 - should not happen!");
-			}
-			tmpexec ++;
-			tmpleader --; // The leader stays the same as the last round for the next execution
-		}
+//		long tmpexec = exec+1;
+//		Integer tmpleader = newLeader;
+//		
+//		while((list = leaderInfos.get(tmpexec))!= null){
+//			for(ConsInfo cinfo:list){
+//				cinfo.leaderId = tmpleader%n;
+////				if(cinfo.round == 0){
+//					manager.getExecution(tmpexec).notifyNewLeader(cinfo.leaderId);
+////				}
+//				tmpleader ++;
+//				log.warning("{0} | {1} Changing leaderinfo for a round > 1 - should not happen!");
+//			}
+//			tmpexec ++;
+//			tmpleader --; // The leader stays the same as the last round for the next execution
+//		}
 
 		return newLeader;
     }
@@ -203,18 +206,18 @@ public class LeaderModule {
      * @param leader ID of the replica established as being the leader for the round
      * 0 of the next consensus
      */
-//    public void decided(Long execId, Integer round) {
-//		Long nextId = execId + 1;
-//		//Only update leader information of the next exec round 0 if none exists yet
-//		// TODO check this if we need to update this more than once?
+    public void decided(Long execId, Integer round, Integer leader) {
+		Long nextId = execId + 1;
+		//Only update leader information of the next exec round 0 if none exists yet
+		// TODO check this if we need to update this more than once?
 //		Integer goodleader = getLeader(execId, round);
-////        if (leaderInfos.get(nextId) == null && leaderInfos.get(execId) != null) {
-//            setLeaderInfo(nextId, ROUND_ZERO, goodleader);
-//			if(getLeader(nextId,1) != null){
-//				throw new RuntimeException("Secound round should not have started");
-//			}
-////        }
-//    }
+//        if (leaderInfos.get(nextId) == null && leaderInfos.get(execId) != null) {
+		setLeaderInfo(nextId, ROUND_ZERO, leader);
+//		if(getLeader(nextId,1) != null){
+//			throw new RuntimeException("Secound round should not have started");
+//		}
+//        }
+    }
 
     /**
      * Checks if the given leader is the correct leader for this round.
@@ -257,13 +260,13 @@ public class LeaderModule {
 	 * @param leader The leader that is checked
      * @return true if its the correct leader, false otherwise
      */
-    public boolean checkAndSetLeader(Long exec, Integer r, Integer leader) {
-       if(checkLeader(exec, r, leader)){
-		   setLeaderInfo(exec, r, leader);
-		   return true;
-	   }
-	   return false;
-    }
+//    public boolean checkAndSetLeader(Long exec, Integer r, Integer leader) {
+//       if(checkLeader(exec, r, leader)){
+//		   setLeaderInfo(exec, r, leader);
+//		   return true;
+//	   }
+//	   return false;
+//    }
 	
 	
 	/**

@@ -218,8 +218,8 @@ public class Acceptor {
 			 * check if the leader is correct or unkown  or If we got f or more 
 			 * weaks for this proposal, lets stick to its leader.
 			 */
-			if ( leaderModule.checkAndSetLeader(propose.eid,propose.round,propose.getSender())
-					|| round.countWeak(propose.value) > manager.quorumF) {
+			if ( leaderModule.checkLeader(propose.eid,propose.round,propose.getSender())){
+//					|| round.countWeak(propose.value) > manager.quorumF) {
 				log.log(Level.FINE, "Processing propose for {0}-{1} normally", 
 						new Object[]{round.getExecution().getId(), round.getNumber()});
 				executePropose(round, propose);
@@ -705,6 +705,7 @@ public class Acceptor {
             checkFreezeMsg(round);
         }
 		// Retry stored proposes if the leader for later rounds changed
+		// TODO check
         if(computeFreeze(round)){
 			for(Propose p:round.storedProposes){
 				proposeReceived(round, p);
@@ -806,8 +807,9 @@ public class Acceptor {
                     proofs.add(createProof(exec.getId(), r));
                 }
             }
-
-            CollectProof clProof = new CollectProof(proofs, newNextLeader);
+			
+			Integer proposer = round.getProposer() == null ? -1 : round.getProposer();
+            CollectProof clProof = new CollectProof(proofs, newNextLeader,proposer);
             verifier.sign(clProof);
 			
             msclog.log(Level.INFO, "{0} >-- {1} C{2}-{3}", new Object[]{conf.getProcessId(), 
@@ -869,10 +871,11 @@ public class Acceptor {
         }
 //        //Set next leader to be the same as this round if not collected
 //        if (!round.isCollected()) {
-//            leaderModule.decided(round.getExecution().getId(),round.getNumber());
+		leaderModule.decided(round.getExecution().getId(),
+				round.getNumber(),round.getProposer());
 //        }
         
-        round.decided();
+	    round.decided();
       
     }
 
