@@ -35,6 +35,7 @@ public class Consensus<E> {
     private Long eid; // execution ID
     private Integer decisionRound;
     private byte[] decision = null; // decided value
+    private Integer proposer = -1;
     private E deserializedDecision = null; // decided value (deserialized)
     private final Object sync = new Object();
 
@@ -42,12 +43,25 @@ public class Consensus<E> {
         this.eid = eid;
     }
 
-    public void decided(byte[] value, Integer round) {
+    /**
+     * Indicates that this consensus was decided by a proposal from the given
+     * proposer.
+     * 
+     * @param value The value that was decided
+     * @param round The round of the decision
+     * @param proposer The proposer that made the proposal in that round
+     */
+    public void decided(byte[] value, Integer round, Integer proposer) {
         synchronized (sync) {
             this.decision = value;
             this.decisionRound = round;
+            this.proposer = proposer;
             sync.notifyAll();
         }
+    }
+    
+    public Integer getProposer(){
+    	return proposer;
     }
 
     public Integer getDecisionRound() {

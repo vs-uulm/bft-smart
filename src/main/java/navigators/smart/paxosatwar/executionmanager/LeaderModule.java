@@ -44,8 +44,8 @@ public class LeaderModule {
      * Each element of that list is a tuple which stands for a round, and the id
      * of the process that was the leader for that round
 	 */
-    private SortedMap<Long, List<ConsInfo>> leaderInfos = 
-			Collections.synchronizedSortedMap(new TreeMap<Long, List<ConsInfo>>());
+    private SortedMap<Long, Deque<ConsInfo>> leaderInfos = 
+			Collections.synchronizedSortedMap(new TreeMap<Long, Deque<ConsInfo>>());
 	private transient ExecutionManager manager;
     private transient final Object sync = new Object();
 	private final int n;
@@ -82,7 +82,7 @@ public class LeaderModule {
      * @param leader ID of the leader
      */
     public final void setLeaderInfo(Long exec, Integer r, Integer leader) {
-        List<ConsInfo> list = leaderInfos.get(exec);
+        Deque<ConsInfo> list = leaderInfos.get(exec);
         if (list == null) {
             list = new LinkedList<ConsInfo>();
             leaderInfos.put(exec, list);
@@ -117,15 +117,18 @@ public class LeaderModule {
 		 * last active round of the previous execution. There must be
 		 * at least one round started, otherwise the messages triggering
 		 * this collect would not be delivered to this execution.
+		 * We then set this leader for this round until we receive updated
+		 * information.
 		 */
 		if(oldLeader == null){
-			Integer lastround = manager.getExecution(exec-1).getLastRound().getNumber();
-			oldLeader = getLeader(exec-1,lastround);
+			
+			oldLeader = leaderInfos.get(exec-1).getLast().leaderId;
 			if(oldLeader == null){
 				throw new RuntimeException("We did not find a leader in the "
 						+ "previous round, exiting as this should not happen... "
 						+ "at least I think that it shouldnt...");
 			}
+			checkAndSetLeader(exec, r, oldLeader);
 		}
 		
 
@@ -144,7 +147,7 @@ public class LeaderModule {
 			log.finer( exec +  " | " + r + " | NEW LEADER for the next round is " + newLeader);
 		}
 
-		List<ConsInfo> list = leaderInfos.get(exec);
+		Deque<ConsInfo> list = leaderInfos.get(exec);
 		ConsInfo ci = findInfo(list, r+1);
 
 		if (ci != null) {
@@ -163,9 +166,9 @@ public class LeaderModule {
 		while((list = leaderInfos.get(tmpexec))!= null){
 			for(ConsInfo cinfo:list){
 				cinfo.leaderId = tmpleader%n;
-				if(cinfo.round == 0){
+//				if(cinfo.round == 0){
 					manager.getExecution(tmpexec).notifyNewLeader(cinfo.leaderId);
-				}
+//				}
 				tmpleader ++;
 				log.warning("{0} | {1} Changing leaderinfo for a round > 1 - should not happen!");
 			}
@@ -183,7 +186,7 @@ public class LeaderModule {
      * @param r Number of the round tobe searched
      * @return The tuple for the specified round, or null if there is none
      */
-    private ConsInfo findInfo(List<ConsInfo> l, Integer r) {
+    private ConsInfo findInfo(Deque<ConsInfo> l, Integer r) {
         for (ConsInfo consInfo : l) {
             if (consInfo.round.equals(r)) {
                 return consInfo;
@@ -224,7 +227,7 @@ public class LeaderModule {
      * @return true if its the correct leader, false otherwise
      */
    public boolean checkLeader(Long exec, Integer r, Integer leader) {
-		List<ConsInfo> list = leaderInfos.get(exec);
+		Deque<ConsInfo> list = leaderInfos.get(exec);
 		if (list != null) {
 			ConsInfo info = findInfo(list, r);
 			log.log(Level.FINEST, "{0} | {1} | INFOLIST existant {2}",
@@ -236,7 +239,7 @@ public class LeaderModule {
 			}
 		} else {
 			if ((list = leaderInfos.get(exec - 1)) != null) {
-				ConsInfo info = list.get(list.size() - 1);
+				ConsInfo info = list.getLast();
 				return info.leaderId.equals(leader);
 			}
 		}
@@ -271,7 +274,7 @@ public class LeaderModule {
      * @return The replica ID of the leader
      */
     public Integer getLeader(Long exec, Integer round) {
-        List<ConsInfo> list = leaderInfos.get(exec);
+        Deque<ConsInfo> list = leaderInfos.get(exec);
         if (list != null) {
            
             ConsInfo info = findInfo(list, round);
@@ -322,17 +325,18 @@ public class LeaderModule {
 
             Long next = Long.valueOf(c.longValue() + 1);
 
-            List<ConsInfo> list = leaderInfos.get(next);
+            Deque<ConsInfo> list = leaderInfos.get(next);
 
             try {
                 if (list == null) {//nunca vai acontecer isso!!!
                     System.err.println("- Executing a code that wasn't supposed to be executed :-)");
                     System.err.println("- And we have some reports there is a bug here!");
+                    log.log(Level.WARNING,"Removing {0} even though {1} does not yet exist",new Object[]{c, next});
                     list = new LinkedList<ConsInfo>();
                     leaderInfos.put(next, list);
-                    List<ConsInfo> rm = leaderInfos.remove(c);
+                    Deque<ConsInfo> rm = leaderInfos.remove(c);
                     if (rm != null && rm.size() > 0) {
-                        ConsInfo ci = rm.get(rm.size() - 1);
+                        ConsInfo ci = rm.getLast();
                         list.add(new ConsInfo(ci.leaderId));
                     }
                 } else {
@@ -354,16 +358,16 @@ public class LeaderModule {
         Long next = Long.valueOf(c.longValue() + 1);
 
         synchronized (sync) {
-            List<ConsInfo> list = leaderInfos.get(next);
+            Deque<ConsInfo> list = leaderInfos.get(next);
 
             if (list == null) {//nunca vai acontecer isso!!!
                 System.err.println("- Executing a code that wasn't supposed to be executed :-)");
                 System.err.println("- And we have some reports there is a bug here!");
                 list = new LinkedList<ConsInfo>();
                 leaderInfos.put(next, list);
-                List<ConsInfo> rm = leaderInfos.remove(c);
+                Deque<ConsInfo> rm = leaderInfos.remove(c);
                 if (rm != null && rm.size() > 0) {
-                    ConsInfo ci = rm.get(rm.size() - 1);
+                    ConsInfo ci = rm.getLast();
                     list.add(new ConsInfo(ci.leaderId));
                 }
             } else {
@@ -377,16 +381,16 @@ public class LeaderModule {
         Long next = Long.valueOf(cEnd.longValue() + 1);
         synchronized (sync) {
 
-            List<ConsInfo> list = leaderInfos.get(next);
+            Deque<ConsInfo> list = leaderInfos.get(next);
 
             if (list == null) {//nunca vai acontecer isso!!!
                 //System.err.println("- Executing a code that wasn't supposed to be executed :-)");
                 //System.err.println("- And we have some reports there is a bug here!");
                 list = new LinkedList<ConsInfo>();
                 leaderInfos.put(next, list);
-                List<ConsInfo> rm = leaderInfos.get(cEnd);
+                Deque<ConsInfo> rm = leaderInfos.get(cEnd);
                 if (rm != null) {
-                    ConsInfo ci = rm.get(rm.size() - 1);
+                    ConsInfo ci = rm.getLast();
                     list.add(new ConsInfo(ci.leaderId));
                 }
             }
@@ -422,7 +426,7 @@ public class LeaderModule {
         ObjectInputStream ois;
         try {
             ois = new ObjectInputStream(bais);
-            leaderInfos = (SortedMap<Long, List<ConsInfo>>) ois.readObject();
+            leaderInfos = (SortedMap<Long, Deque<ConsInfo>>) ois.readObject();
         } catch (IOException e) {
             //cannot happen with bais
         }

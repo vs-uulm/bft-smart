@@ -1,5 +1,6 @@
-/**
- * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and the authors indicated in the @author tags
+/*
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, and 
+ * the authors indicated in the @author tags
  *
  * This file is part of SMaRt.
  *
@@ -13,7 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with SMaRt.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with 
+ * SMaRt.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package navigators.smart.consensus;
@@ -63,13 +65,6 @@ public interface ConsensusService {
      * @param state
      */
     public void deliverState(TransferableState state);
-
-    /**
-     * Returns the id of the leader of the given round
-     * @param cons The Consensus that we wish to get the Proposer for
-     * @return The id of the leader for the given consensus
-     */
-    public int getProposer(Consensus<?> cons);
 
     /**
      * Indicates that the layer that uses the service starts to deliver a state

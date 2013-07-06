@@ -476,17 +476,22 @@ public class Acceptor {
                     + " WEAKS");
         }
 
-        //Schedule timeout if not yet scheduled when one correct replica indicates
-        //the existance of this round
+        /*
+         * Schedule timeout if not yet scheduled when one correct replica 
+         * indicates the existance of this round
+         */
         if (weakAccepted > manager.quorumF) {
 			 //start this execution if it is not already running
             if (eid.intValue() == manager.getNextExecID()) {
                 manager.setInExec(eid);
             }
-			// We have no proposed value even though we get equal weaks for some
-			// check if we got one from a now invalid leader due to
-			// a freeze that matches
-			if(round.getPropValue() == null){
+			/*
+			 * We have no proposed value even though we get equal weaks for some
+			 * check if we got one from a now invalid leader due to
+			 * a freeze that matches TODO check this, with quorum f
+			 * we get different leaders.
+			 */
+			if(round.getPropValue() == null && weakAccepted > manager.quorum2F){
 				for(Propose p:round.storedProposes){
 					if(log.isLoggable(Level.FINER)){
 						log.log(Level.FINER, "{0} | {1} checking propose from {2} "

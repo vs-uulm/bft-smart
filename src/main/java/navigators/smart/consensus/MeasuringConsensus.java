@@ -38,8 +38,8 @@ public class MeasuringConsensus<E> extends Consensus<E> {
     }
 	
 	@Override
-	public void decided(byte[] value, Integer round){
+	public void decided(byte[] value, Integer round, Integer proposer){
 		executionTime = System.currentTimeMillis() - startTime;
-		super.decided(value, batchSize);
+		super.decided(value, batchSize, proposer);
 	}
 }

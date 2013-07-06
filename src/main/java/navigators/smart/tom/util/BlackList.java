@@ -16,133 +16,155 @@
 
 package navigators.smart.tom.util;
 
+import java.security.acl.LastOwnerException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Represents the blacklist of the EBAWA algorithm. Servers are distinguished by positive integers.
- * The class takes two arguments: The number of servers present in order to calculate the leader for the
- * given view and the number f of faults to tolerate. The blacklist cannot grow beyond f to maintain safety
- * and liveness because more than f malicious leaders cannot be handled anyways. Therefore the oldest entry
- * in the blacklist is discarded in the case where the list would grow beyond f.
+ * This class represents the blacklist of the EBAWA algorithm. Servers are
+ * distinguished by positive integers. The class takes two arguments: The number
+ * of servers present and the number f of faults to tolerate. The blacklist
+ * cannot grow beyond f to maintain safety and liveness because more than f
+ * malicious leaders cannot be handled anyways. Therefore the oldest entry in
+ * the blacklist is discarded in the case where the list would grow beyond f.
  * 
- * @author Christian Spann 
+ * @author Christian Spann
  */
 public class BlackList {
-	
-	private static final Logger log = Logger.getLogger(BlackList.class.getName());
 
-    private final boolean[] array;
-    private final TreeSet<Long> blacklist = new TreeSet<Long> ();
+	private static final Logger log = Logger.getLogger(BlackList.class
+			.getName());
+
+	private final TreeSet<Long> blacklist = new TreeSet<Long>();
 	private final Set<Integer> whitelist = new HashSet<Integer>();
-	private final Set<Integer>listedservers = new HashSet<Integer>();
-	private final HashMap<Integer,Long> failedviews = new HashMap<Integer,Long>();
-    private int f; //number of allowed malicious servers
+	private final Set<Integer> listedservers = new HashSet<Integer>();
+	private final HashMap<Integer, Long> failedviews = new HashMap<Integer, Long>();
+	private int f; // number of allowed malicious servers
 
-    private int servers;
+	private int servers;
 
-    /**
-     * Creates a blacklist with the given parameters
-     * @param servers The number of replicas participating 
-     * @param f The number of tolerated faults
-     */
-    public BlackList(int servers,int f) {
-        array = new boolean[servers];
-		for (int i = 0;i<servers;i++){
+	/**
+	 * Creates a blacklist with the given parameters
+	 * 
+	 * @param servers
+	 *            The number of replicas participating
+	 * @param f
+	 *            The number of tolerated faults
+	 */
+	public BlackList(int servers, int f) {
+		for (int i = 0; i < servers; i++) {
 			whitelist.add(i);
 		}
-        this.servers = servers;
-        this.f = f;
-    }
+		this.servers = servers;
+		this.f = f;
+	}
 
-    /**
-     * Checks if the leader of the given view (view % #servers) is
-     * present in the blacklist and shall not become leader.
-     * @param view The view to be checked
-     * @return true if the leader is blacklisted, false otherwhise
-     */
-    public boolean contains(long view){
-        return array[(int) (view%servers)];
-    }
-	
+	/**
+	 * Checks if the leader of the given view (view % #servers) is present in
+	 * the blacklist and shall not become leader.
+	 * 
+	 * @param view
+	 *            The view to be checked
+	 * @return true if the leader is blacklisted, false otherwhise
+	 */
+	public boolean contains(long view) {
+		return blacklist.contains(Long.valueOf(view % servers));
+	}
+
 	/**
 	 * Returns the set of servers that are currently expected to be "correct".
+	 * 
 	 * @return A set of probably correct servers
 	 */
-	public List<Integer> getCorrect(){
+	public List<Integer> getCorrect() {
 		return new LinkedList<Integer>(whitelist);
 	}
 
-    /**
-     * Adds the leader of the given view in the first position of
-     * the queue.
-     * @param view The view where the leader failed to propose
-     */
+	/**
+	 * Adds the leader of the given view in the first position of the queue.
+	 * 
+	 * @param view
+	 *            The view where the leader failed to propose
+	 */
 	@SuppressWarnings("boxing")
-	public void addFirst(long view){
-        int server = (int) (view % servers);
+	public void addFirst(long view) {
+		int server = (int) (view % servers);
 		whitelist.remove(server);
-		
+
 		// Check if the views leader is blacklisted already
-		Long lastfailedview = failedviews.put(server,view);
-		if(lastfailedview != null ){
-			if(lastfailedview > view){
-				//Readd the old one as it is newer, we are done
-				failedviews.put(server,lastfailedview);
-			} else if(lastfailedview < view) {
+		Long lastfailedview = failedviews.put(server, view);
+		if (lastfailedview != null) {
+			if (lastfailedview > view) {
+				// Readd the old one as it is newer, we are done
+				failedviews.put(server, lastfailedview);
+			} else if (lastfailedview < view) {
 				// Add the new one to the blacklist and remove the old one
 				blacklist.add(view);
 				blacklist.remove(lastfailedview);
 			}
-			//do nothing if we handled this view already
+			// do nothing if we handled this view already
 		} else {
 			// Handle new additions
 			blacklist.add(view);
 
-			//remove last if list > f
-			if(blacklist.size()>f){
-				Long oldest = blacklist.first();
+			// remove last if list > f
+			if (blacklist.size() > f) {
+				Long oldest = blacklist.pollFirst();
 				server = (int) (oldest % servers);
 				whitelist.add(server);
-				array[server]=false;
 			}
-			if(log.isLoggable(Level.FINE)){
+			if (log.isLoggable(Level.FINE)) {
 				log.fine("blacklisting " + server);
 			}
 		}
-    }
+	}
 
-    /**
-     * Replaces the first entry in the blacklist. This is needed to cope
-     * with repeated merge operations.
-     * @param view The view where the leader failed to propose
-     */
-    @SuppressWarnings("boxing")
-	public void replaceFirst(long  view){
-		long previousview = view-1;
-		
-		//Remove previous view if existant
-		if (blacklist.remove(previousview)){
+	/**
+	 * Replaces the first entry in the blacklist. This is needed to cope with
+	 * repeated merge operations.
+	 * 
+	 * @param view
+	 *            The view where the leader failed to propose
+	 */
+	@SuppressWarnings("boxing")
+	public void replaceFirst(long view) {
+		long previousview = view - 1;
+
+		// Remove previous view if existant
+		if (blacklist.remove(previousview)) {
 			int oldserver = (int) (previousview % servers);
 			whitelist.add(oldserver);
-			array[oldserver] = false;
 		}
-        
-       addFirst(view);
-    }
-    
-    public boolean checkLGView(long current, long lgv){
-		if (lgv == current - 1) {
+
+		addFirst(view);
+	}
+
+	/**
+	 * Checks if there are no good views in between the last good view and the
+	 * view of the propose. and the current one.
+	 * 
+	 * @param currentview
+	 * @param lgv
+	 * @return
+	 */
+	public boolean checkLGView(long currentview, long lgv) {
+		if (lgv == currentview - 1) {
 			return true;
 		} else {
-			//check if lgv was last valid skip or propose
-			while (current < lgv-1){
-				if(!array[(int)++current % servers]){
+			long tmpview = lgv + 1;
+			// check if lgv was last valid skip or propose
+			while (tmpview < currentview) {
+				// Check if all view in between lgv+1 and currentview are
+				// blacklisted which means that they timed out
+				if (!blacklist.contains(tmpview)) {
 					return false;
 				}
+				// if(!array[(int)++currentview % servers]){
+				// return false;
+				// }
 			}
 			return true;
 		}
-    }
+	}
 }

@@ -108,15 +108,6 @@ public class PaxosAtWarService implements ConsensusService {
 		return "Consensus in execution: " + execmng.getInExec() + " last executed consensus: " + execmng.getLastExec();
 	}
 
-	/**
-	 * @param cons The consensus of whom we wish to know the final proposer
-	 * @return The id of the final proposer
-	 */
-	@Override
-	public int getProposer(Consensus<?> cons) {
-		return lm.getLeader(cons.getId(), cons.getDecisionRound()).intValue();
-	}
-
 	@Override
 	public void startDeliverState() {
 		//nothing to do here
@@ -164,13 +155,13 @@ public class PaxosAtWarService implements ConsensusService {
 					}
 
 					byte[] recvstate = tom.getState();
-					statemgr.saveState(cons.getId(), cons.getDecisionRound(), getProposer(cons), lm.getState(), recvstate);
+					statemgr.saveState(cons.getId(), cons.getDecisionRound(), cons.getProposer(), lm.getState(), recvstate);
 
 				} else {
 					if (log.isLoggable(Level.FINER)) {
 						log.finer("Storing message batch in the state log for consensus " + cons.getId());
 					}
-					statemgr.saveBatch(cons.getDecision(), cons.getId(), cons.getDecisionRound(), getProposer(cons));
+					statemgr.saveBatch(cons.getDecision(), cons.getId(), cons.getDecisionRound(), cons.getProposer());
 				}
 			}
 		}
