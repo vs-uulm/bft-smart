@@ -74,15 +74,15 @@ public class ExecutionManagerTest {
 		
 		//test initial configuration
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertTrue(mng.checkLimits(new Propose( 0l, 0, 1,null,null)));
+		assertTrue(mng.checkLimits(new Propose( 0l, 0, 1, 0, null,null)));
 		assertFalse(mng.thereArePendentMessages(0l));
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message with state transfer
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 99l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose( 99l, 0, 1, 0, null,null)));
 		verify(tom).requestStateTransfer(me, others, 1, 99l);
 		assertTrue(mng.thereArePendentMessages(1l));
 	}
@@ -92,19 +92,19 @@ public class ExecutionManagerTest {
 		Integer[] others = {1,2,3}; //list of the other acceptors
 		//test normal configuration
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertTrue(mng.checkLimits(new Propose(0l, 0, 0,null,null)));
+		assertTrue(mng.checkLimits(new Propose(0l, 0, 0, 0, null,null)));
 		assertFalse(mng.thereArePendentMessages(0l));
 		//test normal execution wrong leader msg
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(1l, 0, 0,null,null)));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 0, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg with state transfer
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(101l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(101l, 0, 1, 0, null,null)));
 		verify(tom).requestStateTransfer(me, others, 1, 101l);
 		assertTrue(mng.thereArePendentMessages(101l));
 	}
@@ -114,15 +114,15 @@ public class ExecutionManagerTest {
 		//STATE TRANSFER ENABLED
 		//test initial configuration
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(0l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(0l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(0l));
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message with state transfer
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(99l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(99l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 	}
 
@@ -132,15 +132,15 @@ public class ExecutionManagerTest {
 		
 		//test normal configuration
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test normal execution ooc msg
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(2l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(2l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(2l));
 		//test normal execution ooc msg with state transfer
 		when(tom.isRetrievingState()).thenReturn(true);
-		assertFalse(mng.checkLimits(new Propose(101l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(101l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(101l));
 	}
 	
@@ -148,7 +148,7 @@ public class ExecutionManagerTest {
 	public void testThereArePendentMessages() {
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
@@ -160,7 +160,7 @@ public class ExecutionManagerTest {
 	public void testRemoveExecution() {
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		mng.removeExecution(1l);
 		assertFalse(mng.thereArePendentMessages(1l));
@@ -176,7 +176,7 @@ public class ExecutionManagerTest {
 	public void testRemoveOutOfContexts() {
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		
 		//test initial ooc message
@@ -200,7 +200,7 @@ public class ExecutionManagerTest {
 		
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
-		PaxosMessage msg = new Propose( 1l, 0, 1, null, null);
+		PaxosMessage msg = new Propose( 1l, 0, 1,  0, null, null);
 		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1l, 0, 1,new byte[0]);
 		assertFalse(mng.checkLimits(msg));
 		assertFalse(mng.checkLimits(weak));
@@ -227,7 +227,7 @@ public class ExecutionManagerTest {
 	@Test
 	public void testDeliverState() {
 		when(tom.isRetrievingState()).thenReturn(false);
-		assertFalse(mng.checkLimits(new Propose(1l, 0, 1,null,null)));
+		assertFalse(mng.checkLimits(new Propose(1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
 		
 		TransferableState state = new TransferableState(0l,0,0,10l,null,null,null,null);

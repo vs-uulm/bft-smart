@@ -188,7 +188,6 @@ public class ProofVerifier {
     /**
      * Obtains the value that is considered to be good, as is specified by the PaW algorithm
      * @param proofs Proofs to be evaluated
-     * @param in True if the proofs to be evaluated are from the freezed consensus, false for the proofs from the next consensus
      * @return The value considered to be good, if any. If such value can't be found, null is returned
      */
     public byte[] getGoodValue(CollectProof[] proofs, Integer r) {
