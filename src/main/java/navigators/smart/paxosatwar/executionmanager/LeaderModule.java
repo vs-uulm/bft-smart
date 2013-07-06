@@ -241,11 +241,11 @@ public class LeaderModule {
 						new Object[]{exec, r, info.leaderId});
 				return info.leaderId.equals(leader);
 			}
-		} else {
-			if ((list = leaderInfos.get(exec - 1)) != null) {
-				ConsInfo info = list.getLast();
-				return info.leaderId.equals(leader);
-			}
+//		} else {
+//			if ((list = leaderInfos.get(exec - 1)) != null) {
+//				ConsInfo info = list.getLast();
+//				return info.leaderId.equals(leader);
+//			}
 		}
 		//We did not decide on the previous execution yet, we have to wait... 
 		return false;
