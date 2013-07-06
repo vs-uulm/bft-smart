@@ -204,7 +204,7 @@ public class Proposer {
      * @param execution The current execution
      * @param round The new round where to propose
      */
-    private void createPropose(Execution execution, Round round) {
+	private void createPropose(Execution execution, Round round) {
         byte[] inProp = verifier.getGoodValue(round.proofs, round.getNumber());
 //		manager.getRequestHandler().imAmTheLeader();
 
@@ -235,7 +235,7 @@ public class Proposer {
             }
         }
 		// TODO check if we need to calculate this
-		Integer prevleader = (round.getProposer() == 0) 
+		Integer prevleader = (round.getProposer() == null) 
 				? conf.getProcessId() : round.getProposer();
 		
         //Send propose
