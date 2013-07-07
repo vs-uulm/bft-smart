@@ -522,7 +522,7 @@ public class Acceptor {
         }
 
         // Can I go straight to decided state?
-        if (weakAccepted > manager.quorumFastDecide && !round.isDecided()) {
+        if (round.hasPropose() && weakAccepted > manager.quorumFastDecide && !round.isDecided()) {
             if (log.isLoggable(Level.FINE)) {
                 log.fine( eid + " | " + round.getNumber() + " | DECIDE (WEAK)");
             }
