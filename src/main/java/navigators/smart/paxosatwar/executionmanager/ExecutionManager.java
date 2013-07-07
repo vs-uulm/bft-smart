@@ -77,7 +77,7 @@ public final class ExecutionManager{
     // Paxos messages that were out of context (that didn't belong to the execution that was/is is progress
     private Map<Long, List<PaxosMessage>> outOfContext = new HashMap<Long, List<PaxosMessage>>();
     // Proposes that were out of context (that belonged to future executions, and not the one running at the time)
-    private Map<Long, Propose> outOfContextProposes = new HashMap<Long, Propose>();
+    private Map<Long, List<Propose>> outOfContextProposes = new HashMap<Long, List<Propose>>();
     private ReentrantLock outOfContextLock = new ReentrantLock(); //lock for out of context
 
     private boolean stopped = false; // Is the execution manager stopped?
@@ -443,11 +443,13 @@ public final class ExecutionManager{
 			// First check for a propose...
 			if (thereArePendentMessages(eid)){
 
-				VoteMessage prop = outOfContextProposes.remove(eid);
+				List<Propose> prop = outOfContextProposes.remove(eid);
 				if (prop != null) {
-					if(log.isLoggable(Level.FINEST))
-						log.finest("(" + eid + ") Processing an out of context propose for "+eid);
-					acceptor.processMessage(prop);
+					for(VoteMessage v:prop){
+						if(log.isLoggable(Level.FINEST))
+							log.finest("(" + eid + ") Processing an out of context propose for "+eid);
+						acceptor.processMessage(v);
+					}
 				}
 
 				//then we have to put the pending paxos messages
@@ -485,7 +487,12 @@ public final class ExecutionManager{
         /******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
 
 		if (m.paxosType == MessageFactory.PROPOSE) {
-			outOfContextProposes.put(m.eid, (Propose) m);
+			List<Propose> p = outOfContextProposes.get(m.eid);
+			if(p == null){
+				p = new LinkedList<Propose>();
+				outOfContextProposes.put(m.eid, p);
+			}
+			p.add((Propose)m);
 		} else {
 			List<PaxosMessage> messages = outOfContext.get(m.eid);
 			if (messages == null) {
