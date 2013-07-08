@@ -166,8 +166,10 @@ public class PaxosAtWarService implements ConsensusService {
 			}
 		}
 		execmng.processingFinished(cons);
-		Long stableConsensus = cons.getId().longValue() - 3;
-        lm.removeStableConsenusInfo(stableConsensus);
+		if (cons.getId().longValue() > 2) {
+			Long stableConsensus = cons.getId().longValue() - 3;
+			lm.removeStableConsenusInfo(stableConsensus);
+		}
 	}
 
 	@Override
