@@ -546,7 +546,7 @@ public final class ExecutionManager{
     public void processingFinished(Consensus<?> cons) {
 		Execution e = executions.get(cons.getId());
 		
-		if (!e.isExecuted()){
+		if (e != null && !e.isExecuted()){
 			e.setExecuted();
             //define the last stable consensus... the stable consensus can
             //be removed from the leaderManager and the executionManager
