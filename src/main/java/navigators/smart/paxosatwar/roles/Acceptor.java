@@ -105,7 +105,12 @@ public class Acceptor {
     public final void deliver(PaxosMessage msg) {
         if (manager.checkLimits(msg)) {
             processMessage(msg);
-        } 
+        } else {
+        	if(log.isLoggable(Level.FINER)){
+        		log.log(Level.FINER,"{0} | {1} Failed checkLimits: dropping"
+        				+ " message {2}", new Object[]{msg.eid, msg.round, msg});
+        	}
+        }
     }
 
     /**
@@ -124,6 +129,14 @@ public class Acceptor {
             execution.lock.lock();
 
             Round round = execution.getRound(msg.round);
+            
+            if(round.isCollected()){
+            	if(log.isLoggable(Level.FINER)){
+            		log.log(Level.FINER,"{0} | {1} Round collected, dropping "
+            				+ "message {2}", new Object[]{msg.eid, msg.round, msg});
+            	}
+            	return;
+            }
 
 			// Do not handle message if the corresponding round
 			// is not started yet.
@@ -256,7 +269,7 @@ public class Acceptor {
                 // Is the proposed value good according to the PaW algorithm?
                 if (msg.value != null 
                 		&& (verifier.good(msg.value, collected, msg.round, msg.leader))) {
-                	leaderModule.setLeaderInfo(eid, msg.round, msg.leader);
+                	leaderModule.setLeaderInfo(eid, msg.round, msg.getSender());
                     executePropose(round, msg);
                 } else {
 					if (msg.value == null ) {
@@ -811,7 +824,7 @@ public class Acceptor {
                 }
             }
 			
-			Integer proposer = round.getProposer() == null ? -1 : round.getProposer();
+			Integer proposer = round.getInitialProposer() == null ? newNextLeader : round.getInitialProposer();
             CollectProof clProof = new CollectProof(proofs, newNextLeader,proposer);
             verifier.sign(clProof);
 			
@@ -875,7 +888,7 @@ public class Acceptor {
 //        //Set next leader to be the same as this round if not collected
 //        if (!round.isCollected()) {
 		leaderModule.decided(round.getExecution().getId(),
-				round.getNumber(),round.getProposer());
+				round.getNumber(),round.getInitialProposer());
 //        }
         
 	    round.decided();

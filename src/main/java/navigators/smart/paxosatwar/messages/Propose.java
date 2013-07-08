@@ -67,7 +67,15 @@ public class Propose extends VoteMessage {
         return proof;
     }
     
-    // Implemented method of the Externalizable interface
+    
+    
+    @Override
+	public String toString() {
+		
+		return super.toString()+", Propopser("+leader+")";
+	}
+
+	// Implemented method of the Externalizable interface
     @Override
 	public void serialise(ByteBuffer out) {
 		super.serialise(out);

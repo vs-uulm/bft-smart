@@ -177,7 +177,22 @@ public class Round implements Comparable<Round> {
 	}
 	
 	/**
-	 * Returns the proposer of the accepted proposal
+	 * Returns the initial proposer of the accepted proposal. As he
+	 * successfully proposed the value, if set, he will be the leader
+	 * of the next round when this round is decided.
+	 */
+	public Integer getInitialProposer() {
+		if(p!=null){
+			return p.leader;
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Returns the current proposer of the accepted proposal. As he
+	 * currently proposed the value, he will be responsible for a timely
+	 * decision..
 	 */
 	public Integer getProposer() {
 		if(p!=null){

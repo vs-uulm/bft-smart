@@ -314,7 +314,7 @@ public class Execution {
 		if (decisionRound == -1) {
 			decisionRound = round.getNumber();
 			if (round.getPropValue() != null) {
-				consensus.decided(round.getPropValue(), decisionRound,round.getProposer());
+				consensus.decided(round.getPropValue(), decisionRound,round.getInitialProposer());
 				manager.executionDecided(this);
 			}
 		} else {		
