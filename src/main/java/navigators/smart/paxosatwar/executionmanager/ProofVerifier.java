@@ -296,7 +296,7 @@ public class ProofVerifier {
 		// condition G2 in Paxos At War
 		for (RoundInfo s : infos) {
 			if (checkGoodG2(w, s, r, infos)) {
-				if(s.proposer != leader){
+				if(s.proposer != null && s.proposer != leader){
 					log.log(Level.WARNING,"Proposed leader {0} for round {1}"
 							+ "does not match with CollectInfos leader {2}", 
 							new Object[]{leader,r,s.proposer});
@@ -533,7 +533,7 @@ public class ProofVerifier {
 						// values are equal
 						if (cw != null && w.equals(cw)) {
 							weakcount++;
-							proposers[proofs[i].proposer]++;
+							proposers[proofs[j].proposer]++;
 							proofs[j] = null; // Eliminate this Proof as it was
 												// already counted
 						}
