@@ -25,18 +25,21 @@ import java.util.LinkedList;
 import navigators.smart.tom.util.SerialisationHelper;
 
 /**
- * Proofs to freezed consensus. This class can contain proofs for two consensus.
- * The freezed one, and the next one (if have).
+ * This class contains the proofs for all freezed rounds until the current one
+ * in order to enable the choice of a good value for the next round.
  */
 public final class CollectProof {
 
-    // Proofs to freezed consensus
+    /**
+     *  Proofs of this replica of all previous rounds including the currently
+     *  frozen one
+     */
     private final LinkedList<FreezeProof> proofIn;
 
-    // The new leader id
+    /** The new leader id*/
     private final Integer newLeader;
 	
-	// The initial proposer id
+	/** The first proposer id, that did not cheat */
 	public final Integer proposer;
 
     private byte[] signature;

@@ -22,10 +22,12 @@ package navigators.smart.paxosatwar.roles;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.paxosatwar.executionmanager.Execution;
 import navigators.smart.paxosatwar.executionmanager.ExecutionManager;
 import navigators.smart.paxosatwar.executionmanager.ProofVerifier;
+import navigators.smart.paxosatwar.executionmanager.ProofVerifier.GoodInfo;
 import navigators.smart.paxosatwar.executionmanager.Round;
 import navigators.smart.paxosatwar.messages.Collect;
 import navigators.smart.paxosatwar.messages.CollectProof;
@@ -205,7 +207,7 @@ public class Proposer {
      * @param round The new round where to propose
      */
 	private void createPropose(Execution execution, Round round) {
-        byte[] inProp = verifier.getGoodValue(round.proofs, round.getNumber());
+        GoodInfo info = verifier.getGoodValue(round.proofs, round.getNumber());
 //		manager.getRequestHandler().imAmTheLeader();
 
         //Count view changes in statistics
@@ -235,12 +237,12 @@ public class Proposer {
             }
         }
 		// TODO check if we need to calculate this
-		Integer prevleader = (round.getProposer() == null) 
-				? conf.getProcessId() : round.getProposer();
+		Integer prevleader = (info.proposer == null) 
+				? conf.getProcessId() : info.proposer;
 		
         //Send propose
         communication.send(manager.getAcceptors(),
                 factory.createPropose(execution.getId(), round.getNumber(), 
-				prevleader, inProp, new Proof(round.proofs)));
+				prevleader, info.val, new Proof(round.proofs)));
     }
 }

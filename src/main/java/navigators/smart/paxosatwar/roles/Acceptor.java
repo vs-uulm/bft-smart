@@ -252,10 +252,11 @@ public class Acceptor {
 
             // check if proposer is valid leader
             if (verifier.isTheLeader(msg.getSender(), collected)) {
-                leaderModule.setLeaderInfo(eid, msg.round, msg.getSender());
 
                 // Is the proposed value good according to the PaW algorithm?
-                if (msg.value != null && (verifier.good(msg.value, collected, msg.round))) {
+                if (msg.value != null 
+                		&& (verifier.good(msg.value, collected, msg.round, msg.leader))) {
+                	leaderModule.setLeaderInfo(eid, msg.round, msg.leader);
                     executePropose(round, msg);
                 } else {
 					if (msg.value == null ) {
@@ -527,9 +528,9 @@ public class Acceptor {
             decide(eid, round, weak);
         }
 
-        checkSendStrong(eid, round, weak);
+        int strongcount = checkSendStrong(eid, round, weak);
         
-        computeStrong(eid, round, weak);
+        computeStrong(eid, round, weak, strongcount);
     }
 
     /**
@@ -539,42 +540,47 @@ public class Acceptor {
      * @param eid The current execution id
      * @param round The current round
 	 * @param msg The message with the value to send
+	 * @return The current number of strong messages for the weaks value hash.
      */
-    private void checkSendStrong(final Long eid, final Round round, 
+    private int checkSendStrong(final Long eid, final Round round, 
 			final VoteMessage msg) {
 		int weakAccepted = round.countWeak(msg.value);
+		int count = 0;
         // shall I send a STRONG message?
-        if (weakAccepted > manager.quorumStrong && 
-            !round.isStrongSetted(me.intValue()) &&
-				! round.isFrozen() &&
-				round.hasPropose()) {
-			VoteMessage strong = factory.createStrong(eid, round.getNumber(), round.getPropValueHash());
-			round.setStrong(strong);
-			communication.send(manager.getOtherAcceptors(), strong);
-			
-			if (log.isLoggable(Level.FINER)) {
-				log.finer( eid + " | " + round.getNumber() + " | Sending STRONG");
-			}
-			if (msclog.isLoggable(Level.INFO)) {
-				Integer[] acc = manager.getOtherAcceptors();
-				for (int i = 0; i < acc.length; i++) {
-					msclog.log(Level.INFO, "{0} >-- {1} S{2}-{3}", 
-							new Object[]{conf.getProcessId(), acc[i], eid, 
-								round.getNumber()});
+		if(round.hasPropose()){
+	        if (weakAccepted > manager.quorumStrong && 
+	            !round.isStrongSetted(me.intValue()) &&
+					! round.isFrozen()) {
+				VoteMessage strong = factory.createStrong(eid, round.getNumber(), round.getPropValueHash());
+				round.setStrong(strong);
+				communication.send(manager.getOtherAcceptors(), strong);
+				
+				if (log.isLoggable(Level.FINER)) {
+					log.finer( eid + " | " + round.getNumber() + " | Sending STRONG");
 				}
-			}
-			if (msctlog.isLoggable(Level.INFO)) {
-				Integer[] acc = manager.getOtherAcceptors();
-				for (int i = 0; i < acc.length; i++) {
-					String id = String.format("S%1$d-%2$d-%3$d-%4$d",
-							conf.getProcessId(), acc[i], eid, round.getNumber());
-					msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| "
-							+ "0x{0}| 2| {2}|", new Object[]{conf.getProcessId(),
-								Math.abs(id.hashCode()), id});
+				if (msclog.isLoggable(Level.INFO)) {
+					Integer[] acc = manager.getOtherAcceptors();
+					for (int i = 0; i < acc.length; i++) {
+						msclog.log(Level.INFO, "{0} >-- {1} S{2}-{3}", 
+								new Object[]{conf.getProcessId(), acc[i], eid, 
+									round.getNumber()});
+					}
 				}
-			}
-    
-            }
+				if (msctlog.isLoggable(Level.INFO)) {
+					Integer[] acc = manager.getOtherAcceptors();
+					for (int i = 0; i < acc.length; i++) {
+						String id = String.format("S%1$d-%2$d-%3$d-%4$d",
+								conf.getProcessId(), acc[i], eid, round.getNumber());
+						msctlog.log(Level.INFO, "ms| -t #time| -i {1,number,integer}| "
+								+ "0x{0}| 2| {2}|", new Object[]{conf.getProcessId(),
+									Math.abs(id.hashCode()), id});
+					}
+				}
+	        } else {
+	        	round.countStrong(round.getPropValueHash());
+	        }
+		} 
+		return count;
     }
 
     /**
@@ -599,7 +605,7 @@ public class Acceptor {
                         conf.getProcessId(), id});
         }
         int count = round.setStrong(strong);
-        computeStrong(eid, round, strong);
+        computeStrong(eid, round, strong, count);
     }
 
     /**
@@ -612,15 +618,16 @@ public class Acceptor {
      * @param msg Value sent in the message
 	 * @param strongAccepted The number of accepted values
      */
-    private void computeStrong(Long eid, Round round, VoteMessage msg) {
-		int strongAccepted = round.countStrong(msg.value);
+    private void computeStrong(Long eid, Round round, VoteMessage msg,
+    		final int strongAccepted) {
+//		int strongAccepted = round.countStrong(msg.value);
 
         if (log.isLoggable(Level.FINER)) {
             log.finer( eid + " | " + round.getNumber() + " | " + strongAccepted
                     + " STRONGS");
         }
 
-        if (strongAccepted > manager.quorum2F && !round.isDecided()) {
+        if (round.hasPropose() && strongAccepted > manager.quorum2F && !round.isDecided()) {
 
             if (log.isLoggable(Level.FINE)) {
                 log.fine( eid + " | " + round.getNumber() + " | DECIDE(STRONG)");
