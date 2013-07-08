@@ -234,8 +234,11 @@ public class Round implements Comparable<Round> {
      * messages.
      *
      */
-    public void scheduleTimeout() {
-        if (timeoutTask == null && !isFrozen() ) {
+    public void scheduleTimeout(Integer leader) {
+        if (timeoutTask == null 
+				&& !isFrozen() 
+				&& (leader == null 
+					|| leader != getExecution().manager.getProcessId()) ) {
             if (log.isLoggable(Level.FINER)) {
                 log.finer( execution + " | " 
                         + number + " | SCHEDULE TO " 

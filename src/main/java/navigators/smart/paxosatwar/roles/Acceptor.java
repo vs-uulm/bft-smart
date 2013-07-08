@@ -367,8 +367,8 @@ public class Acceptor {
             log.finer( eid + " | " + round.getNumber() + " | executing PROPOSE with value "+Arrays.toString(p.value));
         }
 		
-		if(!round.hasPropose()){
-			round.scheduleTimeout();
+		if(!round.hasPropose()){			
+			round.scheduleTimeout(p.leader);
 			byte[] hash = null;
 			if (round.getPropValue() == null) {
 				hash = tomlayer.computeHash(p.value);
@@ -499,7 +499,7 @@ public class Acceptor {
 								new Object[]{eid,round.getNumber(),p.getSender()});
 						if(log.isLoggable(Level.FINEST)){
 							log.log(Level.FINEST,"Weak: {0}",Arrays.toString(weak.value));
-							log.log(Level.FINEST,"Prophash: {0}",tomlayer.computeHash(p.value));
+							log.log(Level.FINEST,"Prophash: {0}",Arrays.toString(tomlayer.computeHash(p.value)));
 						}
 					}
 					if(Arrays.equals(weak.value,tomlayer.computeHash(p.value))){
@@ -516,9 +516,7 @@ public class Acceptor {
 //			if(lastround.countFreeze() <= manager.quorumF){
 //				
 //			}
-			if(round.getProposer() == null || round.getProposer() != me){
-				round.scheduleTimeout();
-			}
+			round.scheduleTimeout(round.getProposer());
         }
 
         // Can I go straight to decided state?
@@ -792,9 +790,7 @@ public class Acceptor {
 			 * directly violate safety as long as I am the only one that "fails"
 			 * in that manner. 
 			 */
-			if(newNextLeader != me){
-				nextRound.scheduleTimeout();
-			}
+			nextRound.scheduleTimeout(newNextLeader);
 
             /* 
 			 * Create signed W_s and S_s for all rounds up to this one in order 
