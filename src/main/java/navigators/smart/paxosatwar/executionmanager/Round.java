@@ -396,7 +396,6 @@ public class Round implements Comparable<Round> {
 	 * Establishes that a collect message for this round was already sent
 	 */
 	public void collect() {
-		cancelTimeout();
 		collected = true;
 	}
 
@@ -413,6 +412,7 @@ public class Round implements Comparable<Round> {
 	 * Establishes that this round is frozen
 	 */
 	public void freeze() {
+		cancelTimeout();
 		frozen = true;
 	}
 
@@ -429,12 +429,16 @@ public class Round implements Comparable<Round> {
 	}
 
 	/**
-	 * Retrieves the ammount of replicas that locally freezed this round
+	 * Retrieves the amount of replicas that locally freezed this round
 	 *
-	 * @return Ammount of replicas that locally freezed this round
+	 * @return Amount of replicas that locally freezed this round
 	 */
 	public int countFreeze() {
-            return freeze.size();
+		if(freeze == null){
+			return 0;
+		} else {
+			return freeze.size();
+		}
 	}
 
 	public int countWeak(byte[] value) {
