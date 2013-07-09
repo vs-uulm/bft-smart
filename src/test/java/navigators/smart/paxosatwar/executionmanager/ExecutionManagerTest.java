@@ -162,14 +162,14 @@ public class ExecutionManagerTest {
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1, 0, null,null)));
 		assertTrue(mng.thereArePendentMessages(1l));
-		mng.removeExecution(1l);
-		assertFalse(mng.thereArePendentMessages(1l));
+//		mng.removeExecution(1l);
+//		assertFalse(mng.thereArePendentMessages(1l));
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new VoteMessage(MessageFactory.WEAK, 2l, 0, 1, new byte[0])));
 		assertTrue(mng.thereArePendentMessages(2l));
-		mng.removeExecution(2l);
-		assertFalse(mng.thereArePendentMessages(2l));
+//		mng.removeExecution(2l);
+//		assertFalse(mng.thereArePendentMessages(2l));
 	}
 
 	@Test
@@ -196,7 +196,7 @@ public class ExecutionManagerTest {
 	@Test
 	public void testGetExecution() {
 		Execution exec = mng.getExecution(0l);
-		assertEquals(exec, mng.removeExecution(exec.getId()));
+//		assertEquals(exec, mng.removeExecution(exec.getId()));
 		
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
@@ -207,7 +207,7 @@ public class ExecutionManagerTest {
 		exec = mng.getExecution(1l);
 //		verify(acceptor).processMessage(msg);
 //		verify(acceptor).processMessage(weak);
-		assertEquals(exec, mng.removeExecution(exec.getId()));
+//		assertEquals(exec, mng.removeExecution(exec.getId()));
 	}
 
 //	@Test
@@ -233,7 +233,7 @@ public class ExecutionManagerTest {
 		TransferableState state = new TransferableState(0l,0,0,10l,null,null,null,null);
 		mng.getExecution(5l);
 		mng.deliverState(state);
-		assertNull(mng.removeExecution(5l));
+//		assertNull(mng.removeExecution(5l));
 		assertFalse(mng.thereArePendentMessages(1l));
 	}
 
