@@ -107,7 +107,7 @@ public class Acceptor {
             processMessage(msg);
         } else {
         	if(log.isLoggable(Level.FINER)){
-        		log.log(Level.FINER,"{0} | {1} Failed checkLimits: dropping"
+        		log.log(Level.FINER,"{0} | {1} Failed checkLimits: not processing now"
         				+ " message {2}", new Object[]{msg.eid, msg.round, msg});
         	}
         }
@@ -141,6 +141,10 @@ public class Acceptor {
 			// Do not handle message if the corresponding round
 			// is not started yet.
 			if(execution.getCurrentRoundNumber()<msg.round){
+				if(log.isLoggable(Level.FINER)){
+            		log.log(Level.FINER,"{0} | {1} Round not yet active, storing "
+            				+ "message {2}", new Object[]{msg.eid, msg.round, msg});
+            	}
 				round.pending.add(msg);
 				return;
 			}
@@ -148,27 +152,38 @@ public class Acceptor {
             if (log.isLoggable(Level.FINER)) {
                 log.finer(msg.toString() + " | PROCESSING");
             }
-			
-            // Messages must also be processed when the round is frozen, otherwise we would need decide messages to prevent single frozen
-            // replicas from beeing blocked
-            switch (msg.paxosType) {
-                case MessageFactory.PROPOSE:
-                    proposeReceived(round, (Propose) msg);
-                    break;
-                case MessageFactory.WEAK:
-                    weakAcceptReceived(round, (VoteMessage)msg);
-                    break;
-                case MessageFactory.STRONG:
-                    strongAcceptReceived(round, (VoteMessage)msg);
-                    break;
-                case MessageFactory.DECIDE:
-                    decideReceived(round, (VoteMessage)msg);
-                    break;
-                case MessageFactory.FREEZE:
-                    freezeReceived(round, msg.getSender());
-                    break;
-                default:
-                    log.severe("Unknowm Messagetype received: " + msg);
+            
+            if(msg.paxosType == MessageFactory.FREEZE){
+            	freezeReceived(round, msg.getSender());
+            } else {
+            	if(!round.isDecided()){
+		            /*
+		             *  Messages must also be processed when the round is frozen,
+		             *  otherwise we would need decide messages to prevent 
+		             *  single frozen replicas from beeing blocked. The must
+		             *  however not be processed when we are decided, except
+		             *  for freeze messages. So they are handles above.
+		             */
+		            switch (msg.paxosType) {
+			            case MessageFactory.FREEZE:
+			            	freezeReceived(round, msg.getSender());
+			            	break;
+		                case MessageFactory.PROPOSE:
+		                    proposeReceived(round, (Propose) msg);
+		                    break;
+		                case MessageFactory.WEAK:
+		                    weakAcceptReceived(round, (VoteMessage)msg);
+		                    break;
+		                case MessageFactory.STRONG:
+		                    strongAcceptReceived(round, (VoteMessage)msg);
+		                    break;
+		                case MessageFactory.DECIDE:
+		                    decideReceived(round, (VoteMessage)msg);
+		                    break;
+		                default:
+		                    log.severe("Unknowm Messagetype received: " + msg);
+		            }
+            	}
             }
 
         } finally {
@@ -674,7 +689,7 @@ public class Acceptor {
     }
 
     /**
-     * This mehod is called by timertasks associated with rounds. It will
+     * This method is called by timertasks associated with rounds. It will
      * locally freeze a round, given that is not already frozen, its not
      * decided, and is not removed from its execution
      *
