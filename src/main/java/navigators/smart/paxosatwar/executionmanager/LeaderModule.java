@@ -333,16 +333,16 @@ public class LeaderModule {
 
             try {
                 if (list == null) {//nunca vai acontecer isso!!!
-                    System.err.println("- Executing a code that wasn't supposed to be executed :-)");
-                    System.err.println("- And we have some reports there is a bug here!");
+//                    System.err.println("- Executing a code that wasn't supposed to be executed :-)");
+//                    System.err.println("- And we have some reports there is a bug here!");
                     log.log(Level.WARNING,"Removing {0} even though {1} does not yet exist",new Object[]{c, next});
-                    list = new LinkedList<ConsInfo>();
-                    leaderInfos.put(next, list);
-                    Deque<ConsInfo> rm = leaderInfos.remove(c);
-                    if (rm != null && rm.size() > 0) {
-                        ConsInfo ci = rm.getLast();
-                        list.add(new ConsInfo(ci.leaderId));
-                    }
+//                    list = new LinkedList<ConsInfo>();
+//                    leaderInfos.put(next, list);
+//                    Deque<ConsInfo> rm = leaderInfos.remove(c);
+//                    if (rm != null && rm.size() > 0) {
+//                        ConsInfo ci = rm.getLast();
+//                        list.add(new ConsInfo(ci.leaderId));
+//                    }
                 } else {
                     leaderInfos.remove(c);
                 }
