@@ -69,6 +69,7 @@ public class ServersCommunicationLayer extends Thread implements ConnectionMonit
 			MessageVerifierFactory<PTPMessageVerifier> verifierfactory,
 			GlobalMessageVerifier<SystemMessage> globalverifier) throws IOException {
 		super("ServersCommunicationLayer");
+		setDaemon(true);
 		this.conf = conf;
 		this.inQueue = inQueue;
 		this.me = conf.getProcessId();

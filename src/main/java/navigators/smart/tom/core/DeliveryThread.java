@@ -59,6 +59,7 @@ public class DeliveryThread extends Thread {
      */
     public DeliveryThread(TOMLayer tomLayer, TOMReceiver recv, TOMConfiguration conf) {
         super("Delivery Thread "+ conf.getProcessId());
+        setDaemon(true);
         this.tomLayer = tomLayer;
         this.conf = conf;
         this.receiver = recv;

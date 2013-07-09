@@ -75,6 +75,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     @SuppressWarnings({ "rawtypes", "unchecked" })
 	public ServerCommunicationSystem(TOMConfiguration conf) throws IOException  {
         super("Server CS");
+        setDaemon(true);
         inQueue = new ArrayBlockingQueue<SystemMessage>(conf.getInQueueSize());
         
        MessageVerifierFactory<PTPMessageVerifier> ptpFactory = null;

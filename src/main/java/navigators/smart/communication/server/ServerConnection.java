@@ -282,10 +282,11 @@ public class ServerConnection {
 
 		public SenderThread() {
 			super("Sender for " + remoteId);
+			setDaemon(true);
 			delay = conf.getSendDelay();
 			delaySending = delay > 0;
 			if (delaySending) {
-				delayTimer = new Timer("DelayTimer for " + remoteId);
+				delayTimer = new Timer("DelayTimer for " + remoteId,true);
 				delayTimer.schedule(new TimerTask() {
 
 					@Override
@@ -332,6 +333,7 @@ public class ServerConnection {
 
 		public ReceiverThread() {
 			super("Receiver for " + remoteId);
+			setDaemon(true);
 			if (ptpverifier != null) {
 				receivedHash = ByteBuffer.allocate(ptpverifier.getHashSize());
 			}

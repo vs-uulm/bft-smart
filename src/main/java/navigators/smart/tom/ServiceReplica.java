@@ -61,7 +61,7 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
         // Initialize messages queue received from the TOM layer
         this.requestQueue = new LinkedBlockingQueue<TOMMessage>();
 
-        this.replicaThread = new Thread(this);
+        this.replicaThread = new Thread(this, "ServiceReplica");
         this.replicaThread.start(); // starts the replica
 
         

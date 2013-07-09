@@ -66,6 +66,8 @@ public class RequestHandler extends Thread {
 	private final ServerCommunicationSystem communication;
 
 	public RequestHandler(ServerCommunicationSystem com, ExecutionManager execmng, LeaderModule lm, ProofVerifier a, TOMConfiguration conf, TOMLayer tom) {
+		super("RequestHandler");
+		setDaemon(true);
 		this.execManager = execmng;
 		this.lm = lm;
 		this.verifier = a;
