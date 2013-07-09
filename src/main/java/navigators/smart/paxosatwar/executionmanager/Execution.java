@@ -40,18 +40,20 @@ public class Execution {
 	private Integer decisionRound = Integer.valueOf(-1); // round at which a desision was made
 	private Integer currentRound = ROUND_ZERO; //Currently active round
 	public ReentrantLock lock = new ReentrantLock(); //this execution lock (called by other classes)
+	public final Long eid;
 
 	/**
 	 * Creates a new instance of Execution for Acceptor Manager
 	 *
+	 * @param eid The executions id
 	 * @param manager Execution manager for this execution
 	 * @param consensus MeasuringConsensus instance to which this execution works for
-	 * @param firstleader The leader that is expected to be the first leader
 	 * @param initialTimeout Initial timeout for rounds
 	 */
 	@SuppressWarnings("rawtypes")
-	protected Execution(ExecutionManager manager, MeasuringConsensus consensus, 
+	protected Execution(Long eid, ExecutionManager manager, MeasuringConsensus consensus, 
 	long initialTimeout) {
+		this.eid = eid;
 		this.manager = manager;
 		this.consensus = consensus;
 		this.initialTimeout = initialTimeout;
@@ -226,12 +228,10 @@ public class Execution {
 	 * Informs wether or not the execution is currently active. This can
 	 * change back to true if f+1 freeze messages for the last round arrive.
 	 * The current round is immediately increased by one if the round is frozen,
-	 * so it becomes active right away when it is not decided. This prevents
-	 * the case, that when a round is decided after it is frozen, the execution
-	 * might appear as finished but is still active because a new round might
-	 * come up. Still this cannot violate safety. 
+	 * but it does not become active right away. This happens if the round is
+	 * globally frozen, i.e. when f+1 freezes are detected.
 	 * <strong>Important</strong>The designated leader of the
-	 * next round cannot freeze itself, because it would
+	 * next round cannot freeze itself by timeout, because it would
 	 * have to restart its propose if it would freeze its own leadership round.
 	 * Even though, no deadlock can arise, because the client would then suspect
 	 * the leader and the other replicas would find out this finally.
@@ -240,11 +240,14 @@ public class Execution {
 	public boolean isActive() {
 		try {
 			roundsLock.lock();
-//			Round last = rounds.get(rounds.lastKey());
-//			return !last.isDecided() || last.isFrozen();
 			
 			Round r = getRound(currentRound);
-			return  r.isProposed() && !r.isDecided(); // && !r.firstFrozen();
+			if(r.getNumber() == Round.ROUND_ZERO){
+				return  r.isProposed() && !r.isDecided(); //
+			} else {
+				return getRound(currentRound-1).countFreeze() > manager.quorumF 
+						&& !r.isDecided();
+			}
 				
 			// TODO check this for optimisations
 //				
@@ -320,8 +323,7 @@ public class Execution {
 		} else {		
 			// Multiple decisions where made
 			//Check if we have stuff remaining or new messages to propose
-			// TODO Remove this commented code if unnecessary
-//			manager.executionFinished(consensus);
+			manager.processOOCMessages(eid+1);
 		}
 		//check if we need to propose
 		manager.getRequestHandler().notifyChangedConditions();
