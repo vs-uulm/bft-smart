@@ -249,7 +249,7 @@ public final class ExecutionManager{
 			// Old message -> discard. Do not discard messages for the last 
 			// consensus as it might still freeze.
 			if(consId < lastExecuted-1 && ! (executions.containsKey(consId) 
-					&& executions.get(consId).isActive())){	
+					/*&& executions.get(consId).isActive()*/)){	
 				log.log(Level.FINE, "{0} IS OLD - discarding",msg);
 				return false;
 			}
@@ -349,25 +349,39 @@ public final class ExecutionManager{
      * @param id ID of the consensus's execution to be removed
      * @return The consensus's execution that was removed
      */
-    public Execution removeExecution(Long id) {
+    public void removeExecution(Long id) {
         executionsLock.lock();
         /******* BEGIN EXECUTIONS CRITICAL SECTION *******/
 
-        Execution execution = executions.remove(id);
+        // Search the longest chain of inactive executions that may be
+        // removed.
+        for(Iterator<Execution> it = executions.values().iterator();it.hasNext();){
+        	Execution e = it.next();
+        	if(e.eid <= id){
+        		if (!e.isActive()){
+        			it.remove();
+        			outOfContextLock.lock();
+        			/******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
+        			
+        			outOfContextProposes.remove(e.eid);
+        			outOfContext.remove(e.eid);
+        			
+        			/******* END OUTOFCONTEXT CRITICAL SECTION *******/
+        			outOfContextLock.unlock();
+        		} else {
+        			break;
+        		}
+        	}
+        	break;
+        }
+        
+//        Execution execution = executions.remove(id);
 
         /******* END EXECUTIONS CRITICAL SECTION *******/
         executionsLock.unlock();
         
-        outOfContextLock.lock();
-        /******* BEGIN OUTOFCONTEXT CRITICAL SECTION *******/
 
-        outOfContextProposes.remove(id);
-        outOfContext.remove(id);
-
-        /******* END OUTOFCONTEXT CRITICAL SECTION *******/
-        outOfContextLock.unlock();
-
-        return execution;
+//        return execution;
     }
     /** ISTO E CODIGO DO JOAO, PARA TRATAR DA TRANSFERENCIA DE ESTADO
      * Removes all ooc messages including the ones with the currentId
@@ -406,13 +420,12 @@ public final class ExecutionManager{
 		try{
 			executionsLock.lock();
 			/******* BEGIN EXECUTIONS CRITICAL SECTION *******/
-
 			Execution execution = executions.get(eid);
 
 			//there is no execution with the given eid
-			if (execution == null) {
+			if (execution == null && lastExecuted < eid) {
 				//let's create one...
-				execution = new Execution(this, new MeasuringConsensus(eid, System.currentTimeMillis()),
+				execution = new Execution(eid, this, new MeasuringConsensus(eid, System.currentTimeMillis()),
 						initialTimeout);
 				//...and add it to the executions table
 				executions.put(eid, execution);
@@ -435,6 +448,11 @@ public final class ExecutionManager{
     public void processOOCMessages(Long eid) {
 		
     	Execution execution = getExecution(eid);
+    	
+    	// We already dropped this execution.
+    	if(execution == null){
+    		return;
+    	}
 		try {
 //			Guard all by the outofcontextlock			
 			outOfContextLock.lock();
