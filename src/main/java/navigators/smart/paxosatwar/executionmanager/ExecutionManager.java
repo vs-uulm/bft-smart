@@ -577,7 +577,7 @@ public final class ExecutionManager{
 			//set this consensus as the last executed
 			state.execFinished(e.getId());
 			long nextExec = e.getId()+1;
-
+			createExecution(nextExec);
 			// Process pending messages for the next execution
 			processOOCMessages(nextExec);
 
@@ -633,7 +633,7 @@ public final class ExecutionManager{
 //			executionsLock.lock();
 
 			//getExecution and if its not created create it
-			Execution exec = createExecution(state.getInExec());
+			Execution exec = getExecution(state.getInExec());
 
 			// Sets the current execution to the upcoming one
 			state.startExecution(exec.eid);
@@ -648,7 +648,7 @@ public final class ExecutionManager{
 	/**
 	 * Checks if there are active executions in this manager or if the current
 	 * execution is still running.
-	 * @return 
+		 * @return 
 	 */
 	public boolean isIdle() {
 		switch (state.state) {
