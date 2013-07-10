@@ -118,6 +118,7 @@ public final class ExecutionManager{
         this.quorumFastDecide = (int) Math.ceil((acceptors.length + 3 * f) / 2);
 		this.n = acceptors.length;
         setTOMLayer(tom);
+		createExecution(0l);
     }
 
     /**
