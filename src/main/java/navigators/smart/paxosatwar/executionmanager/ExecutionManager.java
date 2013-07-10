@@ -236,7 +236,6 @@ public final class ExecutionManager{
      * @return true in case the message can be executed, false otherwise
      */
     public final boolean checkLimits(PaxosMessage msg) {
-		try{
 			Long consId = msg.eid;
 			try {
 				executionsLock.readLock().lock();
@@ -251,6 +250,7 @@ public final class ExecutionManager{
 				executionsLock.readLock().unlock();
 			}
 			
+		try{
 			// This lock is required to block the addition of messages during ooc processing
 			outOfContextLock.lock();
 
