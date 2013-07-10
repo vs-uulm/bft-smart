@@ -442,7 +442,10 @@ public final class ExecutionManager{
 
 
 	/**
-	 * Handles all OOC Messages that are present for the given execution.
+	 * Handles all OOC Messages that are present for the given execution. This
+	 * method must be called ONLY when it is clear, that the execution 
+	 * <code>eid</code> is already active, i.e. the previous decision is finished.
+	 * 
 	 * @param eid The Execution ID to process
 	 */
     public void processOOCMessages(Long eid) {
@@ -539,12 +542,6 @@ public final class ExecutionManager{
     }
 	
 	public void executionDecided(Execution e){		
-		//set this consensus as the last executed
-		setLastExec(e.getId());
-		long nextExec = e.getId()+1;
-		
-		// Process pending messages for the next execution
-		processOOCMessages(nextExec);
 
 		//verify if there is a next proposal to be executed
 		//(it only happens if the previous consensus were decided in a
@@ -557,7 +554,8 @@ public final class ExecutionManager{
 	
 	/**
 	 * This method is called when the execution of the current consensus is finished
-	 * and so it is clear that the results are stable.
+	 * and so it is clear that the results are stable. Only then, we can start
+	 * the next execution to process as we do not have c
 	 * 
 	 * @param cons The consensus that was finished.
 	 */
@@ -566,6 +564,13 @@ public final class ExecutionManager{
 		
 		if (e != null && !e.isExecuted()){
 			e.setExecuted();
+			//set this consensus as the last executed
+			setLastExec(e.getId());
+			long nextExec = e.getId()+1;
+			
+			// Process pending messages for the next execution
+			processOOCMessages(nextExec);
+			
             //define the last stable consensus... the stable consensus can
             //be removed from the leaderManager and the executionManager
             if (cons.getId().longValue() > 2) {
