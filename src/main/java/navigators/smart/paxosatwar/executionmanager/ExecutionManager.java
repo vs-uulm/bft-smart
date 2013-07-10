@@ -578,7 +578,6 @@ public final class ExecutionManager{
 		if (e != null && !e.isExecuted()){
 			e.setExecuted();
 			//set this consensus as the last executed
-			state.execFinished(e.getId());
 			long nextExec = e.getId()+1;
 			createExecution(nextExec);
 			// Process pending messages for the next execution
@@ -590,6 +589,8 @@ public final class ExecutionManager{
 				Long stableConsensus = cons.getId().longValue() - 3;
 				removeExecution(stableConsensus);
 			}
+			// This should be the last statement before the notify
+			state.execFinished(e.getId());
 		}
     	requesthandler.notifyChangedConditions();
     }
