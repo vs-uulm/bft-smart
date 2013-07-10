@@ -80,7 +80,7 @@ public class PaxosAtWarService implements ConsensusService {
 
 	@Override
 	public long getLastExecuted() {
-		return execmng.getLastExec().longValue();
+		return execmng.state.getLastExec();
 	}
 
 	@Override
@@ -105,7 +105,7 @@ public class PaxosAtWarService implements ConsensusService {
 
 	@Override
 	public String toString() {
-		return "Consensus in execution: " + execmng.getInExec() + " last executed consensus: " + execmng.getLastExec();
+		return "Consensus in execution: " + execmng.state.getInExec() + " last executed consensus: " + execmng.state.getLastExec();
 	}
 
 	@Override

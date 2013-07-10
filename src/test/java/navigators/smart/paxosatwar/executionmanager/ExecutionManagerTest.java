@@ -76,6 +76,7 @@ public class ExecutionManagerTest {
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertTrue(mng.checkLimits(new Propose( 0l, 0, 1, 0, null,null)));
 		assertFalse(mng.thereArePendentMessages(0l));
+		
 		//test initial ooc message
 		when(tom.isRetrievingState()).thenReturn(false);
 		assertFalse(mng.checkLimits(new Propose( 1l, 0, 1, 0, null,null)));

@@ -407,10 +407,12 @@ public class Acceptor {
 //				round.getExecution().decided(round);
 //			}
 
-			//start this execution if it is not already running
-			if (eid.intValue() == manager.getNextExecID()) {
-				manager.setInExec(eid);
-			}
+			/*
+			 * start this execution if it is not already running, but only
+			 * when we did not execute it yet.
+			 */
+			manager.state.startExecution(eid);
+			
 			Object deserialised = tomlayer.checkProposedValue(p.value);
 			if (deserialised != null) {
 				round.getExecution().getConsensus().setDeserialisedDecision(deserialised);
@@ -503,8 +505,8 @@ public class Acceptor {
          */
         if (weakAccepted > manager.quorumF) {
 			 //start this execution if it is not already running
-            if (eid.intValue() == manager.getNextExecID()) {
-                manager.setInExec(eid);
+            if (eid == manager.state.getNextExecID()) {
+                manager.state.startExecution(eid);
             }
 			/*
 			 * We have no proposed value even though we get equal weaks for some

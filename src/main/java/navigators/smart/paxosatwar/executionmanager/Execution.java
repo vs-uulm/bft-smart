@@ -323,7 +323,7 @@ public class Execution {
 		} else {		
 			// Multiple decisions where made
 			//Check if we have stuff remaining or new messages to propose
-			manager.processOOCMessages(eid+1);
+//			manager.processOOCMessages(eid+1);
 		}
 		//check if we need to propose
 		manager.getRequestHandler().notifyChangedConditions();
@@ -340,6 +340,9 @@ public class Execution {
 		Round next = getRound(currentRound);
 		//Process pending msgs for next round
 		for(PaxosMessage msg:next.pending){
+			if(log.isLoggable(Level.FINE)){
+				log.log(Level.FINE,"{0} | {1} Handling message: {2}",new Object[]{next.getExecution().eid,next.getNumber(),msg});
+			}
 			getManager().acceptor.processMessage(msg);
 		}
 	}
@@ -363,5 +366,15 @@ public class Execution {
 			log.severe("Got notified about new leader, but the round "
 					+ "is not zero, so this should not happen ");
 		}
+	}
+	
+	/**
+	 * Cleans up this Execution when it is finished
+	 */
+	public void cleanUp(){
+		for(Round r:getRounds()){
+			r.cleanUp();
+		}
+		rounds.clear();
 	}
 }

@@ -614,4 +614,19 @@ public class Round implements Comparable<Round> {
 	public int compareTo(Round o) {
 		return -number.compareTo(o.number);
 	}
+	
+	/**
+	 * Cleanup stuff to simplify garbage collection
+	 */
+	public void cleanUp(){
+		cancelTimeout();
+		pending.clear();
+		weakcount.clear();
+		strongcount.clear();
+		decidedcount.clear();
+		if(proofs != null){
+			Arrays.fill(proofs, null);
+		}
+		storedProposes.clear();
+	}
 }

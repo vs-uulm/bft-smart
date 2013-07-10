@@ -155,7 +155,7 @@ public class RequestHandler extends Thread {
 				leaderLock.lock();
 				
 				if (log.isLoggable(Level.FINER)) {
-					log.finer("Next leader for eid=" + (execManager.getNextExecID()) + ": " + lm.getLeader(execManager.getNextExecID()));
+					log.finer("Next leader for eid=" + (execManager.state.getNextExecID()) + ": " + lm.getLeader(execManager.state.getNextExecID()));
 				}
 				byte[] value = null;
 				while (!canPropose() || (value = tomlayer.createPropose()) == null){
@@ -182,7 +182,7 @@ public class RequestHandler extends Thread {
 	private boolean canPropose(){
 		boolean leader, ready;
 		//Check if i'm the leader
-		leader = lm.checkLeader(execManager.getNextExecID(), Round.ROUND_ZERO, conf.getProcessId());
+		leader = lm.checkLeader(execManager.state.getInExec(), Round.ROUND_ZERO, conf.getProcessId());
 //		Integer nextLeader = lm.getLeader(execManager.getNextExecID());
 //		leader = nextLeader != null && nextLeader.equals(conf.getProcessId());
 		//no consensus is in execution 
@@ -235,7 +235,7 @@ public class RequestHandler extends Thread {
 
 	public void forwardRequestToLeader(TOMMessage request) {
 		@SuppressWarnings("boxing")
-		Integer leaderId = lm.getLeader(execManager.getLastExec() + 1, 0);
+		Integer leaderId = lm.getLeader(execManager.state.getLastExec() + 1, 0);
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("Forwarding " + request + " to " + leaderId);
 		}
@@ -303,7 +303,7 @@ public class RequestHandler extends Thread {
 		leaderLock.lock(); // Signal the TOMlayer thread, if this replica is the leader
 		lm.setLeaderInfo(start, Round.ROUND_ZERO, newLeader); // update the leader
 		leaderChanged = true;
-		if (lm.getLeader(execManager.getNextExecID()).equals(conf.getProcessId())) {
+		if (lm.getLeader(execManager.state.getNextExecID()).equals(conf.getProcessId())) {
 			iAmLeader.signal();
 		}
 		leaderLock.unlock();
@@ -466,7 +466,7 @@ public class RequestHandler extends Thread {
 
 			Integer newLeader = chooseNewLeader();
 
-			Long last = execManager.getLastExec();
+			Long last = execManager.state.getLastExec();
 
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Sending COLLECT to " + newLeader
@@ -513,14 +513,14 @@ public class RequestHandler extends Thread {
 	private Integer chooseNewLeader() {
 		Integer lastRoundNumber = Round.ROUND_ZERO; //the number of the last round successfully executed
 
-		Execution lastExec = execManager.getExecution(execManager.getLastExec());
+		Execution lastExec = execManager.getExecution(execManager.state.getLastExec());
 		if (lastExec != null) {
 			Round lastRound = lastExec.getDecisionRound();
 			if (lastRound != null) {
 				lastRoundNumber = lastRound.getNumber();
 			}
 		}
-		return (lm.getLeader(execManager.getLastExec(), lastRoundNumber) + 1) % conf.getN();
+		return (lm.getLeader(execManager.state.getLastExec(), lastRoundNumber) + 1) % conf.getN();
 	}
 
 	/**
