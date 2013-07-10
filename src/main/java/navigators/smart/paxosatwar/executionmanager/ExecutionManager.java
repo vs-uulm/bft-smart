@@ -238,17 +238,19 @@ public final class ExecutionManager{
     public final boolean checkLimits(PaxosMessage msg) {
 		try{
 			Long consId = msg.eid;
-
-			executionsLock.readLock().lock();
-			// Old message -> discard. Do not discard messages for the last 
-			// consensus as it might still freeze.
-			if(consId < state.getLastExec()-1 && ! (executions.containsKey(consId) 
-					/*&& executions.get(consId).isActive()*/)){	
-				log.log(Level.FINE, "{0} IS OLD - discarding",msg);
-				return false;
+			try {
+				executionsLock.readLock().lock();
+				// Old message -> discard. Do not discard messages for the last 
+				// consensus as it might still freeze.
+				if(consId < state.getLastExec()-1 && ! (executions.containsKey(consId) 
+						/*&& executions.get(consId).isActive()*/)){	
+					log.log(Level.FINE, "{0} IS OLD - discarding",msg);
+					return false;
+				}
+			} finally {
+				executionsLock.readLock().unlock();
 			}
-			executionsLock.readLock().unlock();
-
+			
 			// This lock is required to block the addition of messages during ooc processing
 			outOfContextLock.lock();
 
