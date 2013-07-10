@@ -417,7 +417,7 @@ public final class ExecutionManager{
 			Execution execution = executions.get(eid);
 
 			//there is no execution with the given eid
-			if (execution == null && state.getLastExec() < eid) {
+			if (execution == null) {
 				//let's create one...
 				execution = new Execution(eid, this, new MeasuringConsensus(eid, System.currentTimeMillis()),
 						initialTimeout);
