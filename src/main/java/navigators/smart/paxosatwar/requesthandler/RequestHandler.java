@@ -150,6 +150,7 @@ public class RequestHandler extends Thread {
 		}
 
 		while (true) {
+				byte[] value = null;
 			// blocks until this replica learns to be the leader for the current round of the current consensus
 			try {
 				leaderLock.lock();
@@ -157,7 +158,6 @@ public class RequestHandler extends Thread {
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("Next leader for eid=" + (execManager.state.getNextExecID()) + ": " + lm.getLeader(execManager.state.getNextExecID()));
 				}
-				byte[] value = null;
 				while (!canPropose() || (value = tomlayer.createPropose()) == null){
 					iAmLeader.awaitUninterruptibly();	
 				}
@@ -166,12 +166,12 @@ public class RequestHandler extends Thread {
 					log.finer("I can propose.");
 				}
 	
-				execManager.startNextExecution(value);
 				
 				leaderChanged = false;
 			} finally {
 				leaderLock.unlock();
 			}
+				execManager.startNextExecution(value);
 		}
 	}
 	

@@ -260,7 +260,7 @@ public final class ExecutionManager{
 			
 			if ( 	// Check revival bounds -> not idle and lastmsg == -1 
 					//(revived indicator) and msgid >= revivalHighmark
-					(!(isIdle() && state.isInStartedState()
+					(!(/*isIdle() &&*/ state.isInStartedState()
 					&& consId.longValue() >= (state.getLastExec() + revivalHighMark))
 					// Msg is within high marks (or the is replica synchronizing)
 					&&  (consId.longValue() < (state.getLastExec() + paxosHighMark)))) { 
@@ -407,7 +407,7 @@ public final class ExecutionManager{
      * @return The consensus's execution specified
      */
 	@SuppressWarnings("rawtypes")
-	public Execution getExecution(Long eid) {
+	public Execution createExecution(Long eid) {
 		try{
 			executionsLock.writeLock().lock();
 			/******* BEGIN EXECUTIONS CRITICAL SECTION *******/
@@ -422,14 +422,29 @@ public final class ExecutionManager{
 				executions.put(eid, execution);
 
 				/******* END EXECUTIONS CRITICAL SECTION *******/				
+				return execution;
 			}
-			return execution;
+			throw new RuntimeException("Creating Execution twice or creating an execution for an old eid");
         
 		} finally {
 			executionsLock.writeLock().unlock();
 		}
-
     }
+	
+	/**
+	 * Returns the execution for the given execution id
+	 * @param eid The id of the desired execution
+	 * @return The execution
+	 */
+	public Execution getExecution(Long eid){
+		try{
+			executionsLock.readLock().lock();
+			return executions.get(eid);
+		}finally{
+			executionsLock.readLock().unlock();
+		}
+		
+	}
 
 
 	/**
@@ -441,7 +456,7 @@ public final class ExecutionManager{
 	 */
     public void processOOCMessages(Long eid) {
 		
-    	Execution execution = getExecution(eid);
+    	Execution execution = executions.get(eid);
     	
     	// We already dropped this execution.
     	if(execution == null){
@@ -551,33 +566,28 @@ public final class ExecutionManager{
 	 * @param cons The consensus that was finished.
 	 */
     public void processingFinished(Consensus<?> cons) {
-    	try{
-    		executionsLock.readLock().lock();
-			Execution e = executions.get(cons.getId());
-			if (log.isLoggable(Level.FINER)){
-					log.log(Level.FINER,"{0} processing finished, {1} ooc props, "
-							+ "{2} executions with ooc msgs",new Object[]{cons.getId(),
-							outOfContext.size(),outOfContextProposes.size()});
+		Execution e = getExecution(cons.getId());
+		if (log.isLoggable(Level.FINER)){
+				log.log(Level.FINER,"{0} processing finished, {1} ooc props, "
+						+ "{2} executions with ooc msgs",new Object[]{cons.getId(),
+						outOfContext.size(),outOfContextProposes.size()});
+		}
+		if (e != null && !e.isExecuted()){
+			e.setExecuted();
+			//set this consensus as the last executed
+			state.execFinished(e.getId());
+			long nextExec = e.getId()+1;
+
+			// Process pending messages for the next execution
+			processOOCMessages(nextExec);
+
+			//define the last stable consensus... the stable consensus can
+			//be removed from the leaderManager and the executionManager
+			if (cons.getId().longValue() > 2) {
+				Long stableConsensus = cons.getId().longValue() - 3;
+				removeExecution(stableConsensus);
 			}
-			if (e != null && !e.isExecuted()){
-				e.setExecuted();
-				//set this consensus as the last executed
-				state.execFinished(e.getId());
-				long nextExec = e.getId()+1;
-				
-				// Process pending messages for the next execution
-				processOOCMessages(nextExec);
-				
-	            //define the last stable consensus... the stable consensus can
-	            //be removed from the leaderManager and the executionManager
-	            if (cons.getId().longValue() > 2) {
-					Long stableConsensus = cons.getId().longValue() - 3;
-	                removeExecution(stableConsensus);
-	            }
-			}
-    	} finally {
-    		executionsLock.readLock().unlock();
-    	}
+		}
     	requesthandler.notifyChangedConditions();
     }
 
@@ -623,7 +633,7 @@ public final class ExecutionManager{
 //			executionsLock.lock();
 
 			//getExecution and if its not created create it
-			Execution exec = getExecution(state.getInExec());
+			Execution exec = createExecution(state.getInExec());
 
 			// Sets the current execution to the upcoming one
 			state.startExecution(exec.eid);
@@ -646,19 +656,20 @@ public final class ExecutionManager{
 			log.fine("ExecManager is currently in RUNNING state");
 			return false;
 		default:
-			// Check existant executions
-			try {
-				executionsLock.readLock().lock();
-				for (Execution e : executions.values()) {
-					if (e.isActive()) {
-						log.fine(e + " is still active");
-						return false;
-					}
-				}
-				return true;
-			} finally {
-				executionsLock.readLock().unlock();
-			}
+			return true;
+//			// Check existant executions
+//			try {
+//				executionsLock.readLock().lock();
+//				for (Execution e : executions.values()) {
+//					if (e.isActive()) {
+//						log.fine(e + " is still active");
+//						return false;
+//					}
+//				}
+//				return true;
+//			} finally {
+//				executionsLock.readLock().unlock();
+//			}
 		}
 //		return inExecution.equals(IDLE) 
 //					&& !getExecution(lastExecuted).isActive();
