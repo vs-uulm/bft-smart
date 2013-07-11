@@ -276,7 +276,7 @@ public class Acceptor {
                 // Is the proposed value good according to the PaW algorithm?
                 if (msg.value != null 
                 		&& (verifier.good(msg.value, collected, msg.round, msg.leader))) {
-                	leaderModule.setLeaderInfo(eid, msg.round, msg.getSender());
+//                	leaderModule.setLeaderInfo(eid, msg.round, msg.getSender());
                     executePropose(round, msg);
                 } else {
 					if (msg.value == null ) {
