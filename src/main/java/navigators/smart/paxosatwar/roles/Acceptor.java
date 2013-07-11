@@ -182,6 +182,7 @@ public class Acceptor {
 
         } catch  (NullPointerException npe){
 			log.log(Level.SEVERE, "NullPointer occurred in proces msg", npe);
+			npe.printStackTrace();
 		} finally {
             execution.lock.unlock();
         }
