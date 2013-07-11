@@ -124,7 +124,9 @@ public class Acceptor {
      */
     public void processMessage(PaxosMessage msg) {
         Execution execution = manager.getExecution(msg.eid);
-
+		if(execution == null){
+			log.warning("Accepted message for unknown execution");
+		}
         try {
             execution.lock.lock();
 
@@ -178,7 +180,9 @@ public class Acceptor {
                     log.severe("Unknowm Messagetype received: " + msg);
             }
 
-        } finally {
+        } catch  (NullPointerException npe){
+			log.log(Level.SEVERE, "NullPointer occurred in proces msg", npe);
+		} finally {
             execution.lock.unlock();
         }
     }
