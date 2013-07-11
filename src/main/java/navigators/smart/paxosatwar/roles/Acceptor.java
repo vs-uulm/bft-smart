@@ -693,8 +693,8 @@ public class Acceptor {
         Execution execution = round.getExecution();
         execution.lock.lock();
 
-        if (log.isLoggable(Level.INFO)) {
-            log.info( round.getExecution() + " | " + round.getNumber() + " | TIMEOUT");
+        if (log.isLoggable(Level.FINE)) {
+            log.fine( round.getExecution() + " | " + round.getNumber() + " | TIMEOUT");
         }
 
         if (!round.isDecided()) {

@@ -212,7 +212,9 @@ public class LeaderModule {
 		// TODO check this if we need to update this more than once?
 //		Integer goodleader = getLeader(execId, round);
 //        if (leaderInfos.get(nextId) == null && leaderInfos.get(execId) != null) {
-		log.log(Level.INFO,"{0} | {1} Decided, next leader: {2}",new Object[]{execId,round,leader});
+		if(log.isLoggable(Level.FINE)){
+			log.log(Level.FINE,"{0} | {1} Decided, next leader: {2}",new Object[]{execId,round,leader});
+		}
 		setLeaderInfo(nextId, ROUND_ZERO, leader);
 //		if(getLeader(nextId,1) != null){
 //			throw new RuntimeException("Secound round should not have started");
