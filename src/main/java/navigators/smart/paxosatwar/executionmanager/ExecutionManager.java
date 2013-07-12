@@ -596,7 +596,10 @@ public final class ExecutionManager{
 
     public void deliverState(TransferableState txstate){
     	
-        Long lastEid = txstate.lastEid;
+    	//First create the successing execution
+    	createExecution(state.getNextExecID());
+
+    	Long lastEid = txstate.lastEid;
         //set this consensus as the last executed
 		state.deliverState(txstate.lastEid);
 		
@@ -622,7 +625,7 @@ public final class ExecutionManager{
         //stateManager.setWaiting(-1);
 		// process ooc messages within the ooc lock 
 		// idle mode is set within this call to prevent simulataneous message processing of the next consensus
-		processOOCMessages(state.getNextExecID());
+		processOOCMessages(state.getInExec());
     }
 	
 	/**
@@ -817,7 +820,7 @@ public final class ExecutionManager{
 				}
 				this.inExecution = eid + 1;
 //				this.nextExecution = inExecution + 1;
-				state = IdleState.RUNNING;
+//				state = IdleState.RUNNING;
 			} finally {
 				statelock.unlock();
 			}
