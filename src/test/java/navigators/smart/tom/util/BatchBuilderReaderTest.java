@@ -13,7 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SMaRt. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package navigators.smart.tom.util;
 
 import java.nio.ByteBuffer;
