@@ -241,8 +241,8 @@ public final class ExecutionManager{
 				executionsLock.readLock().lock();
 				// Old message -> discard. Do not discard messages for the last 
 				// consensus as it might still freeze.
-				if(consId < state.getLastExec()-1 && ! (executions.containsKey(consId) 
-						/*&& executions.get(consId).isActive()*/)){	
+				if(consId < state.getLastExec()-1 /*&& ! (executions.containsKey(consId)*/ 
+						/*&& executions.get(consId).isActive())*/){	
 					log.log(Level.FINE, "{0} IS OLD - discarding",msg);
 					return false;
 				}
@@ -356,7 +356,6 @@ public final class ExecutionManager{
         /******* BEGIN EXECUTIONS CRITICAL SECTION *******/
 
         Execution e = executions.remove(id);
-        // Cleanup stuff, clear lists etc.
         e.cleanUp();
        
         /******* END EXECUTIONS CRITICAL SECTION *******/
@@ -636,7 +635,7 @@ public final class ExecutionManager{
 //		try {
 //			executionsLock.lock();
 
-			//getExecution and if its not created create it
+			//getExecution 
 			Execution exec = getExecution(state.getInExec());
 
 			// Sets the current execution to the upcoming one

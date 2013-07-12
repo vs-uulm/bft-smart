@@ -125,10 +125,14 @@ public class Acceptor {
     public void processMessage(PaxosMessage msg) {
         Execution execution = manager.getExecution(msg.eid);
 		if(execution == null){
-			log.warning("Accepted message for unknown execution");
+			log.warning("Accepted message for unknown execution: "+msg.eid);
+			return;
 		}
         try {
             execution.lock.lock();
+            if(execution.isRemoved()){
+            	return;
+            }
 
             Round round = execution.getRound(msg.round);
             

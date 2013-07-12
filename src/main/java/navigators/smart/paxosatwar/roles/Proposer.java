@@ -135,22 +135,30 @@ public class Proposer {
      */
     private void collectReceived(Collect msg) {
         Execution execution = manager.getExecution(msg.eid);
-        CollectProof cp = msg.getProof();
-
-        // Logging outputs for logfile and message sequence chart logs
-        if (log.isLoggable(Level.FINER)) {
-            log.finer(msg.toString()+" | received");
+        if(execution == null){
+        	//Execution is removed already, return
+        	return;
         }
-        msclog.log(Level.INFO, "{0} --> {1} C{2}-{3}",
-                new Object[]{msg.getSender(), conf.getProcessId(),
-                    execution.getId(), msg.round});
-        String id = String.format("C%1$d-%2$d-%3$d-%4$d", msg.getSender(),
-                conf.getProcessId(), execution.getId(), msg.round);
-        msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 4| {2}|",
-                new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
-
         try {
             execution.lock.lock();
+            
+            if(execution.isRemoved()){
+            	//Execution has just been removed, return.
+            	return;
+            }
+            CollectProof cp = msg.getProof();
+            
+            // Logging outputs for logfile and message sequence chart logs
+            if (log.isLoggable(Level.FINER)) {
+            	log.finer(msg.toString()+" | received");
+            }
+            msclog.log(Level.INFO, "{0} --> {1} C{2}-{3}",
+            		new Object[]{msg.getSender(), conf.getProcessId(),
+            		execution.getId(), msg.round});
+            String id = String.format("C%1$d-%2$d-%3$d-%4$d", msg.getSender(),
+            		conf.getProcessId(), execution.getId(), msg.round);
+            msctlog.log(Level.INFO, "mr| -t #time| -i {0,number,integer}| 0x{1}| 4| {2}|",
+            		new Object[]{Math.abs(id.hashCode()), conf.getProcessId(), id});
             if (cp != null && verifier.validSignature(cp, msg.getSender().intValue())) {
                 if (log.isLoggable(Level.FINEST)) {
                     log.log(Level.FINEST, "{0} | {1} | COLLECT SIGNED",

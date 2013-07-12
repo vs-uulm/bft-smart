@@ -41,6 +41,7 @@ public class Execution {
 	private Integer currentRound = ROUND_ZERO; //Currently active round
 	public final ReentrantLock lock = new ReentrantLock(); //this execution lock (called by other classes)
 	public final Long eid;
+	private boolean removed = false;
 
 	/**
 	 * Creates a new instance of Execution for Acceptor Manager
@@ -191,6 +192,15 @@ public class Execution {
 	 */
 	public boolean isDecided() {
 		return decisionRound != -1;
+	}
+	
+	/**
+	 * Informs wether or not the execution is removed and invalid
+	 *
+	 * @return True if it is decided, false otherwise
+	 */
+	public boolean isRemoved() {
+		return removed;
 	}
 	
 	/**
@@ -371,10 +381,15 @@ public class Execution {
 	/**
 	 * Cleans up this Execution when it is finished
 	 */
-	public void cleanUp(){
+	protected void cleanUp(){
+		lock.lock();
+		removed = true;
+		roundsLock.lock();
 		for(Round r:getRounds()){
 			r.cleanUp();
 		}
 		rounds.clear();
+		roundsLock.unlock();
+		lock.unlock();
 	}
 }
