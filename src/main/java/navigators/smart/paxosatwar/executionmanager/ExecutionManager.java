@@ -1,4 +1,5 @@
-/* * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
+/*
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
  * and the authors indicated in the @author tags 
  *  
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -591,8 +592,8 @@ public final class ExecutionManager{
 
     public void deliverState(TransferableState txstate){
     	
-    	//First create the successing execution
-    	createExecution(state.getNextExecID());
+    	//Create the successing execution
+    	createExecution(txstate.lastEid+1);
 
     	Long lastEid = txstate.lastEid;
         //set this consensus as the last executed
