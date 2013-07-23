@@ -59,21 +59,21 @@ public class PaxosMessageTest {
 	
 	@Test
 	public void testSerialiseFreezeProof(){
-		FreezeProof freeze = new FreezeProof(0, 1l, 1, new byte[0], true,true,false);
+		FreezeProof freeze = new FreezeProof(0, 1l, 1, 0, new byte[0], true,true,false);
 		ByteBuffer buf = ByteBuffer.allocate(freeze.getMsgSize());
 		freeze.serialise(buf);
 		buf.rewind();
 		FreezeProof freeze2 = new FreezeProof(buf);
 		assertEquals(freeze, freeze2);
 		
-		freeze = new FreezeProof(0, 1l, 1, new byte[0], false,false,false);
+		freeze = new FreezeProof(0, 1l, 1, 0, new byte[0], false,false,false);
 		buf = ByteBuffer.allocate(freeze.getMsgSize());
 		freeze.serialise(buf);
 		buf.rewind();
 		freeze2 = new FreezeProof(buf);
 		assertEquals(freeze, freeze2);
 		
-		freeze = new FreezeProof(0, 1l, 1, TestHelper.createTestByte(), true,true,false);
+		freeze = new FreezeProof(0, 1l, 1, 0, TestHelper.createTestByte(), true,true,false);
 		buf = ByteBuffer.allocate(freeze.getMsgSize());
 		freeze.serialise(buf);
 		buf.rewind();
@@ -83,10 +83,10 @@ public class PaxosMessageTest {
 	
 	@Test
 	public void testSerialiseCollectEmpty() {
-		FreezeProof freeze = new FreezeProof(0, 1l, 1,  TestHelper.createTestByte(),true,true,false);
+		FreezeProof freeze = new FreezeProof(0, 1l, 1, 0, TestHelper.createTestByte(),true,true,false);
 		LinkedList<FreezeProof> freezes = new LinkedList<FreezeProof>();
 		freezes.add(freeze);
-		Collect msg = new Collect(0l,0,0, new CollectProof(freezes, 1, 0));
+		Collect msg = new Collect(0l,0,0, new CollectProof(freezes, 1));
 		msg.getProof().setSignature(TestHelper.createTestByte());
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);
@@ -96,7 +96,7 @@ public class PaxosMessageTest {
 		
 		//Test with empty freezes list
 		freezes.clear();
-		msg = new Collect(0l,0,0,new CollectProof(freezes, 1, 0));
+		msg = new Collect(0l,0,0,new CollectProof(freezes, 1));
 		msg.getProof().setSignature(TestHelper.createTestByte());
 		buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);
@@ -117,10 +117,10 @@ public class PaxosMessageTest {
 	@Test
 	public void testSerialiseCollectTestByte() {
 		byte[] test = TestHelper.createTestByte();
-		FreezeProof freeze = new FreezeProof(0, 1l, 1, test, true,true,false);
+		FreezeProof freeze = new FreezeProof(0, 1l, 1, 0, test, true,true,false);
 		LinkedList<FreezeProof> freezes = new LinkedList<FreezeProof>();
 		freezes.add(freeze);
-		Collect msg = new Collect(0l,0,0,new CollectProof(freezes, 1,0));
+		Collect msg = new Collect(0l,0,0,new CollectProof(freezes, 1));
 		msg.getProof().setSignature(TestHelper.createTestByte());
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		msg.serialise(buf);

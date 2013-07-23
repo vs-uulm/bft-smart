@@ -29,13 +29,8 @@ public class Propose extends VoteMessage {
 	 */
 	private Proof proof; 
 	
-	/** The leader that initially proposed this value in order to have
-	 * stable leader information */
-	public final Integer leader;
-	
 	public Propose( ByteBuffer in) {
 		super(in);
-		leader = in.getInt();
 		boolean hasProof = in.get() == 1 ? true : false;
 		if (hasProof) {
 			proof = new Proof(in);
@@ -56,7 +51,6 @@ public class Propose extends VoteMessage {
      */
     public Propose(Long id, Integer round, Integer sender, Integer leader, byte[] value, Proof proof) {
 		super(MessageFactory.PROPOSE, id, round, sender, value);
-		this.leader = leader;
 		this.proof = proof;
 	}
 
@@ -73,14 +67,13 @@ public class Propose extends VoteMessage {
     @Override
 	public String toString() {
 		
-		return super.toString()+", Propopser("+leader+")";
+		return super.toString();
 	}
 
 	// Implemented method of the Externalizable interface
     @Override
 	public void serialise(ByteBuffer out) {
 		super.serialise(out);
-		out.putInt(leader);
 		if (proof != null) {
 			out.put((byte) 1);
 			proof.serialise(out);
@@ -94,7 +87,7 @@ public class Propose extends VoteMessage {
 	public int getMsgSize() {
 		int ret = super.getMsgSize();
 
-		ret += 5; // 1 for the indication of a proof and 4 for the leader int
+		ret += 1; // 1 for the indication of a proof 
 		if (proof != null) {
 			ret += proof.getMsgSize();
 		}
