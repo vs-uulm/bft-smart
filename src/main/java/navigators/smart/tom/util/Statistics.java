@@ -1,4 +1,5 @@
-/* * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
+/*
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
  * and the authors indicated in the @author tags 
  *  
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -12,7 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. 
- */package navigators.smart.tom.util;
+ */
+package navigators.smart.tom.util;
 
 import java.io.*;
 import java.net.Inet4Address;
@@ -22,10 +24,12 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
 import navigators.smart.consensus.Consensus;
 import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.SystemMessage;
 import navigators.smart.tom.core.messages.TOMMessage;
+
 import org.apache.commons.math.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatistics;
 
@@ -89,8 +93,15 @@ public class Statistics {
 		}
 	}
 
-	public static void init(TOMConfiguration conf) {
+	public synchronized static void init(TOMConfiguration conf) {
 		stats = new Statistics(conf);
+		Statistics.class.notifyAll();
+	}
+	
+	public synchronized static void waitForStats() throws InterruptedException{
+			while(stats == null){
+				Statistics.class.wait();
+			}
 	}
 
 	private Statistics(TOMConfiguration conf) {

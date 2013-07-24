@@ -79,7 +79,6 @@ public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
 
         ExecutionManager manager = new ExecutionManager(acceptor, proposer,
                 group, conf.getF(), me, conf.getFreezeInitialTimeout(),tom);
-		lm.setExecManager(manager);
         RequestHandler req = new RequestHandler(cs, manager, lm, proofVerifier, conf,tom);
         req.start();
         //init message handling threads
