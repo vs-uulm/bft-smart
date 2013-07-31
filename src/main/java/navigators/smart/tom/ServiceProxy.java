@@ -286,7 +286,7 @@ public class ServiceProxy extends TOMSender {
 		/* 
 		 * Blacklist the evil non proposer for random mode (like ebawa)
 		 * or the non repliant replicas for read only requests
-		 */
+		 */		log.log(Level.FINE,"Blacklist before timeout handling: {0}", new Object[]{blacklist});
 		if(random && !tommsg.isReadOnlyRequest()){
 			blacklist.addFirst(group.get(0));
 		} else if(tommsg.isReadOnlyRequest()){
@@ -295,6 +295,6 @@ public class ServiceProxy extends TOMSender {
 					blacklist.addFirst(target);
 				}
 			}
-		} 
+		} 		log.log(Level.FINE,"Blacklist after timeout handling: {0}", new Object[]{blacklist});
 	}
 }

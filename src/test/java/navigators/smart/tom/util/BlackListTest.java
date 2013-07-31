@@ -29,6 +29,11 @@ public class BlackListTest extends TestCase {
 			testlist.addFirst(i);
 			assertTrue(testlist.contains(i));
 			assertFalse(testlist.getCorrect().contains(i));
+			if (i < 3) {
+				assertTrue(testlist.getCorrect().size() == servers - i - 1);
+			} else {
+				assertTrue(testlist.getCorrect().size() == servers - f);
+			}
 		}
 
 	}
@@ -39,9 +44,13 @@ public class BlackListTest extends TestCase {
 			testlist.addFirst(i);
 			assertTrue(testlist.contains(i));
 			assertFalse(testlist.getCorrect().contains(i));
+			System.out.println(testlist.getCorrect().size());
 			if (i >= f) {
 				assertFalse(testlist.contains(i - f));
-				assertTrue(testlist.getCorrect().contains(i-f));
+				assertTrue(testlist.getCorrect().contains(i - f));
+				assertTrue(testlist.getCorrect().size() == servers - f);
+			} else {
+				assertTrue(testlist.getCorrect().size() == servers - i-1);
 			}
 		}
 	}
@@ -52,10 +61,14 @@ public class BlackListTest extends TestCase {
 			testlist.replaceFirst(i);
 			assertTrue(testlist.contains(i));
 			assertFalse(testlist.getCorrect().contains(i));
+			
+			System.out.println(testlist.getCorrect().size());
 			if(i>0){
 				assertFalse(testlist.contains(i - 1));
-				assertTrue(testlist.getCorrect().contains(i-1));
+				assertTrue(testlist.getCorrect().contains(i - 1));
 			}
+			assertTrue(testlist.getCorrect().size() == servers - 1);
+			
 		}
 	}
 

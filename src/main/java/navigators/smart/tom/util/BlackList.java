@@ -79,7 +79,7 @@ public class BlackList {
 		return new LinkedList<Integer>(whitelist);
 	}
 
-	/**
+	@Override	public String toString() {		return "BlackList [blacklist=" + blacklist + ", whitelist=" + whitelist				+ ", listedservers=" + listedservers + ", failedviews="				+ failedviews + ", f=" + f + ", servers=" + servers + "]";	}	/**
 	 * Adds the leader of the given view in the first position of the queue.
 	 * 
 	 * @param view
