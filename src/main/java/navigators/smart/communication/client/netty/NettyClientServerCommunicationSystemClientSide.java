@@ -15,48 +15,7 @@
  */
 package navigators.smart.communication.client.netty;
 
-import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-
-import navigators.smart.communication.client.CommunicationSystemClientSide;
-import navigators.smart.communication.client.ReplyReceiver;
-import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.TOMConfiguration;
-import navigators.smart.tom.util.TOMUtil;
-
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-
-
+import java.net.ConnectException;import java.nio.channels.ClosedChannelException;import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.PrivateKey;import java.security.Signature;import java.security.SignatureException;import java.security.spec.InvalidKeySpecException;import java.util.Enumeration;import java.util.Hashtable;import java.util.List;import java.util.concurrent.Executor;import java.util.concurrent.Executors;import java.util.concurrent.locks.ReentrantLock;import java.util.concurrent.locks.ReentrantReadWriteLock;import java.util.logging.Level;import java.util.logging.Logger;import javax.crypto.Mac;import javax.crypto.SecretKey;import javax.crypto.SecretKeyFactory;import javax.crypto.spec.PBEKeySpec;import navigators.smart.communication.client.CommunicationSystemClientSide;import navigators.smart.communication.client.ReplyReceiver;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;import navigators.smart.tom.util.TOMUtil;import org.jboss.netty.bootstrap.ClientBootstrap;import org.jboss.netty.buffer.ChannelBuffer;import org.jboss.netty.buffer.ChannelBuffers;import org.jboss.netty.channel.Channel;import org.jboss.netty.channel.ChannelFuture;import org.jboss.netty.channel.ChannelHandlerContext;import org.jboss.netty.channel.ChannelPipelineCoverage;import org.jboss.netty.channel.ChannelStateEvent;import org.jboss.netty.channel.ExceptionEvent;import org.jboss.netty.channel.MessageEvent;import org.jboss.netty.channel.SimpleChannelUpstreamHandler;import org.jboss.netty.channel.group.ChannelGroup;import org.jboss.netty.channel.group.ChannelGroupFuture;import org.jboss.netty.channel.group.DefaultChannelGroup;import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 /**
  *
  * @author Paulo
@@ -79,7 +38,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     private Signature signatureEngine;
     //private Storage st;
 //    private int count = 0;
-    private int signatureLength;    
+    private int signatureLength;           private ChannelGroup allservers = new DefaultChannelGroup();    ClientBootstrap bootstrap;
     
     private TOMUtil tomutil;
 
@@ -98,11 +57,11 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             signatureLength = tomutil.getSignatureSize();
             for (int i = 0; i < conf.getN(); i++) {
                 try {
-                    // Configure the client.
-                    ClientBootstrap bootstrap = new ClientBootstrap(
+                    // Configure the client.                	Executor pool = Executors.newCachedThreadPool();
+                    bootstrap = new ClientBootstrap(
                             new NioClientSocketChannelFactory(
-                            Executors.newCachedThreadPool(),
-                            Executors.newCachedThreadPool()));
+                            pool,
+                            pool));
 
                     bootstrap.setOption("tcpNoDelay", true);
                     bootstrap.setOption("keepAlive", true);
@@ -168,7 +127,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     @Override
     public void channelConnected(
             ChannelHandlerContext ctx, ChannelStateEvent e) {
-    	Channel ch = e.getChannel();
+    	Channel ch = e.getChannel();    	allservers.add(ch);
     	ChannelBuffer id = ChannelBuffers.buffer(4);
     	id.writeInt(conf.getProcessId().intValue());
     	ChannelFuture f = ch.write(id);
@@ -177,7 +136,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 
     @Override
     public void channelClosed(
-            ChannelHandlerContext ctx, ChannelStateEvent e) {
+            ChannelHandlerContext ctx, ChannelStateEvent e) {    	allservers.remove(ctx.getChannel());
         try {
             //sleeps 10 seconds before trying to reconnect
             Thread.sleep(10000);
@@ -282,5 +241,5 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             e.printStackTrace();
             return null;
         }
-    }
+    }        public void shutdown(){    	ChannelGroupFuture f = allservers.close();    	f.awaitUninterruptibly();    	bootstrap.releaseExternalResources();    }
 }

@@ -15,51 +15,7 @@
  */
 package navigators.smart.communication.client.netty;
 
-import java.net.InetSocketAddress;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-
-import navigators.smart.communication.client.CommunicationSystemServerSide;
-import navigators.smart.communication.client.RequestReceiver;
-import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
-import navigators.smart.communication.server.ServerConnection;
-import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.TOMConfiguration;
-import navigators.smart.tom.util.TOMUtil;
-import navigators.smart.tom.util.Statistics;
-
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-
+import java.net.InetSocketAddress;import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.SignatureException;import java.security.spec.InvalidKeySpecException;import java.util.ArrayDeque;import java.util.Hashtable;import java.util.Iterator;import java.util.Map.Entry;import java.util.Queue;import java.util.Set;import java.util.concurrent.Executors;import java.util.concurrent.ThreadFactory;import java.util.concurrent.locks.ReentrantLock;import java.util.concurrent.locks.ReentrantReadWriteLock;import java.util.logging.Level;import java.util.logging.Logger;import javax.crypto.Mac;import javax.crypto.SecretKey;import javax.crypto.SecretKeyFactory;import javax.crypto.spec.PBEKeySpec;import navigators.smart.communication.client.CommunicationSystemServerSide;import navigators.smart.communication.client.RequestReceiver;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;import navigators.smart.tom.util.TOMUtil;import org.jboss.netty.bootstrap.ServerBootstrap;import org.jboss.netty.channel.Channel;import org.jboss.netty.channel.ChannelHandlerContext;import org.jboss.netty.channel.ChannelPipelineCoverage;import org.jboss.netty.channel.ChannelStateEvent;import org.jboss.netty.channel.ExceptionEvent;import org.jboss.netty.channel.MessageEvent;import org.jboss.netty.channel.SimpleChannelHandler;import org.jboss.netty.channel.group.ChannelGroup;import org.jboss.netty.channel.group.ChannelGroupFuture;import org.jboss.netty.channel.group.DefaultChannelGroup;import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
 /**
  *
@@ -78,8 +34,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
     private SecretKey authKey;
     private Queue<TOMMessage> requestsReceived;
     private ReentrantLock lock = new ReentrantLock();
-    private TOMUtil tomutil;
-
+    private TOMUtil tomutil;    ServerBootstrap bootstrap;    Channel serverchannel;    ChannelGroup allclients = new DefaultChannelGroup();    
     public NettyClientServerCommunicationSystemServerSide(TOMConfiguration conf) {
         try {            
             SecretKeyFactory fac = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
@@ -118,7 +73,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             
             //Configure the server.
             /* Cached thread pool */
-            ServerBootstrap bootstrap = new ServerBootstrap(
+            bootstrap = new ServerBootstrap(
                 new NioServerSocketChannelFactory(
                         Executors.newCachedThreadPool(tfactory),
                         Executors.newCachedThreadPool(tfactory)));
@@ -136,7 +91,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             bootstrap.setPipelineFactory(new NettyServerPipelineFactory(this,false,sessionTable,authKey,macDummy.getMacLength(),conf,rl,tomutil.getSignatureSize(), new ReentrantLock() ));
 
             //Bind and start to accept incoming connections.
-            bootstrap.bind(new InetSocketAddress(conf.getHost(conf.getProcessId()),conf.getPort(conf.getProcessId())));
+            serverchannel = bootstrap.bind(new InetSocketAddress(conf.getHost(conf.getProcessId()),conf.getPort(conf.getProcessId())));
 
             System.out.println("#Bound to port " + conf.getPort(conf.getProcessId()));
             System.out.println("#myId " + conf.getProcessId());
@@ -193,12 +148,12 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             ChannelHandlerContext ctx, ChannelStateEvent e) {
         if(log.isLoggable(Level.INFO))
             log.info("New Connection from "+ ctx.getChannel().getRemoteAddress()+", active clients="+sessionTable.size());
-        
+        allclients.add(ctx.getChannel());
     }
 
     @Override
      public void channelClosed(
-            ChannelHandlerContext ctx, ChannelStateEvent e) {
+            ChannelHandlerContext ctx, ChannelStateEvent e) {    	allclients.remove(ctx.getChannel());
         rl.writeLock().lock();
         //removes session from sessionTable
         Set<Entry<Integer,NettyClientServerSession>> s = sessionTable.entrySet();
@@ -244,5 +199,5 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             else
                 rl.readLock().unlock();
         }
-    }
+    }		public void shutdown(){		serverchannel.close();		ChannelGroupFuture f = allclients.close();		f.awaitUninterruptibly();		bootstrap.releaseExternalResources();		sessionTable.clear();	}
 }

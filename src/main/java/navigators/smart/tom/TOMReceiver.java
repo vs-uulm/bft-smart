@@ -42,7 +42,7 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
     protected static ServerCommunicationSystem cs = null; // Server side comunication system
 
-    protected static TOMLayer tomlayer;
+    protected static TOMLayer tomlayer;        protected static ConsensusService service;
 
     public TOMReceiver( TOMConfiguration conf) throws IOException {
         this.conf = conf;
@@ -86,7 +86,7 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
         ConsensusServiceFactory factory = createFactory(cs, conf);
 
-        ConsensusService service = factory.newInstance(tomlayer);
+        service = factory.newInstance(tomlayer);
         tomlayer.setConsensusService(service); //set backlink
 		//start comlayer when consensus is ready to serve
         cs.start();
@@ -136,6 +136,6 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 	
 	public static String getCurrentPendingRequests(){
 		return tomlayer.clientsManager.pendingreqs.toString();
-	}
+	}		public void shutdown(){		cs.shutdown();		service.shutdown();		tomlayer.shutdown();	}
 }
 

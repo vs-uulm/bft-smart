@@ -62,7 +62,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     private CommunicationSystemServerSide clientsConn;
 
     @SuppressWarnings("rawtypes")
-	private GlobalMessageVerifier verifier;
+	private GlobalMessageVerifier verifier;        /**     * Boolean to control the nested thread     */    private volatile boolean running = true;
 
     /**
      * Creates a new instance of ServerCommunicationSystem
@@ -72,7 +72,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     @SuppressWarnings({ "rawtypes", "unchecked" })
 	public ServerCommunicationSystem(TOMConfiguration conf) throws IOException  {
         super("Server CS");
-        setDaemon(true);
+        
         inQueue = new ArrayBlockingQueue<SystemMessage>(conf.getInQueueSize());
         
        MessageVerifierFactory<PTPMessageVerifier> ptpFactory = null;
@@ -153,7 +153,7 @@ import navigators.smart.tom.util.TOMConfiguration;
     public void run() {
         long count=0;
 		log.info("Inqueue handler starts running");
-        while (true) {
+        while (running) {
             try {
                 if (log.isLoggable(Level.FINE)) {
                     count++;
@@ -167,11 +167,9 @@ import navigators.smart.tom.util.TOMConfiguration;
             } catch (InterruptedException ex) {
                 java.util.logging.Logger.getLogger(ServerCommunicationSystem.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
+        }       cleanUp();    }
 
-    }
-
-    /**
+	private void cleanUp() {		msgHandlers.clear();		serversConn.shutdown();		clientsConn.shutdown();		inQueue.clear();	}	/**
      * Used to send messages.
      *
      * @param targets the target receivers of the message
@@ -223,7 +221,7 @@ import navigators.smart.tom.util.TOMConfiguration;
        }
        //set increased priority if System property is not set or invalid
        t.setPriority(Thread.NORM_PRIORITY + 1);
-    }
+    }        /**     * Shuts down the nested thread.     */    public void shutdown(){    	running = false;    	this.interrupt();    }
 
 }
 

@@ -74,7 +74,7 @@ public interface ConsensusService {
      */
     public void deliveryFinished(Consensus<?> cons);
 
-	public void start();
+	public void start();		public void shutdown();
 	
 	
 //	/** 

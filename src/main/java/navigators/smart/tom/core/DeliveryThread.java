@@ -16,8 +16,6 @@
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +31,7 @@ import navigators.smart.tom.util.TOMConfiguration;
 
 /**
  * This class implements a thread which will deliver totally ordered requests to the application
- * 
+ * @author Christian Spann
  */
 public class DeliveryThread extends Thread {
 	
@@ -45,7 +43,7 @@ public class DeliveryThread extends Thread {
 
     private final TOMReceiver receiver;
     
-    private ConsensusService consensusservice;
+    private ConsensusService consensusservice;        private volatile boolean running = true;
 
     /**
      * Creates a new instance of DeliveryThread
@@ -55,7 +53,6 @@ public class DeliveryThread extends Thread {
      */
     public DeliveryThread(TOMLayer tomLayer, TOMReceiver recv, TOMConfiguration conf) {
         super("Delivery Thread "+ conf.getProcessId());
-        setDaemon(true);
         this.tomLayer = tomLayer;
         this.conf = conf;
         this.receiver = recv;
@@ -86,7 +83,7 @@ public class DeliveryThread extends Thread {
      *
      * @param transferredState The state we got from the other replicas
      */
-    public void updateState(TransferableState transferredState) {
+    public void updateState(TransferableState transferredState) {    	    	    	//wake up if we are waiting    	this.interrupt();
 
         deliverLock.lock();
 
@@ -143,7 +140,7 @@ public class DeliveryThread extends Thread {
     public void run() {
 
         long startTime;
-        while (true) {
+        while (running) {
             tomLayer.checkAndWaitForState();
             try {
                 deliverLock.lock();
@@ -207,5 +204,5 @@ public class DeliveryThread extends Thread {
 
     public void setConsensusservice(ConsensusService consensusservice) {
         this.consensusservice = consensusservice;
-    }
+    }	public void shutdown() {		running = false;		this.interrupt();	}
 }

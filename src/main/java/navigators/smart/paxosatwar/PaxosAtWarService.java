@@ -173,5 +173,5 @@ public class PaxosAtWarService implements ConsensusService {
 	@Override
 	public void start() {
 		//nothing to do for paw
-	}
+	}		@Override	public void shutdown(){		requestsTimer.shutdown();	}
 }

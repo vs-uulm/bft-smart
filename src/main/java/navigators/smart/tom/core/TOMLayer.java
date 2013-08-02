@@ -365,5 +365,5 @@ public class TOMLayer implements RequestReceiver {
 
 	public StateManager getStateManager() {
 		return stateManager;
-	}
+	}	public void shutdown() {		dt.shutdown();			}
 }

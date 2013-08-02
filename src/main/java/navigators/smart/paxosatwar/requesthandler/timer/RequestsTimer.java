@@ -143,5 +143,5 @@ public class RequestsTimer {
 	            rwLock.readLock().unlock();
 			}
         }
-    }
+    }        public void shutdown(){    	timer.cancel();    	unwatchAll();    }
 }

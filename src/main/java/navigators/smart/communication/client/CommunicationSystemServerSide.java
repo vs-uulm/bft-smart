@@ -24,5 +24,5 @@ import navigators.smart.tom.core.messages.TOMMessage;
  */
 public interface CommunicationSystemServerSide {   
    public void send(Integer[] targets, TOMMessage sm);
-   public void setRequestReceiver(RequestReceiver requestReceiver);
+   public void setRequestReceiver(RequestReceiver requestReceiver);   public void shutdown();
 }

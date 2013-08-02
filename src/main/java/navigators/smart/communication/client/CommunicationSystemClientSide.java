@@ -27,5 +27,5 @@ public interface CommunicationSystemClientSide {
    public void send(boolean sign, List<Integer> targets, TOMMessage sm);
    public void send(boolean sign, Integer target, TOMMessage sm);
    public void setReplyReceiver(ReplyReceiver trr);
-   public void sign(TOMMessage sm);
+   public void sign(TOMMessage sm);   public void shutdown();
 }

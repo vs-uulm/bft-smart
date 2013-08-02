@@ -109,7 +109,7 @@ public class BlackList {
 			// remove last if list > f
 			if (blacklist.size() > f) {
 				Long oldest = blacklist.pollFirst();
-				server = (int) (oldest % servers);
+				server = (int) (oldest % servers);				failedviews.remove(server);
 				whitelist.add(server);
 			}
 			if (log.isLoggable(Level.FINE)) {

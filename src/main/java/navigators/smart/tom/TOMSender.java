@@ -161,5 +161,5 @@ public abstract class TOMSender implements ReplyReceiver {
 
     public Integer getId() {
         return me;
-    }
+    }        public void shutdown() {    	cs.shutdown();    }
 }
