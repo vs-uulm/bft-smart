@@ -202,6 +202,7 @@ public final class ExecutionManager{
 	
 	public void shutdown(){
 		requesthandler.shutdown();
+		timer.shutdownNow();
 	}
 
     /**
