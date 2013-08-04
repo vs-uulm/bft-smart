@@ -199,6 +199,10 @@ public final class ExecutionManager{
         }
         stoppedMsgsLock.unlock();
     }
+	
+	public void shutdown(){
+		requesthandler.shutdown();
+	}
 
     /**
      * Restarts this execution manager
