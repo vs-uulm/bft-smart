@@ -15,10 +15,11 @@
  */
 package navigators.smart.paxosatwar.executionmanager;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import navigators.smart.consensus.Consensus;
-import navigators.smart.consensus.MeasuringConsensus;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import navigators.smart.paxosatwar.messages.MessageFactory;
 import navigators.smart.paxosatwar.messages.PaxosMessage;
 import navigators.smart.paxosatwar.messages.Propose;
@@ -194,6 +195,7 @@ public class ExecutionManagerTest {
 		assertFalse(mng.thereArePendentMessages(2l));
 	}
 
+	@SuppressWarnings("unused")
 	@Test
 	public void testGetExecution() {
 		Execution exec = mng.getExecution(0l);
@@ -205,7 +207,7 @@ public class ExecutionManagerTest {
 		VoteMessage weak = new VoteMessage(MessageFactory.WEAK, 1l, 0, 1,new byte[0]);
 		assertFalse(mng.checkLimits(msg));
 		assertFalse(mng.checkLimits(weak));
-		exec = mng.getExecution(1l);
+//		exec = mng.getExecution(1l);
 //		verify(acceptor).processMessage(msg);
 //		verify(acceptor).processMessage(weak);
 //		assertEquals(exec, mng.removeExecution(exec.getId()));
