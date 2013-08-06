@@ -47,7 +47,6 @@ import navigators.smart.tom.core.TOMLayer;
  *
  * @author Alysson
  */
-@SuppressWarnings("LoggerStringConcat")
 public final class ExecutionManager{
 	
 	private static final Logger log = Logger.getLogger(ExecutionManager.class.getCanonicalName());
@@ -550,6 +549,7 @@ public final class ExecutionManager{
         return requesthandler;
     }
 	
+	@SuppressWarnings("unchecked")
 	public void executionDecided(Execution e){		
 
 		//verify if there is a next proposal to be executed

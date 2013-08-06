@@ -14,19 +14,7 @@
  * limitations under the License. 
  */package navigators.smart.tom;
 
-import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import navigators.smart.communication.ServerCommunicationSystem;
-import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.DebugInfo;
-import navigators.smart.tom.util.TOMConfiguration;
-
+import java.io.IOException;import java.util.concurrent.BlockingQueue;import java.util.concurrent.LinkedBlockingQueue;import java.util.concurrent.locks.Condition;import java.util.concurrent.locks.ReentrantLock;import java.util.logging.Level;import java.util.logging.Logger;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.DebugInfo;import navigators.smart.tom.util.TOMConfiguration;
 
 /**
  * This class implements a TOMReceiver, and also a replica for the server side of the application.

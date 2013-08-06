@@ -17,8 +17,8 @@
 package navigators.smart.consensus;
 
 import java.util.Arrays;
-
-import navigators.smart.tom.util.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -30,6 +30,9 @@ import navigators.smart.tom.util.Logger;
  * @author Christian Spann 
  */
 public class Consensus<E> {
+	
+	public static final Logger log = 
+			Logger.getLogger(Consensus.class.getCanonicalName());
 
     private Long eid; // execution ID
     private Integer decisionRound;
@@ -111,10 +114,11 @@ public class Consensus<E> {
     private void waitForPropose() {
         synchronized (sync) {
             try {
-                Logger.println("waiting for propose for " + eid);
+                log.fine("waiting for propose for " + eid);
                 sync.wait();
             } catch (InterruptedException ex) {
-                Logger.println(ex.getMessage());
+                log.log(Level.WARNING,"Got Interrupted while waiting for "
+                		+ "consensus to be decided", ex.getMessage());
                 ex.printStackTrace();
             }
         }

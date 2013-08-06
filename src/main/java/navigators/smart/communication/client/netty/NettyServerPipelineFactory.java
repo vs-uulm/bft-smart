@@ -15,22 +15,7 @@
  */
 package navigators.smart.communication.client.netty;
 
-import static org.jboss.netty.channel.Channels.pipeline;
-
-import java.util.Hashtable;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.crypto.SecretKey;
-import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
-
-import navigators.smart.tom.util.TOMConfiguration;
-
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-
+import static org.jboss.netty.channel.Channels.pipeline;import java.util.Hashtable;import java.util.concurrent.locks.ReentrantLock;import java.util.concurrent.locks.ReentrantReadWriteLock;import javax.crypto.SecretKey;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;import navigators.smart.tom.util.TOMConfiguration;import org.jboss.netty.channel.ChannelPipeline;import org.jboss.netty.channel.ChannelPipelineFactory;
 
 /**
  * @author The Netty Project (netty-dev@lists.jboss.org)
@@ -38,8 +23,6 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
  * @version $Rev: 643 $, $Date: 2009/09/08 00:11:57 $
  */
 public class NettyServerPipelineFactory implements ChannelPipelineFactory {
-
-    private static Logger log = Logger.getLogger(NettyClientPipelineFactory.class.getCanonicalName());
 
     NettyClientServerCommunicationSystemServerSide ncs;
     boolean isClient;
@@ -51,7 +34,7 @@ public class NettyServerPipelineFactory implements ChannelPipelineFactory {
     ReentrantReadWriteLock rl;
     ReentrantLock lock;
 
-    public NettyServerPipelineFactory(NettyClientServerCommunicationSystemServerSide ncs, boolean isClient, Hashtable<Integer,NettyClientServerSession> sessionTable, SecretKey authKey, int macLength, TOMConfiguration conf, ReentrantReadWriteLock rl, int signatureLength, ReentrantLock lock) {
+    public NettyServerPipelineFactory(NettyClientServerCommunicationSystemServerSide ncs,     		boolean isClient, Hashtable<Integer,NettyClientServerSession> sessionTable,     		SecretKey authKey, int macLength, TOMConfiguration conf,     		ReentrantReadWriteLock rl, int signatureLength, ReentrantLock lock) {
         this.ncs = ncs;
         this.isClient = isClient;
         this.sessionTable = sessionTable;

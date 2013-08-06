@@ -14,16 +14,7 @@
  * limitations under the License. 
  */package navigators.smart.tom;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import navigators.smart.communication.client.CommunicationSystemClientSide;
-import navigators.smart.communication.client.ReplyReceiver;
-import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.TOMConfiguration;
-
+import java.util.ArrayList;import java.util.List;import java.util.concurrent.locks.Lock;import java.util.concurrent.locks.ReentrantLock;import navigators.smart.communication.client.CommunicationSystemClientSide;import navigators.smart.communication.client.ReplyReceiver;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;
 
 /**
  * This class is used to
@@ -37,8 +28,6 @@ public abstract class TOMSender implements ReplyReceiver {
     private CommunicationSystemClientSide cs; // Client side comunication system
     private Lock lock = new ReentrantLock(); // lock to manage concurrent access to this object by other threads
     private boolean useSignatures = false;
-    private Random rnd = new Random();
-	private volatile int lastReplica = 0; // The last replica that got the request to handle it;
 
     /**
      * This method initializes the object
@@ -50,7 +39,6 @@ public abstract class TOMSender implements ReplyReceiver {
      *
      * TODO: ver o q é isto de "client side comunication system"
      */
-    @SuppressWarnings("hiding")
     public void init(CommunicationSystemClientSide cs, TOMConfiguration conf, int sequence) {
         this.init(cs, conf);
         this.sequence = sequence;
@@ -63,7 +51,7 @@ public abstract class TOMSender implements ReplyReceiver {
      * @param cs Client side comunication system
      * @param conf Total order messaging configuration
      */
-    @SuppressWarnings({ "boxing", "hiding" })
+    @SuppressWarnings({ "boxing"})
     public void init(CommunicationSystemClientSide cs, TOMConfiguration conf) {
         this.cs = cs;
         this.cs.setReplyReceiver(this); // This object itself shall be a reply receiver

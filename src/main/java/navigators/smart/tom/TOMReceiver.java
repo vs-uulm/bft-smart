@@ -18,15 +18,14 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import navigators.smart.communication.ForwardedMessageHandler;
+import navigators.smart.communication.ForwardedMessageHandler;
 import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.communication.StateMessageHandler;
 import navigators.smart.consensus.ConsensusService;
 import navigators.smart.consensus.ConsensusServiceFactory;
 import navigators.smart.tom.core.TOMLayer;
 import navigators.smart.tom.core.messages.SystemMessage;
-import navigators.smart.tom.util.ShutdownThread;
+import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.ShutdownThread;
 import navigators.smart.tom.util.TOMConfiguration;
 
 /**
@@ -80,8 +79,8 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
         tomlayer = new TOMLayer( this, cs, conf);
 
-        cs.addMessageHandler(SystemMessage.Type.FORWARDED,new ForwardedMessageHandler(tomlayer));
-        cs.addMessageHandler(SystemMessage.Type.SM_MSG,new StateMessageHandler(tomlayer));
+        cs.addMessageHandler(SystemMessage.Type.FORWARDED,new ForwardedMessageHandler<TOMMessage>(tomlayer));
+        cs.addMessageHandler(SystemMessage.Type.SM_MSG,new StateMessageHandler<TOMMessage>(tomlayer));
         cs.setRequestReceiver(tomlayer);
 
         ConsensusServiceFactory factory = createFactory(cs, conf);

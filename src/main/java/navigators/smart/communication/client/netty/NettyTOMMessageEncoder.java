@@ -15,27 +15,7 @@
  */
 package navigators.smart.communication.client.netty;
 
-import static org.jboss.netty.buffer.ChannelBuffers.buffer;
-
-import java.util.Hashtable;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.crypto.Mac;
-
-import navigators.smart.tom.core.messages.TOMMessage;
-
-import navigators.smart.tom.util.Statistics;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
-
-
-@ChannelPipelineCoverage("all")
+import static org.jboss.netty.buffer.ChannelBuffers.buffer;import java.util.Hashtable;import java.util.concurrent.locks.ReentrantReadWriteLock;import java.util.logging.Level;import java.util.logging.Logger;import javax.crypto.Mac;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.Statistics;import org.jboss.netty.buffer.ChannelBuffer;import org.jboss.netty.channel.ChannelHandler;import org.jboss.netty.channel.ChannelHandlerContext;import org.jboss.netty.channel.Channels;import org.jboss.netty.channel.MessageEvent;import org.jboss.netty.channel.SimpleChannelHandler;@ChannelHandler.Sharable
 public class NettyTOMMessageEncoder extends SimpleChannelHandler {
     
     private Hashtable<Integer,NettyClientServerSession> sessionTable;
@@ -43,9 +23,9 @@ public class NettyTOMMessageEncoder extends SimpleChannelHandler {
     private ReentrantReadWriteLock rl;
     private boolean useMAC;
 	
-	private static final Logger log = Logger.getLogger(NettyTOMMessageEncoder.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(			NettyTOMMessageEncoder.class.getCanonicalName());
 
-    public NettyTOMMessageEncoder(Hashtable<Integer,NettyClientServerSession> sessionTable, ReentrantReadWriteLock rl, int signatureLength, boolean useMAC){
+    public NettyTOMMessageEncoder(Hashtable<Integer,    		NettyClientServerSession> sessionTable, ReentrantReadWriteLock rl,     		int signatureLength, boolean useMAC){
         this.sessionTable = sessionTable;
         this.rl = rl;
         this.signatureLength = signatureLength;

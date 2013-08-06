@@ -14,20 +14,11 @@
  * limitations under the License. 
  */package navigators.smart.tom.demo;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import navigators.smart.communication.ServerCommunicationSystem;
-import navigators.smart.tom.ServiceReplica;
-import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.DebugInfo;
-import navigators.smart.tom.util.TOMConfiguration;
-
+import java.io.IOException;import java.util.logging.Level;import java.util.logging.Logger;import navigators.smart.communication.ServerCommunicationSystem;import navigators.smart.tom.ServiceReplica;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.DebugInfo;
 
 public class ThroughputTestServer extends ServiceReplica {
     
-    private ServerCommunicationSystem cs;
+//    private ServerCommunicationSystem cs;
     private int id;
     private int interval;
     private long numDecides=0;

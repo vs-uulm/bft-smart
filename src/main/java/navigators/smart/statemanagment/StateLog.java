@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * checkpoint together with all the batches of messages received so far, comprises this replica
  * current state
  * 
- * @author Jo�o Sousa
+ * @author Joao Sousa
  */
 public class StateLog {
 	
@@ -67,7 +67,6 @@ public class StateLog {
      * @param stateHash
      * @param lmstate
      */
-    @SuppressWarnings("hiding")
 	public void newCheckpoint(Long lastCPEid, Integer lastCPRound, Integer lastCPLeader, Long lastEid, byte[] state, byte[] stateHash, byte[] lmstate) {
 
         for (int i = 0; i < this.messageBatches.length; i++)

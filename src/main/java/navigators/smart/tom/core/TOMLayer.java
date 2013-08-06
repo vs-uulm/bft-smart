@@ -159,7 +159,6 @@ public class TOMLayer implements RequestReceiver {
 	 * @return A value to be proposed to the acceptors or null if no requests
 	 * are pending.
 	 */
-	@SuppressWarnings("null")
 	public byte[] createPropose() {
 		// Retrieve a set of pending requests from the clients manager
 		PendingRequests pendingReqs = clientsManager.getPendingRequests();

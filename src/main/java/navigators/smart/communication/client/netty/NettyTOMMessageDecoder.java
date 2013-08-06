@@ -15,38 +15,11 @@
  */
 package navigators.smart.communication.client.netty;
 
-import java.nio.ByteBuffer;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-
-import navigators.smart.tom.core.messages.TOMMessage;
-import navigators.smart.tom.util.Configuration;
-import navigators.smart.tom.util.TOMConfiguration;
-import navigators.smart.tom.util.Statistics;
-
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
-
+import java.nio.ByteBuffer;import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.PublicKey;import java.security.Signature;import java.util.Arrays;import java.util.Hashtable;import java.util.concurrent.locks.ReentrantLock;import java.util.concurrent.locks.ReentrantReadWriteLock;import java.util.logging.Level;import java.util.logging.Logger;import javax.crypto.Mac;import javax.crypto.SecretKey;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.Configuration;import navigators.smart.tom.util.Statistics;import navigators.smart.tom.util.TOMConfiguration;import org.jboss.netty.buffer.ChannelBuffer;import org.jboss.netty.channel.Channel;import org.jboss.netty.channel.ChannelFuture;import org.jboss.netty.channel.ChannelHandlerContext;import org.jboss.netty.handler.codec.frame.FrameDecoder;
 /**
  *
  * @author Paulo Sousa
  */
-@ChannelPipelineCoverage("one")
 public class NettyTOMMessageDecoder extends FrameDecoder {
 
     private static final Logger log = Logger.getLogger(NettyTOMMessageDecoder.class.getCanonicalName());
@@ -190,9 +163,9 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
                 return false;
             }
             // creates MAC/publick key stuff if it's the first message received
-            // from the client
-            navigators.smart.tom.util.Logger.println("Creating MAC/public key stuff, first message from client" + sender);
-            navigators.smart.tom.util.Logger.println("sessionTable size=" + sessionTable.size());
+            // from the client            if(log.isLoggable(Level.FINE)){
+            	log.fine("Creating MAC/public key stuff, first message from client" + sender);
+            	log.fine("sessionTable size=" + sessionTable.size());            }
             Mac macSend = Mac.getInstance(conf.getHmacAlgorithm());
             macSend.init(authKey);
             Mac macReceive = Mac.getInstance(conf.getHmacAlgorithm());
@@ -201,9 +174,9 @@ public class NettyTOMMessageDecoder extends FrameDecoder {
             rl.writeLock().lock();
             sessionTable.put(sender, cs);
             rl.writeLock().unlock();
-	    log.log(Level.INFO,"Client {0} connected.",sender);
-            if(log.isLoggable(Level.FINER))
-                    log.fine("#active clients " + sessionTable.size());
+            log.log(Level.INFO,"Client {0} connected.",sender);
+            if(log.isLoggable(Level.FINE)){
+                    log.fine("#active clients " + sessionTable.size());            }
             return true;
         } catch (InvalidKeyException ex) {
             Logger.getLogger(NettyTOMMessageDecoder.class.getName()).log(Level.SEVERE, null, ex);

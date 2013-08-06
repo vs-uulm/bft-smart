@@ -51,7 +51,6 @@ public class RequestRecover {
         }
     }
 
-    @SuppressWarnings("hiding")
     public void recover(byte[] hash) {
         this.msg = null;
         this.hash = hash;

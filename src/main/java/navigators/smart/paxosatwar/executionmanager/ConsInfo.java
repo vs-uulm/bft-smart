@@ -26,7 +26,7 @@ import static navigators.smart.paxosatwar.executionmanager.Round.ROUND_ZERO;
  */
 public class ConsInfo implements Serializable {
 
-	public Integer round;
+	private static final long serialVersionUID = 1L;	public Integer round;
 	public Integer leaderId;
 
 	public ConsInfo(Integer l) {

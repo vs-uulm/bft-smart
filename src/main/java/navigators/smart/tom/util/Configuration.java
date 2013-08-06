@@ -63,7 +63,6 @@ public class Configuration {
         this.hosts = conf.hosts;
         this.factoryclass = conf.factoryclass;
         this.ptpverifierclass = conf.ptpverifierclass;
-        this.hostsFileName = conf.hostsFileName;
     }
 
      public Configuration(Integer processId, String configHome){

@@ -15,7 +15,7 @@
  */
 package navigators.smart.tom.util;
 
-import java.security.PrivateKey;import java.security.PublicKey;import java.util.concurrent.ExecutorService;import java.util.concurrent.ThreadPoolExecutor;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
+import java.security.PrivateKey;import java.security.PublicKey;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
 public class TOMConfiguration extends Configuration {
 
     protected int n;
@@ -34,10 +34,8 @@ public class TOMConfiguration extends Configuration {
     protected boolean verifyTimestamps;
     protected boolean useSenderThread;
     protected static RSAKeyLoader rsaLoader;
-    protected Logger log;
     protected int clientServerCommSystem;
     private int maxMessageSize;
-    private int debug;
     private int numNIOThreads;
     private int commBuffering;
     private VerifierType verifiertype;
@@ -69,7 +67,6 @@ public class TOMConfiguration extends Configuration {
         this.decideMessagesEnabled = conf.decideMessagesEnabled;
         this.verifyTimestamps = conf.verifyTimestamps;
         this.useSenderThread = conf.useSenderThread;
-        this.log = conf.log;
         this.clientServerCommSystem = conf.clientServerCommSystem;
         this.numNIOThreads = conf.numNIOThreads;
         this.commBuffering = conf.commBuffering;
@@ -165,17 +162,17 @@ public class TOMConfiguration extends Configuration {
                 maxMessageSize = Integer.parseInt(s);
             }
 
-            s = configs.remove("system.debug");
-            if (s == null) {
-                Logger.debug = false;
-            } else {
-                debug = Integer.parseInt(s);
-                if (debug == 0) {
-                    Logger.debug = false;
-                } else {
-                    Logger.debug = true;
-                }
-            }
+//            s = configs.remove("system.debug");
+//            if (s == null) {
+//                Logger.debug = false;
+//            } else {
+//                debug = Integer.parseInt(s);
+//                if (debug == 0) {
+//                    Logger.debug = false;
+//                } else {
+//                    Logger.debug = true;
+//                }
+//            }
 
             s = configs.remove("system.totalordermulticast.replayVerificationTime");
             if (s == null) {
