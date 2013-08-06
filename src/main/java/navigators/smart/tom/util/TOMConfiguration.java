@@ -15,10 +15,7 @@
  */
 package navigators.smart.tom.util;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
-
+import java.security.PrivateKey;import java.security.PublicKey;import java.util.concurrent.ExecutorService;import java.util.concurrent.ThreadPoolExecutor;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
 public class TOMConfiguration extends Configuration {
 
     protected int n;
@@ -57,7 +54,6 @@ public class TOMConfiguration extends Configuration {
 	private boolean fairClientHandling;
 	// Shall we send readonly requests to f+1 or to all replicas
 	private boolean readonlytoall;
-
     public TOMConfiguration(TOMConfiguration conf, int processId) {
         super(conf, processId);
         this.n = conf.n;
@@ -88,8 +84,7 @@ public class TOMConfiguration extends Configuration {
         this.signatureSize = conf.signatureSize;
         this.sendDelay = conf.sendDelay;
 		this.fairClientHandling = conf.fairClientHandling;
-		this.readonlytoall = conf.readonlytoall;
-    }
+		this.readonlytoall = conf.readonlytoall;    }
 
     /** Creates a new instance of TOMConfiguration
      * @param processId The id of this process
@@ -495,5 +490,4 @@ public class TOMConfiguration extends Configuration {
 
 	public boolean isFairClientHandling() {
 		return fairClientHandling;
-	}
-}
+	}}

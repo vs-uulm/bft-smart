@@ -15,8 +15,7 @@
  */
 package navigators.smart.communication.client.netty;
 
-import java.net.ConnectException;import java.nio.channels.ClosedChannelException;import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.PrivateKey;import java.security.Signature;import java.security.SignatureException;import java.security.spec.InvalidKeySpecException;import java.util.Enumeration;import java.util.Hashtable;import java.util.List;import java.util.concurrent.Executor;import java.util.concurrent.Executors;import java.util.concurrent.locks.ReentrantLock;import java.util.concurrent.locks.ReentrantReadWriteLock;import java.util.logging.Level;import java.util.logging.Logger;import javax.crypto.Mac;import javax.crypto.SecretKey;import javax.crypto.SecretKeyFactory;import javax.crypto.spec.PBEKeySpec;import navigators.smart.communication.client.CommunicationSystemClientSide;import navigators.smart.communication.client.ReplyReceiver;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;import navigators.smart.tom.util.TOMUtil;import org.jboss.netty.bootstrap.ClientBootstrap;import org.jboss.netty.buffer.ChannelBuffer;import org.jboss.netty.buffer.ChannelBuffers;import org.jboss.netty.channel.Channel;import org.jboss.netty.channel.ChannelFuture;import org.jboss.netty.channel.ChannelHandlerContext;import org.jboss.netty.channel.ChannelPipelineCoverage;import org.jboss.netty.channel.ChannelStateEvent;import org.jboss.netty.channel.ExceptionEvent;import org.jboss.netty.channel.MessageEvent;import org.jboss.netty.channel.SimpleChannelUpstreamHandler;import org.jboss.netty.channel.group.ChannelGroup;import org.jboss.netty.channel.group.ChannelGroupFuture;import org.jboss.netty.channel.group.DefaultChannelGroup;import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-/**
+import java.net.ConnectException;import java.nio.channels.ClosedChannelException;import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.PrivateKey;import java.security.Signature;import java.security.SignatureException;import java.security.spec.InvalidKeySpecException;import java.util.Hashtable;import java.util.List;import java.util.concurrent.ExecutorService;import java.util.concurrent.Executors;import java.util.concurrent.ScheduledExecutorService;import java.util.concurrent.TimeUnit;import java.util.concurrent.locks.ReentrantLock;import java.util.concurrent.locks.ReentrantReadWriteLock;import java.util.logging.Level;import java.util.logging.Logger;import javax.crypto.Mac;import javax.crypto.SecretKey;import javax.crypto.SecretKeyFactory;import javax.crypto.spec.PBEKeySpec;import navigators.smart.communication.client.CommunicationSystemClientSide;import navigators.smart.communication.client.ReplyReceiver;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;import navigators.smart.tom.util.TOMUtil;import org.jboss.netty.bootstrap.ClientBootstrap;import org.jboss.netty.buffer.ChannelBuffer;import org.jboss.netty.buffer.ChannelBuffers;import org.jboss.netty.channel.Channel;import org.jboss.netty.channel.ChannelFuture;import org.jboss.netty.channel.ChannelHandlerContext;import org.jboss.netty.channel.ChannelPipelineCoverage;import org.jboss.netty.channel.ChannelStateEvent;import org.jboss.netty.channel.ExceptionEvent;import org.jboss.netty.channel.MessageEvent;import org.jboss.netty.channel.SimpleChannelUpstreamHandler;import org.jboss.netty.channel.group.ChannelGroup;import org.jboss.netty.channel.group.ChannelGroupFuture;import org.jboss.netty.channel.group.DefaultChannelGroup;import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;/**
  *
  * @author Paulo
  */
@@ -38,9 +37,9 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     private Signature signatureEngine;
     //private Storage st;
 //    private int count = 0;
-    private int signatureLength;           private ChannelGroup allservers = new DefaultChannelGroup();    ClientBootstrap bootstrap;
+    private int signatureLength;           private ChannelGroup allservers = new DefaultChannelGroup();    ClientBootstrap bootstrap;        private ScheduledExecutorService reconnectionhandler = Executors.newScheduledThreadPool(2);
     
-    private TOMUtil tomutil;
+    private TOMUtil tomutil;        private volatile boolean running = true;
 
     @SuppressWarnings("boxing")
     public NettyClientServerCommunicationSystemClientSide(TOMConfiguration conf) {
@@ -56,9 +55,8 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
             signatureLength = tomutil.getSignatureSize();
             for (int i = 0; i < conf.getN(); i++) {
-                try {
-                    // Configure the client.                	Executor pool = Executors.newCachedThreadPool();
-                    bootstrap = new ClientBootstrap(
+                try {                	// Configure the client.
+                                	ExecutorService	pool = Executors.newCachedThreadPool();                    bootstrap = new ClientBootstrap(
                             new NioClientSocketChannelFactory(
                             pool,
                             pool));
@@ -67,14 +65,13 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
                     bootstrap.setOption("keepAlive", true);
 
                     // Set up the default event pipeline.
-                    bootstrap.setPipelineFactory(new NettyClientPipelineFactory(this, true, sessionTable, authKey, macDummy.getMacLength(), conf, rl, signatureLength, new ReentrantLock()));
-
+                    bootstrap.setPipelineFactory(                    		new NettyClientPipelineFactory(this, true,                     				sessionTable, authKey,                     				macDummy.getMacLength(), conf, rl,                     				signatureLength, new ReentrantLock()));                    
                     // Start the connection attempt.
                     ChannelFuture future = null;
-                    log.fine("Connecting to replica " + i + " at " + conf.getRemoteAddress(i));
+                    log.fine("Connecting to replica " + i + " at "                     + conf.getRemoteAddress(i));
                     do {
                         if(future != null){
-                            log.warning("Failed to connect to replica " + i + " at " + conf.getRemoteAddress(i)+" - trying again.");
+                            log.warning("Failed to connect to replica " + i                             		+ " at " + conf.getRemoteAddress(i)+" - trying again.");
                         }
                         future = bootstrap.connect(conf.getRemoteAddress(i));
                         future.awaitUninterruptibly();
@@ -136,42 +133,33 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 
     @Override
     public void channelClosed(
-            ChannelHandlerContext ctx, ChannelStateEvent e) {    	allservers.remove(ctx.getChannel());
-        try {
-            //sleeps 10 seconds before trying to reconnect
-            Thread.sleep(10000);
-        } catch (InterruptedException ex) {
-            log.log(Level.SEVERE, null, ex);
-        }
+            final ChannelHandlerContext ctx, ChannelStateEvent e) {    	    	if(running){			reconnectionhandler.schedule(new Runnable() {				public void run() {					// Reconnect to this host					ChannelFuture f = bootstrap.connect(ctx.getChannel()							.getRemoteAddress());						f.awaitUninterruptibly();					if (!f.isSuccess()&&running) {						//reschedule if failure						reconnectionhandler.schedule(this, 5, TimeUnit.SECONDS);					}				}			}, 5, TimeUnit.SECONDS);    	}
         //System.out.println("Channel closed");
-        rl.writeLock().lock();
-        //tries to reconnect the channel
-        Enumeration<NettyClientServerSession> sessionElements = sessionTable.elements();
-        while (sessionElements.hasMoreElements()) {
-            NettyClientServerSession ncss = sessionElements.nextElement();
-            if (ncss.getChannel() == ctx.getChannel()) {
-                try {
-                    Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
-                    // Configure the client.                    
-                    ClientBootstrap bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
-                    // Set up the default event pipeline.
-                    bootstrap.setPipelineFactory(new NettyClientPipelineFactory(this, true, sessionTable, authKey, macDummy.getMacLength(), conf, rl, tomutil.getSignatureSize(), new ReentrantLock()));
-                    // Start the connection attempt.
-                    ChannelFuture future = bootstrap.connect(conf.getRemoteAddress(ncss.getReplicaId().intValue()));
-                    //creates MAC stuff
-                    Mac macSend = ncss.getMacSend();
-                    Mac macReceive = ncss.getMacReceive();
-                    @SuppressWarnings("boxing")
-                    NettyClientServerSession cs = new NettyClientServerSession(future.getChannel(), macSend, macReceive, ncss.getReplicaId(), TOMConfiguration.getRSAPublicKey(ncss.getReplicaId()), new ReentrantLock());
-                    sessionTable.remove(ncss.getReplicaId());
-                    sessionTable.put(ncss.getReplicaId(), cs);
-                    //System.out.println("RE-Connecting to replica "+ncss.getReplicaId()+" at " + conf.getRemoteAddress(ncss.getReplicaId()));
-                } catch (NoSuchAlgorithmException ex) {
-                    log.log(Level.SEVERE, null, ex);
-                }
-            }
-
-        }
+//        rl.writeLock().lock();
+//        //tries to reconnect the channel
+//        Enumeration<NettyClientServerSession> sessionElements = sessionTable.elements();
+//        while (sessionElements.hasMoreElements()) {
+//            NettyClientServerSession ncss = sessionElements.nextElement();
+//            if (ncss.getChannel() == ctx.getChannel()) {
+//                try {
+//                    Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
+//                   ctx.getChannel().co
+//                    // Start the connection attempt.
+//                    ChannelFuture future = bootstrap.connect(conf.getRemoteAddress(ncss.getReplicaId().intValue()));
+//                    //creates MAC stuff
+//                    Mac macSend = ncss.getMacSend();
+//                    Mac macReceive = ncss.getMacReceive();
+//                    @SuppressWarnings("boxing")
+//                    NettyClientServerSession cs = new NettyClientServerSession(future.getChannel(), macSend, macReceive, ncss.getReplicaId(), TOMConfiguration.getRSAPublicKey(ncss.getReplicaId()), new ReentrantLock());
+//                    sessionTable.remove(ncss.getReplicaId());
+//                    sessionTable.put(ncss.getReplicaId(), cs);
+//                    //System.out.println("RE-Connecting to replica "+ncss.getReplicaId()+" at " + conf.getRemoteAddress(ncss.getReplicaId()));
+//                } catch (NoSuchAlgorithmException ex) {
+//                    log.log(Level.SEVERE, null, ex);
+//                }
+//            }
+//
+//        }
 
         //closes all other channels to avoid messages being sent to only a subset of the replicas
 		/*
@@ -179,7 +167,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 		 * (sessionElements.hasMoreElements()){ ((NettyClientServerSession)
 		 * sessionElements.nextElement()).getChannel().close(); }
 		 */
-        rl.writeLock().unlock();
+//        rl.writeLock().unlock();
     }
 
     public void setReplyReceiver(ReplyReceiver trr) {
@@ -241,5 +229,5 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
             e.printStackTrace();
             return null;
         }
-    }        public void shutdown(){    	ChannelGroupFuture f = allservers.close();    	f.awaitUninterruptibly();    	bootstrap.releaseExternalResources();    }
+    }        public void shutdown(){    	running = false;    	reconnectionhandler.shutdownNow();    	ChannelGroupFuture f = allservers.close();    	f.awaitUninterruptibly();		bootstrap.releaseExternalResources();		log.info("Released ext ressources");    }
 }
