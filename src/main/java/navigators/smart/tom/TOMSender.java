@@ -1,4 +1,5 @@
-/* * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
+/*
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
  * and the authors indicated in the @author tags 
  *  
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -12,9 +13,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
  * See the License for the specific language governing permissions and 
  * limitations under the License. 
- */package navigators.smart.tom;
+ */
+package navigators.smart.tom;
 
-import java.util.ArrayList;import java.util.List;import java.util.concurrent.locks.Lock;import java.util.concurrent.locks.ReentrantLock;import navigators.smart.communication.client.CommunicationSystemClientSide;import navigators.smart.communication.client.ReplyReceiver;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import navigators.smart.communication.client.CommunicationSystemClientSide;
+import navigators.smart.communication.client.ReplyReceiver;
+import navigators.smart.tom.core.messages.TOMMessage;
+import navigators.smart.tom.util.TOMConfiguration;
+
 
 /**
  * This class is used to
@@ -149,5 +160,9 @@ public abstract class TOMSender implements ReplyReceiver {
 
     public Integer getId() {
         return me;
-    }        public void shutdown() {    	cs.shutdown();    }
+    }
+    
+    public void shutdown() {
+    	cs.shutdown();
+    }
 }

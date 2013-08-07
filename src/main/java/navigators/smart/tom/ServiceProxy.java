@@ -1,4 +1,5 @@
-/* * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
+/*
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
  * and the authors indicated in the @author tags 
  *  
  * Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -162,11 +163,14 @@ public class ServiceProxy extends TOMSender {
 					// Send the request to the replicas, and get its ID
 					if (random && !readOnly){
 						targets.add(r.getNextRandomReplica());
+						log.fine("Sending request "+tommsg.getId()+" to "+targets.get(0));
 						doTOUnicast(targets.get(0) ,tommsg);
 					} else if (readOnly){
 						targets = r.getNRandomReplicas(f+1);
+						log.fine("Sending request "+tommsg.getId()+" to "+targets);
 						doTOMulticast(tommsg, targets);
 					} else {
+						log.fine("Multicasting request "+tommsg.getId());
 						doTOMulticast(tommsg);		// send to all
 					}
 					sync.wait(timeout);
@@ -286,7 +290,8 @@ public class ServiceProxy extends TOMSender {
 		/* 
 		 * Blacklist the evil non proposer for random mode (like ebawa)
 		 * or the non repliant replicas for read only requests
-		 */		log.log(Level.FINE,"Blacklist before timeout handling: {0}", new Object[]{blacklist});
+		 */
+		log.log(Level.FINE,"Blacklist before timeout handling: {0}", new Object[]{blacklist});
 		if(random && !tommsg.isReadOnlyRequest()){
 			blacklist.addFirst(group.get(0));
 		} else if(tommsg.isReadOnlyRequest()){
@@ -295,6 +300,7 @@ public class ServiceProxy extends TOMSender {
 					blacklist.addFirst(target);
 				}
 			}
-		} 		log.log(Level.FINE,"Blacklist after timeout handling: {0}", new Object[]{blacklist});
+		} 
+		log.log(Level.FINE,"Blacklist after timeout handling: {0}", new Object[]{blacklist});
 	}
 }
