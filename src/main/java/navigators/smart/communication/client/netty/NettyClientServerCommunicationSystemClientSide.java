@@ -96,65 +96,62 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
 
     @SuppressWarnings("boxing")
     public NettyClientServerCommunicationSystemClientSide(TOMConfiguration conf) {
-        try {
-            SecretKeyFactory fac = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
-            PBEKeySpec spec = new PBEKeySpec(PASSWORD.toCharArray());
-            authKey = fac.generateSecret(spec);
-            tomutil = new TOMUtil();
-            this.conf = conf;
-            this.sessionTable = new Hashtable<Integer, NettyClientServerSession>();
-            //this.st = new Storage(BENCHMARK_PERIOD);
-            this.rl = new ReentrantReadWriteLock();
-            Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
-            signatureLength = tomutil.getSignatureSize();
-            for (int i = 0; i < conf.getN(); i++) {
-                try {
-                	// Configure the client.
-                
-                	ExecutorService	pool = Executors.newCachedThreadPool();
-                    bootstrap = new ClientBootstrap(
-                            new NioClientSocketChannelFactory(
-                            pool,
-                            pool));
+		try {
+			SecretKeyFactory fac = SecretKeyFactory
+					.getInstance("PBEWithMD5AndDES");
+			PBEKeySpec spec = new PBEKeySpec(PASSWORD.toCharArray());
+			authKey = fac.generateSecret(spec);
+			tomutil = new TOMUtil();
+			this.conf = conf;
+			this.sessionTable = new Hashtable<Integer, NettyClientServerSession>();
+			// this.st = new Storage(BENCHMARK_PERIOD);
+			this.rl = new ReentrantReadWriteLock();
+			Mac macDummy = Mac.getInstance(conf.getHmacAlgorithm());
+			signatureLength = tomutil.getSignatureSize();
 
-                    bootstrap.setOption("tcpNoDelay", true);
-                    bootstrap.setOption("keepAlive", true);
+			// Configure the client.
+			ExecutorService pool = Executors.newCachedThreadPool();
+			bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
+					pool, pool));
 
-                    // Set up the default event pipeline.
-                    bootstrap.setPipelineFactory(
-                    		new NettyClientPipelineFactory(this, true, 
-                    				sessionTable, authKey, 
-                    				macDummy.getMacLength(), conf, rl, 
-                    				signatureLength, new ReentrantLock()));
-                    
+			bootstrap.setOption("tcpNoDelay", true);
+			bootstrap.setOption("keepAlive", true);
 
-                    // Start the connection attempt.
-                    ChannelFuture future = null;
-                    log.fine("Connecting to replica " + i + " at " 
-                    + conf.getRemoteAddress(i));
-                    do {
-                        if(future != null){
-                            log.warning("Failed to connect to replica " + i 
-                            		+ " at " + conf.getRemoteAddress(i)+" - trying again.");
-                        }
-                        future = bootstrap.connect(conf.getRemoteAddress(i));
-                        future.awaitUninterruptibly();
+			// Set up the default event pipeline.
+			bootstrap.setPipelineFactory(new NettyClientPipelineFactory(this,
+					true, sessionTable, authKey, macDummy.getMacLength(), conf,
+					rl, signatureLength, new ReentrantLock()));
+			
+			for (int i = 0; i < conf.getN(); i++) {
 
-                    } while (!future.isSuccess());
-                    log.info("Connected to replica " + i + " at " + conf.getRemoteAddress(i));
+				// Start the connection attempt.
+				ChannelFuture future = null;
+				log.fine("Connecting to replica " + i + " at "
+						+ conf.getRemoteAddress(i));
+				do {
+					if (future != null) {
+						log.warning("Failed to connect to replica " + i
+								+ " at " + conf.getRemoteAddress(i)
+								+ " - trying again.");
+					}
+					future = bootstrap.connect(conf.getRemoteAddress(i));
+					future.awaitUninterruptibly();
 
-                    //creates MAC stuff
-                    Mac macSend = Mac.getInstance(conf.getHmacAlgorithm());
-                    macSend.init(authKey);
-                    Mac macReceive = Mac.getInstance(conf.getHmacAlgorithm());
-                    macReceive.init(authKey);
-                    NettyClientServerSession cs = new NettyClientServerSession(future.getChannel(), macSend, macReceive, i, TOMConfiguration.getRSAPublicKey(i), new ReentrantLock());
-                    sessionTable.put(i, cs);
+				} while (!future.isSuccess());
+				log.info("Connected to replica " + i + " at "
+						+ conf.getRemoteAddress(i));
 
-                } catch (InvalidKeyException ex) {
-                    log.log(Level.SEVERE, null, ex);
-                }
-            }
+				// creates MAC stuff
+				Mac macSend = Mac.getInstance(conf.getHmacAlgorithm());
+				macSend.init(authKey);
+				Mac macReceive = Mac.getInstance(conf.getHmacAlgorithm());
+				macReceive.init(authKey);
+				NettyClientServerSession cs = new NettyClientServerSession(
+						future.getChannel(), macSend, macReceive, i,
+						TOMConfiguration.getRSAPublicKey(i),
+						new ReentrantLock());
+				sessionTable.put(i, cs);
+			}
         } catch (InvalidKeySpecException ex) {
             log.log(Level.SEVERE, null, ex);
         } catch (NoSuchAlgorithmException ex) {
