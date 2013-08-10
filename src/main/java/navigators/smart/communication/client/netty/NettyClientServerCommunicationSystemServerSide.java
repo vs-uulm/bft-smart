@@ -245,10 +245,12 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
             if (e.getChannel().equals(value.getChannel())) {
                 Integer key = m.getKey();
                 sessionTable.remove(key);
-                System.out.println("#Removed client channel with ID= " + key);
-                System.out.println("#active clients="+sessionTable.size());
+                log.info("#Removed client channel with ID= " + key);
+                log.info("#active clients="+sessionTable.size());
                 break;
-            }
+            } else {
+				log.log(Level.FINE,"Closed channel: {0}, checked channel:{1} ",new Object[]{e.getChannel(),value.getChannel()});
+			}
         }
         rl.writeLock().unlock();
         log.info("Session Closed, active clients="+sessionTable.size());
