@@ -88,7 +88,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     private ChannelGroup allservers = new DefaultChannelGroup();
     ClientBootstrap bootstrap;
     
-    private ScheduledExecutorService reconnectionhandler = Executors.newScheduledThreadPool(2);
+//    private ScheduledExecutorService reconnectionhandler = Executors.newScheduledThreadPool(2);
     
     private TOMUtil tomutil;
     
@@ -197,21 +197,22 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     public void channelClosed(
             final ChannelHandlerContext ctx, ChannelStateEvent e) {
     	
-    	if(running){
-			reconnectionhandler.schedule(new Runnable() {
-				public void run() {
-					// Reconnect to this host
-					ChannelFuture f = bootstrap.connect(ctx.getChannel()
-							.getRemoteAddress());
-	
-					f.awaitUninterruptibly();
-					if (!f.isSuccess()&&running) {
-						//reschedule if failure
-						reconnectionhandler.schedule(this, 5, TimeUnit.SECONDS);
-					}
-				}
-			}, 5, TimeUnit.SECONDS);
-    	}
+//    	if(running){
+//			reconnectionhandler.schedule(new Runnable() {
+//				public void run() {
+//					// Reconnect to this host
+//					ChannelFuture f = bootstrap.connect(ctx.getChannel()
+//							.getRemoteAddress());
+//	
+//					f.awaitUninterruptibly();
+//					if (!f.isSuccess()&&running) {
+//						//reschedule if failure
+//						reconnectionhandler.schedule(this, 5, TimeUnit.SECONDS);
+//					}
+//				}
+//			}, 5, TimeUnit.SECONDS);
+//    	}
+		log.info("Channel to "+ctx.getChannel().getRemoteAddress()+" closed");
         //System.out.println("Channel closed");
 //        rl.writeLock().lock();
 //        //tries to reconnect the channel
@@ -312,7 +313,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     
     public void shutdown(){
     	running = false;
-    	reconnectionhandler.shutdownNow();
+//    	reconnectionhandler.shutdownNow();
     	ChannelGroupFuture f = allservers.close();
     	f.awaitUninterruptibly();
 		bootstrap.releaseExternalResources();
