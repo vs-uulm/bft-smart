@@ -352,7 +352,7 @@ public class TOMLayer implements RequestReceiver {
 
 	public byte[] getState() {
 		return receiver.getState();
-	}
+	}		public void setState(byte[] state){		receiver.setState(state);	}
 
 	/**
 	 * Waits until the currently running Statetransfer is finished. If no State-

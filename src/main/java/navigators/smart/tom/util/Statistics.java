@@ -152,7 +152,7 @@ public class Statistics {
 	 * @throws IOException 
 	 */
 	public static PrintWriter createStatsFileWriter(String name) throws IOException{
-		return new PrintWriter(new BufferedWriter(new FileWriter(checkAndGetStatsDir() + "/" +name)));
+		return new PrintWriter(new BufferedWriter(new FileWriter(checkAndGetStatsDir() + "/" +name, true)));
 	}
 	
 	/**
