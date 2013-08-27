@@ -16,9 +16,9 @@
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.BufferOverflowException;import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -59,20 +59,17 @@ public abstract class SystemMessage {
     
     public final Type type;
     protected final Integer sender; // ID of the process which sent the message
-    protected volatile byte[] msgdata; //serialised version of this message
-
-    /**
+    protected volatile byte[] msgdata; //serialised version of this message        private static Map<Class<?>,Integer> msgsizes = Collections.synchronizedMap(new HashMap<Class<?>, Integer>());    /**
      * Creates a new instance of SystemMessage
      * @param type The type id of this message
      * @param in The inputstream containing the serialised object
      */
     public SystemMessage(Type type, ByteBuffer in){
+    	init(in.remaining()+1*2);
         this.type = type;
-        in.get();
-        sender = Integer.valueOf(in.getInt());
-    }
+        in.get();        sender = Integer.valueOf(in.getInt());    }
     
-    /**
+    private void init(int size) {    	if(!msgsizes.containsKey(this.getClass())){        	msgsizes.put(this.getClass(), size);        }	}	/**
      * Creates a new instance of SystemMessage
      * @param type The type id of this message
      * @param in The inputstream containing the serialised object
@@ -81,8 +78,7 @@ public abstract class SystemMessage {
     public SystemMessage(Type type, DataInput in) throws IOException{
     	this.type = type;
     	in.readByte();
-    	sender = Integer.valueOf(in.readInt());
-    }
+    	sender = Integer.valueOf(in.readInt());    }
     
 	/**
      * Creates a new instance of SystemMessage
@@ -91,7 +87,7 @@ public abstract class SystemMessage {
      */
     public SystemMessage(Type type, Integer sender){
         this.type = type;
-        this.sender = sender;
+        this.sender = sender;        init(1024);
     }
     
     /**
@@ -122,15 +118,12 @@ public abstract class SystemMessage {
 //    }
 
     public byte[] getBytes(){
-    	if(msgdata == null){
-    		ByteBuffer buf = ByteBuffer.allocate(getMsgSize());
-    		serialise(buf);
-    		msgdata = buf.array();
+    	if(msgdata == null){    		ByteBuffer buf = getByteBuffer();
+//    		msgdata = new byte[buf.position()];    		msgdata = Arrays.copyOfRange(buf.array(), 0, buf.limit());
     	}
         return msgdata;
-    }
-    
-    /**
+    }        /**     * This method serialises the contents of this class to a ByteBuffer     */    public ByteBuffer getByteBuffer(){    	ByteBuffer buf;		for(;;){			int size = msgsizes.get(this.getClass());    		try {    			buf = ByteBuffer.allocate(size);    			serialise(buf);    			buf.flip();    			return buf;    		} catch(BufferOverflowException e){    			size *= 2;     			msgsizes.put(this.getClass(), size);    			buf = ByteBuffer.allocate(size);    		}		}    }    
+	/**
      * Sets the messagedata in serialised form
      * @param bytes The data of the message
      */

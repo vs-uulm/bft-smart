@@ -44,7 +44,7 @@ public class BlackListTest extends TestCase {
 			testlist.addFirst(i);
 			assertTrue(testlist.contains(i));
 			assertFalse(testlist.getCorrect().contains(i));
-			System.out.println(testlist.getCorrect().size());
+//			System.out.println(testlist.getCorrect().size());
 			if (i >= f) {
 				assertFalse(testlist.contains(i - f));
 				assertTrue(testlist.getCorrect().contains(i - f));
@@ -62,7 +62,7 @@ public class BlackListTest extends TestCase {
 			assertTrue(testlist.contains(i));
 			assertFalse(testlist.getCorrect().contains(i));
 			
-			System.out.println(testlist.getCorrect().size());
+//			System.out.println(testlist.getCorrect().size());
 			if(i>0){
 				assertFalse(testlist.contains(i - 1));
 				assertTrue(testlist.getCorrect().contains(i - 1));

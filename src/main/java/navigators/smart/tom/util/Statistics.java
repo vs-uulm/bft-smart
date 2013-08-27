@@ -59,7 +59,7 @@ public class Statistics {
 	private volatile int strequestsreceived;
 	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
-	private volatile boolean headerPrinted = false;
+//	private static volatile boolean headerPrinted = false;
 	private volatile String paramname = "";
 	private volatile String headerExtension = "";
 	private long start;
@@ -75,6 +75,8 @@ public class Statistics {
 	private final SynchronizedSummaryStatistics decisionduration = new SynchronizedSummaryStatistics();
 	// Static reference to have easy access from everywhere
 	public static Statistics stats;
+	
+	private static final Set<String> initialised = new HashSet<String>();
 
 	static {
 		TIMESTAMP_LOGGER.setUseParentHandlers(false);
@@ -115,9 +117,9 @@ public class Statistics {
 			//Setup prefix for replicas 
 			String prefix = createPrefix();
 			//open statsfiles for writing
-			runningstatswriter = createStatsFileWriter(prefix + "_" + RUNNING_STATS_FILE);
-			serverstatswriter = createStatsFileWriter( prefix + "_" + SERVER_STATS_FILE);
-			clientstatswriter = createStatsFileWriter( prefix + "_" + CLIENT_STATS_FILE);
+			runningstatswriter = createStatsFileWriter(RUNNING_STATS_FILE);
+			serverstatswriter = createStatsFileWriter( SERVER_STATS_FILE);
+			clientstatswriter = createStatsFileWriter( CLIENT_STATS_FILE);
 
 		} catch (IOException ex) {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
@@ -152,7 +154,11 @@ public class Statistics {
 	 * @throws IOException 
 	 */
 	public static PrintWriter createStatsFileWriter(String name) throws IOException{
-		return new PrintWriter(new BufferedWriter(new FileWriter(checkAndGetStatsDir() + "/" +name, true)));
+		File file = new File(checkAndGetStatsDir() + "/" +createPrefix()+name);
+		if(file.exists() && !initialised.contains(name)){
+			initialised.add(name);
+		}
+		return new PrintWriter(new BufferedWriter(new FileWriter(file,true)));
 	}
 	
 	/**
@@ -165,7 +171,7 @@ public class Statistics {
 		if (hostname.contains(".")) {
 			hostname = hostname.substring(0, hostname.indexOf("."));
 		}
-		return hostname;
+		return hostname+"_";
 	}
 
 	/**
@@ -195,8 +201,8 @@ public class Statistics {
 	 * @param stats The stats must correspond in their order to the extensions supplied via extendStats.
 	 */
 	public void printStats(String param, SummaryStatistics... stats) {
-		if (!headerPrinted) {
-			headerPrinted = true;
+		if (!initialised.contains(SERVER_STATS_FILE)) {
+			initialised.add(SERVER_STATS_FILE);
 			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges STReqsSent STReqsReceived" + headerExtension);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
@@ -222,7 +228,12 @@ public class Statistics {
 	}
 
 	public void printRunningStatsHeader(String header) {
-		runningstatswriter.append("Time(ns) ").append(TOMReceiver.getCurrentServerComQueuesNames()).append(' ').append("\"Pending Requests\" ").append(header).append("\n").flush();
+		if(!initialised.contains(RUNNING_STATS_FILE)){
+			runningstatswriter.append("Time(ns) ")
+					.append(TOMReceiver.getCurrentServerComQueuesNames())
+					.append(' ').append("\"Pending Requests\" ").append(header)
+					.append("\n").flush();
+		}
 	}
 
 	public void printRunningStats(String timestamp, String output) {
