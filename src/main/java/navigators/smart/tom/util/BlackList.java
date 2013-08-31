@@ -14,8 +14,7 @@
  * limitations under the License. 
  */package navigators.smart.tom.util;
 
-import java.util.HashMap;import java.util.HashSet;import java.util.LinkedList;import java.util.List;import java.util.Set;import java.util.TreeSet;import java.util.logging.Level;import java.util.logging.Logger;
-/**
+import java.util.HashMap;import java.util.HashSet;import java.util.LinkedList;import java.util.List;import java.util.Map.Entry;import java.util.Set;import java.util.TreeMap;import java.util.logging.Level;import java.util.logging.Logger;/**
  * This class represents the blacklist of the EBAWA algorithm. Servers are
  * distinguished by positive integers. The class takes two arguments: The number
  * of servers present and the number f of faults to tolerate. The blacklist
@@ -30,10 +29,10 @@ public class BlackList {
 	private static final Logger log = Logger.getLogger(BlackList.class
 			.getName());
 
-	private final TreeSet<Long> blacklist = new TreeSet<Long>();
+	private final TreeMap<Long,Integer> viewtoservermap = new TreeMap<Long,Integer>();
 	private final Set<Integer> whitelist = new HashSet<Integer>();
-	private final Set<Integer> listedservers = new HashSet<Integer>();
-	private final HashMap<Integer, Long> failedviews = new HashMap<Integer, Long>();
+//	private final Set<Integer> listedservers = new HashSet<Integer>();
+	private final HashMap<Integer, Long> servertoviewmap = new HashMap<Integer, Long>();
 	private int f; // number of allowed malicious servers
 
 	private int servers;
@@ -62,8 +61,8 @@ public class BlackList {
 	 *            The view to be checked
 	 * @return true if the leader is blacklisted, false otherwhise
 	 */
-	public boolean contains(long view) {
-		return blacklist.contains(Long.valueOf(view % servers));
+	public boolean containsLeaderOfView(Long view) {
+		return servertoviewmap.containsKey(Integer.valueOf((int)(view % servers)));
 	}
 
 	/**
@@ -75,7 +74,7 @@ public class BlackList {
 		return new LinkedList<Integer>(whitelist);
 	}
 
-	@Override	public String toString() {		return "BlackList [blacklist=" + blacklist + ", whitelist=" + whitelist				+ ", listedservers=" + listedservers + ", failedviews="				+ failedviews + ", f=" + f + ", servers=" + servers + "]";	}	/**
+	@Override	public String toString() {		return "BlackList [blacklist=" + viewtoservermap + ", whitelist=" + whitelist				+ ", failedviews="				+ servertoviewmap + ", f=" + f + ", servers=" + servers + "]";	}	/**
 	 * Adds the leader of the given view in the first position of the queue.
 	 * 
 	 * @param view
@@ -83,30 +82,30 @@ public class BlackList {
 	 */
 	@SuppressWarnings("boxing")
 	public void addFirst(long view) {
-		int server = (int) (view % servers);
+		Integer server = (int) (view % servers);
 		whitelist.remove(server);
 
 		// Check if the views leader is blacklisted already
-		Long lastfailedview = failedviews.put(server, view);
+		Long lastfailedview = servertoviewmap.put(server, view);
 		if (lastfailedview != null) {
 			if (lastfailedview > view) {
 				// Readd the old one as it is newer, we are done
-				failedviews.put(server, lastfailedview);
+				servertoviewmap.put(server, lastfailedview);
 			} else if (lastfailedview < view) {
 				// Add the new one to the blacklist and remove the old one
-				blacklist.add(view);
-				blacklist.remove(lastfailedview);
-			}
+				viewtoservermap.put(view,server);
+				viewtoservermap.remove(lastfailedview);
+			}			log.fine("Updating blacklist entry of "+server);
 			// do nothing if we handled this view already
 		} else {
 			// Handle new additions
-			blacklist.add(view);
+			viewtoservermap.put(view,server);
 
-			// remove last if list > f
-			if (blacklist.size() > f) {
-				Long oldest = blacklist.pollFirst();
-				server = (int) (oldest % servers);				failedviews.remove(server);
-				whitelist.add(server);
+			// remove last (smallest) entry which is the first in this case if list > f
+			if (viewtoservermap.size() > f) {
+				Entry<Long,Integer> oldest = viewtoservermap.pollFirstEntry();
+								servertoviewmap.remove(oldest.getValue());
+				whitelist.add(oldest.getValue());
 			}
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("blacklisting " + server);
@@ -125,11 +124,10 @@ public class BlackList {
 	public void replaceFirst(long view) {
 		long previousview = view - 1;
 
-		// Remove previous view if existant
-		if (blacklist.remove(previousview)) {
-			int oldserver = (int) (previousview % servers);
-			whitelist.add(oldserver);
-		}
+		// Remove previous view if existant		Integer server;
+		if ((server = viewtoservermap.remove(previousview)) !=  null) {			if (log.isLoggable(Level.FINE)) {				log.fine("unblacklisting " + server);			}			servertoviewmap.remove(server);
+			whitelist.add(server);
+		} else {			log.warning("No entry to replace found for "+previousview);		}
 
 		addFirst(view);
 	}
@@ -151,7 +149,7 @@ public class BlackList {
 			while (tmpview < currentview) {
 				// Check if all view in between lgv+1 and currentview are
 				// blacklisted which means that they timed out
-				if (!blacklist.contains(tmpview)) {
+				if (!viewtoservermap.containsKey(tmpview)) {
 					return false;
 				}
 				// if(!array[(int)++currentview % servers]){

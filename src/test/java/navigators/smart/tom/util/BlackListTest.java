@@ -27,7 +27,7 @@ public class BlackListTest extends TestCase {
 	public void testContains() {
 		for (int i = 0; i < servers; i++) {
 			testlist.addFirst(i);
-			assertTrue(testlist.contains(i));
+			assertTrue(testlist.containsLeaderOfView((long)i));
 			assertFalse(testlist.getCorrect().contains(i));
 			if (i < 3) {
 				assertTrue(testlist.getCorrect().size() == servers - i - 1);
@@ -42,11 +42,11 @@ public class BlackListTest extends TestCase {
 	public void testAddFirst() {
 		for (int i = 0; i < 2 * f; i++) {
 			testlist.addFirst(i);
-			assertTrue(testlist.contains(i));
+			assertTrue(testlist.containsLeaderOfView((long)i));
 			assertFalse(testlist.getCorrect().contains(i));
 //			System.out.println(testlist.getCorrect().size());
 			if (i >= f) {
-				assertFalse(testlist.contains(i - f));
+				assertFalse(testlist.containsLeaderOfView((long)i - f));
 				assertTrue(testlist.getCorrect().contains(i - f));
 				assertTrue(testlist.getCorrect().size() == servers - f);
 			} else {
@@ -59,12 +59,12 @@ public class BlackListTest extends TestCase {
 	public void testReplaceFirst() {
 		for (int i = 0; i < 2 * f; i++) {
 			testlist.replaceFirst(i);
-			assertTrue(testlist.contains(i));
+			assertTrue(testlist.containsLeaderOfView((long)i));
 			assertFalse(testlist.getCorrect().contains(i));
 			
 //			System.out.println(testlist.getCorrect().size());
 			if(i>0){
-				assertFalse(testlist.contains(i - 1));
+				assertFalse(testlist.containsLeaderOfView((long)i - 1));
 				assertTrue(testlist.getCorrect().contains(i - 1));
 			}
 			assertTrue(testlist.getCorrect().size() == servers - 1);
