@@ -140,23 +140,13 @@ public class BlackList {
 	 * @param lgv
 	 * @return
 	 */
-	public boolean checkLGView(long currentview, long lgv) {
-		if (lgv == currentview - 1) {
-			return true;
-		} else {
-			long tmpview = lgv + 1;
-			// check if lgv was last valid skip or propose
-			while (tmpview < currentview) {
-				// Check if all view in between lgv+1 and currentview are
-				// blacklisted which means that they timed out
-				if (!viewtoservermap.containsKey(tmpview)) {
-					return false;
-				}
-				// if(!array[(int)++currentview % servers]){
-				// return false;
-				// }
-			}
-			return true;
-		}
-	}
+	public boolean checkLGView(long currentview, long lgv) {		long currV = lgv+1;		// check if lgv was last valid skip or propose
+		while (currV < currentview ) {
+			// Check if all view in between lgv+1 and currentview are
+			// blacklisted which means that they timed out
+			if (whitelist.contains(getLeader(currV))) {
+				return false;
+			}		}
+		return true;
+	}		public int getLeader(long id) {		return (int) (id % servers);	}
 }
