@@ -55,6 +55,7 @@ public class Consensus<E> {
      */
     public void decided(byte[] value, Integer round, Integer proposer) {
         synchronized (sync) {
+        	log.fine("Decided "+this);
             this.decision = value;
             this.decisionRound = round;
             this.proposer = proposer;
@@ -96,7 +97,8 @@ public class Consensus<E> {
      */
     public E getDeserializedDecision() {
         synchronized (sync) {
-            if (deserializedDecision == null && decision == null) {
+            while (deserializedDecision == null && decision == null) {
+            	log.info("Waiting for "+eid);
                 waitForPropose();
             }
         }
