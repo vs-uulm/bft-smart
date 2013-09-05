@@ -35,7 +35,7 @@ import navigators.smart.tom.core.timer.messages.RTMessage;
  *
  * @author Christian Spann 
  */
-public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
+public class PaWMessageHandler implements MessageHandler<SystemMessage,Boolean>{
     
 	public static final Logger log = Logger.getLogger(PaWMessageHandler.class.getCanonicalName());
     
@@ -77,8 +77,8 @@ public class PaWMessageHandler<T> implements MessageHandler<SystemMessage,T>{
 		}
     }
 
-	public SystemMessage deserialise(Type type, ByteBuffer buf, Object result) throws ClassNotFoundException, IOException {
-         switch(type){
+	public SystemMessage deserialise(Type type, ByteBuffer buf, Boolean result) throws ClassNotFoundException, IOException {
+        if(!result){        	log.severe("Non verified message received");        	return null;        }		switch(type){
             case PAXOS_MSG:
                 return PaxosMessage.readFromBuffer(buf);
 			case RT_MSG:

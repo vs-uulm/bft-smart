@@ -28,7 +28,7 @@ import navigators.smart.tom.util.TOMUtil;
  * Handler for forwarded messages.
  * @author Christian Spann 
  */
-public class StateMessageHandler<A> implements MessageHandler<SMMessage, A> {
+public class StateMessageHandler implements MessageHandler<SMMessage, Boolean> {
 
 	private final static Logger log = Logger.getLogger(ForwardedMessageHandler.class.getCanonicalName());
 	private final TOMLayer tomLayer;
@@ -51,7 +51,7 @@ public class StateMessageHandler<A> implements MessageHandler<SMMessage, A> {
 
 	}
 
-	public SMMessage deserialise(SystemMessage.Type type, ByteBuffer buf, A verificationresult) throws IOException, ClassNotFoundException {
+	public SMMessage deserialise(SystemMessage.Type type, ByteBuffer buf, 			Boolean verificationresult) throws IOException, ClassNotFoundException {		if(!verificationresult){			log.severe("Unverified SMMessage");			return null;		}
 		return new SMMessage(buf);
 	}
 }

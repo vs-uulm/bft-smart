@@ -28,7 +28,7 @@ import navigators.smart.tom.core.timer.messages.ForwardedMessage;
  * Handler for forwarded messages.
  * @author Christian Spann 
  */
-public class ForwardedMessageHandler<A> implements MessageHandler<ForwardedMessage, A> {
+public class ForwardedMessageHandler implements MessageHandler<ForwardedMessage, Boolean> {
 
 	private final static Logger log = Logger.getLogger(ForwardedMessageHandler.class.getCanonicalName());
 	private final TOMLayer tomLayer;
@@ -47,7 +47,7 @@ public class ForwardedMessageHandler<A> implements MessageHandler<ForwardedMessa
 
 	}
 
-	public ForwardedMessage deserialise(SystemMessage.Type type, ByteBuffer buf, A verificationresult) throws IOException, ClassNotFoundException {
-		return new ForwardedMessage(buf);
+	public ForwardedMessage deserialise(SystemMessage.Type type, ByteBuffer buf,			Boolean verificationresult) throws IOException, ClassNotFoundException {
+		if(!verificationresult){			log.severe("Unverified ForwardedMessage");			return null;		}		return new ForwardedMessage(buf);
 	}
 }
