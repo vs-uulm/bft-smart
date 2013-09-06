@@ -15,7 +15,7 @@
  */
 package navigators.smart.clientsmanagement;
 
-import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.SignatureException;import java.util.ArrayList;import java.util.List;import java.util.SortedMap;import java.util.TreeMap;import java.util.concurrent.atomic.AtomicInteger;import java.util.concurrent.locks.ReentrantLock;import java.util.logging.Level;import java.util.logging.Logger;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;import navigators.smart.tom.util.TOMUtil;
+import java.security.InvalidKeyException;import java.security.NoSuchAlgorithmException;import java.security.SignatureException;import java.util.ArrayList;import java.util.List;import java.util.SortedMap;import java.util.TreeMap;import java.util.concurrent.atomic.AtomicInteger;import java.util.concurrent.locks.ReentrantLock;import java.util.logging.Level;import java.util.logging.Logger;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.TOMConfiguration;import navigators.smart.tom.util.TOMUtil;
 /**
  * Holds a list of all currently active Clients and their pending Requests. 
  * The contents of this object differ across replicas, as clients may send
@@ -36,7 +36,7 @@ public class ClientsManager {
 	 * must be monitored through a list of present requests.
 	 */
 	public final AtomicInteger pendingreqs = new AtomicInteger();
-	private volatile int nextClient = 0;
+	private volatile int nextClient = 0;		private boolean random;
 
 	/**
 	 * Creates a new ClientsManager object with the given configuration.
@@ -45,7 +45,7 @@ public class ClientsManager {
 	 */
 	public ClientsManager(TOMConfiguration conf) {
 		this.conf = conf;
-		TOMUtil util = null;
+		TOMUtil util = null;		if(conf.getVerifierType().equals(VerifierType.GlobalVerifier)){			random = true;		} else {			random = false;		}
 		try {
 			util = new TOMUtil();
 		} catch (InvalidKeyException e) {
@@ -275,7 +275,7 @@ public class ClientsManager {
 							!fromClient ||
 							//I already have/had this message but this is ok
 							clientData.getLastMessageReceived() == request.getSequence()) {
-						valid = true;
+						valid = true;						if(random){							clientData.addRequest(request);						}
 					} else {
 						//it is an invalid message if it's being sent by a client 
 						//(sequence number < last received )
