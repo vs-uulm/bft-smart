@@ -79,8 +79,8 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
 
         tomlayer = new TOMLayer( this, cs, conf);
 
-        cs.addMessageHandler(SystemMessage.Type.FORWARDED,new ForwardedMessageHandler<TOMMessage>(tomlayer));
-        cs.addMessageHandler(SystemMessage.Type.SM_MSG,new StateMessageHandler<TOMMessage>(tomlayer));
+        cs.addMessageHandler(SystemMessage.Type.FORWARDED,new ForwardedMessageHandler(tomlayer));
+        cs.addMessageHandler(SystemMessage.Type.STATE_MSG,new StateMessageHandler(tomlayer));
         cs.setRequestReceiver(tomlayer);
 
         ConsensusServiceFactory factory = createFactory(cs, conf);

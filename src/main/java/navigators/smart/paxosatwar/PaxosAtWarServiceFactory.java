@@ -87,7 +87,7 @@ public class PaxosAtWarServiceFactory implements ConsensusServiceFactory{
         proposer.setManager(manager);
         manager.setRequestHandler(req);
 
-        PaWMessageHandler<?> msghandler = new PaWMessageHandler<byte[]>(acceptor, proposer, req);
+        PaWMessageHandler msghandler = new PaWMessageHandler(acceptor, proposer, req);
         //create service object that implements ConsensusService interface
         ConsensusService service = new PaxosAtWarService(lm, manager, conf,tom);
         cs.addMessageHandler(SystemMessage.Type.PAXOS_MSG, msghandler);

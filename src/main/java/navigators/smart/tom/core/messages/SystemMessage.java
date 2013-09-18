@@ -29,12 +29,12 @@ public abstract class SystemMessage {
 
     public enum Type {
 
-        TOM_MSG(Byte.valueOf((byte) 1)),
-        FORWARDED(Byte.valueOf((byte) 2)),
-        PAXOS_MSG(Byte.valueOf((byte) 3)),
-        RR_MSG(Byte.valueOf((byte) 4)),
-        RT_MSG(Byte.valueOf((byte) 5)),
-        SM_MSG(Byte.valueOf((byte) 6));
+        TOM_MSG((byte) 1),
+        FORWARDED((byte) 2),
+        PAXOS_MSG((byte) 3),
+        RR_MSG((byte) 4),
+        RT_MSG((byte) 5),
+        STATE_MSG((byte) 6), // Message containting STATE request or reply information        STATEREQUEST_MSG((byte)7); // Message containting a STATE Fetch request        
 
         public final Byte type;
 
@@ -47,7 +47,7 @@ public abstract class SystemMessage {
             }
         }
 
-        Type (Byte type) {
+        Type (byte type) {
             this.type = type;
         }
 

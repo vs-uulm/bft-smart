@@ -45,7 +45,7 @@ public class SMMessage extends SystemMessage {
 	 */
 	public SMMessage(Integer sender, Long eid, int type, int replica, TransferableState state) {
 
-		super(Type.SM_MSG, sender);
+		super(Type.STATE_MSG, sender);
 		this.state = state;
 		this.eid = eid;
 		this.sm_type = type;
@@ -55,7 +55,7 @@ public class SMMessage extends SystemMessage {
 
 	@SuppressWarnings("boxing")
 	public SMMessage(ByteBuffer in) throws IOException, ClassNotFoundException {
-		super(Type.SM_MSG, in);
+		super(Type.STATE_MSG, in);
 		eid = in.getLong();
 		sm_type = in.getInt();
 		replica = in.getInt();
