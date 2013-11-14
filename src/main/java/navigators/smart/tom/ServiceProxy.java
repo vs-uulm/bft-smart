@@ -1,4 +1,19 @@
-
+/*
+ * Copyright (c) 2007-2013 Alysson Bessani, Eduardo Alchieri, Paulo Sousa, 
+ * and the authors indicated in the @author tags 
+ *  
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ *  
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ *  
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License. 
+ */
 package navigators.smart.tom;
 
 import java.util.*;
@@ -32,6 +47,7 @@ public class ServiceProxy extends TOMSender {
 	private ReplicaHolder r = new ReplicaHolder();
 	long timeout = 0; //timeout to wait for the client request
 	private BlackList blacklist;
+	public final List<Integer> emptylist = new ArrayList<Integer>();
 	
 	private class ReplicaHolder {
 //		private int currentReplica = 0;
@@ -79,7 +95,8 @@ public class ServiceProxy extends TOMSender {
 	 * Constructor
 	 * 
 	 * @param id Process id for this client
-	 * @param timeout The timeout to wait for the request to finish before printing some logging info.
+	 * @param timeout The timeout to wait for the request to finish before 
+	 * retrying the request and printing some logging info.
 	 */
 	public ServiceProxy(int id, String configdir, long timeout) {
 		TOMConfiguration conf = new TOMConfiguration(id, configdir);
@@ -114,11 +131,11 @@ public class ServiceProxy extends TOMSender {
 	 * @param request Request to be sent
 	 * @return The reply from the replicas related to request
 	 */
-	public byte[] invoke(byte[] request) {
+	public Reply invoke(byte[] request) {
 		return invoke(request, false,false);
 	}
 	
-	public byte[] invoke(byte[] request, boolean readonly) {
+	public Reply invoke(byte[] request, boolean readonly) {
 		return invoke(request, readonly, false);
 	}
 
@@ -130,7 +147,9 @@ public class ServiceProxy extends TOMSender {
 	 * @param readOnly it is a read only request (will not be ordered)
 	 * @return The reply from the replicas related to request
 	 */
-	public byte[] invoke(byte[] request, boolean readOnly, boolean random) {
+	public Reply invoke(byte[] request, boolean readOnly, boolean random) {
+		List<Integer> targets = new ArrayList<Integer>();
+		
 		// Ahead lies a critical section.
 		// This ensures the thread-safety by means of a semaphore
 		synchronized (sync) {
@@ -138,13 +157,14 @@ public class ServiceProxy extends TOMSender {
 				// Discard previous replies
 				Arrays.fill(replies, null);
 				response = null;
+				
 				TOMMessage tommsg = createTOMMsg(request, readOnly);
 //				if(random){
 //					Collections.shuffle(group);
 //				}
 				reqId = getLastSequenceNumber();
 				while (!decided){
-					List<Integer> targets = new ArrayList<Integer>();
+					
 					// Send the request to the replicas, and get its ID
 					if (random && !readOnly){
 						targets.add(r.getNextRandomReplica());
@@ -167,7 +187,8 @@ public class ServiceProxy extends TOMSender {
 			} catch (InterruptedException ex) {
 				Logger.getLogger(ServiceProxy.class.getName()).log(Level.SEVERE, null, ex);
 			}
-			return response; // return the response
+			
+			return new Reply(targets,response); // return the response
 		}
 	}
 
@@ -182,7 +203,7 @@ public class ServiceProxy extends TOMSender {
 	 * @param readOnly it is a read only request (will not be ordered)
 	 * @return The reply from the replicas related to request
 	 */
-	public byte[] invoke(TOMMessage request) {
+	public Reply invoke(TOMMessage request) {
 
 		// Ahead lies a critical section.
 		// This ensures the thread-safety by means of a semaphore
@@ -207,7 +228,7 @@ public class ServiceProxy extends TOMSender {
 
 		}
 
-		return response; // return the response
+		return new Reply(emptylist,response); // return the response
 	}
 
 	/**

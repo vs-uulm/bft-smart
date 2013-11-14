@@ -45,7 +45,7 @@ public class CounterClient {
         while(i<1000){
             buf.putInt(inc);
             buf.rewind();
-	    replybuf = ByteBuffer.wrap(counterProxy.invoke(buf.array(),(inc == 0)));
+	    replybuf = ByteBuffer.wrap(counterProxy.invoke(buf.array(),(inc == 0)).replydata);
 	    System.out.println("Counter value: "+replybuf.getInt());
 	    i++;
         }

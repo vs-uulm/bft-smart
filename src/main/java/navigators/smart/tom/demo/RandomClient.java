@@ -49,7 +49,7 @@ public class RandomClient {
             new DataOutputStream(out).writeInt(argument);
             new DataOutputStream(out).writeInt(operator);
 
-	        byte[] reply = counterProxy.invoke(out.toByteArray(),false);
+	        byte[] reply = counterProxy.invoke(out.toByteArray(),false).replydata;
 	        int newValue = new DataInputStream(new ByteArrayInputStream(reply)).readInt();
 	        System.out.println("Current value: "+newValue);
 	        i++;

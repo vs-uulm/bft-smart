@@ -29,11 +29,11 @@ import java.util.List;
 public class Reply {
 	
 	public final List<Integer> targets;
-	public final byte[] request;
+	public final byte[] replydata;
 	
-	public Reply(List<Integer> targets, byte[] request) {
+	public Reply(List<Integer> targets, byte[] replydata) {
 		super();
 		this.targets = targets;
-		this.request = request;
+		this.replydata = replydata;
 	}
 }
