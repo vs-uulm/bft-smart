@@ -25,7 +25,7 @@ import navigators.smart.consensus.ConsensusService;
 import navigators.smart.consensus.ConsensusServiceFactory;
 import navigators.smart.tom.core.TOMLayer;
 import navigators.smart.tom.core.messages.SystemMessage;
-import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.ShutdownThread;
+import navigators.smart.tom.util.ShutdownThread;
 import navigators.smart.tom.util.TOMConfiguration;
 
 /**

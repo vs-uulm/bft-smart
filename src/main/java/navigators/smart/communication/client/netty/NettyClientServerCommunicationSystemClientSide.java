@@ -28,8 +28,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -92,7 +90,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     
     private TOMUtil tomutil;
     
-    private volatile boolean running = true;
+//    private volatile boolean running = true;
 
     @SuppressWarnings("boxing")
     public NettyClientServerCommunicationSystemClientSide(TOMConfiguration conf) {
@@ -312,7 +310,7 @@ public class NettyClientServerCommunicationSystemClientSide extends SimpleChanne
     }
     
     public void shutdown(){
-    	running = false;
+//    	running = false;
 //    	reconnectionhandler.shutdownNow();
     	ChannelGroupFuture f = allservers.close();
     	f.awaitUninterruptibly();

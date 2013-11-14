@@ -40,7 +40,6 @@ import navigators.smart.tom.util.*;
  * 
  * @author  Christian Spann 
  */
-@SuppressWarnings("LoggerStringConcat")
 public class TOMLayer implements RequestReceiver {
 
 	private static final Logger log = Logger.getLogger(TOMLayer.class.getCanonicalName());

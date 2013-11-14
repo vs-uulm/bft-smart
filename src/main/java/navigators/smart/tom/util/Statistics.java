@@ -16,10 +16,20 @@
  */
 package navigators.smart.tom.util;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +47,6 @@ import org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatistics;
  *
  * @author Chritian Spann 
  */
-@SuppressWarnings("LoggerStringConcat")
 public class Statistics {
 
 	private static final Logger TIMESTAMP_LOGGER = Logger.getLogger("navigators.smart.timestamplogger");
@@ -114,8 +123,6 @@ public class Statistics {
 			Arrays.fill(recv, 0l);
 			isLeader = conf.getProcessId() == 0;
 
-			//Setup prefix for replicas 
-			String prefix = createPrefix();
 			//open statsfiles for writing
 			runningstatswriter = createStatsFileWriter(RUNNING_STATS_FILE);
 			serverstatswriter = createStatsFileWriter( SERVER_STATS_FILE);
@@ -262,7 +269,7 @@ public class Statistics {
 
 	public void consensusDone(Consensus<TOMMessage> c) {
 		long time = System.currentTimeMillis();
-		long consensusstart = consensusstarts.remove(c);
+//		long consensusstart = consensusstarts.remove(c);
 		consensusduration.addValue(time - consensusstarts.remove(c));
 	}
 
@@ -340,13 +347,13 @@ public class Statistics {
 		}
 	}
 
-	private <T extends Comparable<T>> T getMax(T[] a) {
-		T max = a[0];
-		for (T t : a) {
-			max = max.compareTo(t) < 0 ? t : max;
-		}
-		return max;
-	}
+//	private <T extends Comparable<T>> T getMax(T[] a) {
+//		T max = a[0];
+//		for (T t : a) {
+//			max = max.compareTo(t) < 0 ? t : max;
+//		}
+//		return max;
+//	}
 
 	/**
 	 * Returns the statistics object for this client. If none is existant a new one is created and returned.

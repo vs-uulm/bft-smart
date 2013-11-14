@@ -105,16 +105,16 @@ public class RSAKeyLoader {
     }
 
     //utility methods for going from string to public/private key
+    @SuppressWarnings("restriction")
     private PrivateKey getPrivateKeyFromString(String key) throws Exception {
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        sun.misc.BASE64Decoder b64 = new sun.misc.BASE64Decoder();
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");		sun.misc.BASE64Decoder b64 = new sun.misc.BASE64Decoder();
         EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(b64.decodeBuffer(key));
         PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
         return privateKey;
     }
 
-    private PublicKey getPublicKeyFromString(String key) throws Exception {
-        sun.misc.BASE64Decoder b64 = new sun.misc.BASE64Decoder();
+    @SuppressWarnings("restriction")
+    private PublicKey getPublicKeyFromString(String key) throws Exception {		sun.misc.BASE64Decoder b64 = new sun.misc.BASE64Decoder();
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(b64.decodeBuffer(key));
         PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);

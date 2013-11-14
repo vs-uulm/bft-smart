@@ -64,7 +64,7 @@ public class RSAKeyPairGenerator {
         w.close();
     }
     
-    
+    @SuppressWarnings("restriction")
     private String getKeyAsString(Key key) {
         byte[] keyBytes = key.getEncoded();
         sun.misc.BASE64Encoder b64 = new sun.misc.BASE64Encoder();

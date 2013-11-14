@@ -14,12 +14,12 @@
  * limitations under the License. 
  */package navigators.smart.tom.demo;
 
-import java.io.IOException;import java.util.logging.Level;import java.util.logging.Logger;import navigators.smart.communication.ServerCommunicationSystem;import navigators.smart.tom.ServiceReplica;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.DebugInfo;
+import java.io.IOException;import java.util.logging.Level;import java.util.logging.Logger;import navigators.smart.tom.ServiceReplica;import navigators.smart.tom.core.messages.TOMMessage;import navigators.smart.tom.util.DebugInfo;
 
 public class ThroughputTestServer extends ServiceReplica {
     
 //    private ServerCommunicationSystem cs;
-    private int id;
+//    private int id;
     private int interval;
     private long numDecides=0;
     private long lastDecideTimeInstant;
@@ -27,7 +27,7 @@ public class ThroughputTestServer extends ServiceReplica {
     
     public ThroughputTestServer(int id, int interval) throws IOException {
         super(id);
-        this.id = id;
+//        this.id = id;
         this.interval = interval;
     }
 
