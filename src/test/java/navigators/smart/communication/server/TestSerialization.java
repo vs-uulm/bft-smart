@@ -28,8 +28,8 @@ public class TestSerialization {
         TOMMessage tm = new TOMMessage(0,0,new String("abc").getBytes());
 
         byte[] message = tm.getBytes();
-        System.out.println(message.length);
-        System.out.println(message);
+//        System.out.println(message.length);
+//        System.out.println(message);
 
         //TOMMessage tm2 = (TOMMessage) ois.readObject();
         ByteBuffer buf = ByteBuffer.wrap(message);

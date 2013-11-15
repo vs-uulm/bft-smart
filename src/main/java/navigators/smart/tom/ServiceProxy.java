@@ -148,7 +148,7 @@ public class ServiceProxy extends TOMSender {
 	 * @return The reply from the replicas related to request
 	 */
 	public Reply invoke(byte[] request, boolean readOnly, boolean random) {
-		List<Integer> targets = new ArrayList<Integer>();
+		List<Integer> targets = null;
 		
 		// Ahead lies a critical section.
 		// This ensures the thread-safety by means of a semaphore
@@ -157,13 +157,13 @@ public class ServiceProxy extends TOMSender {
 				// Discard previous replies
 				Arrays.fill(replies, null);
 				response = null;
-				
 				TOMMessage tommsg = createTOMMsg(request, readOnly);
 //				if(random){
 //					Collections.shuffle(group);
 //				}
 				reqId = getLastSequenceNumber();
 				while (!decided){
+					targets = new ArrayList<Integer>();
 					
 					// Send the request to the replicas, and get its ID
 					if (random && !readOnly){
@@ -283,9 +283,8 @@ public class ServiceProxy extends TOMSender {
 
 	private void handleTimeout(TOMMessage tommsg, boolean random, List<Integer> group) {
 		StringBuilder s = new StringBuilder("Timeout while waiting for replies ")
-						.append(", got replies from: \n")
-						.append(Arrays.toString(replies))
-						.append("Targets: ");
+						.append(": replies:").append(Arrays.toString(replies))
+						.append(":Targets: ");
 		if (random || tommsg.isReadOnlyRequest()) {
 			s.append(group);
 		} else {

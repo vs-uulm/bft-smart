@@ -102,8 +102,8 @@ public class StateManager {
 
 			emptyEIDs(eid);
 
-			if (log.isLoggable(Level.WARNING)) {
-				log.warning("Requesting Statetransfer up to" + (eid - 1));
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("Requesting Statetransfer up to " + (eid - 1));
 			}
 			return true;
 		} else {
