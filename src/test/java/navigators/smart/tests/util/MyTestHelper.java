@@ -18,7 +18,7 @@
  *
  * @author Christian Spann
  */
-public class TestHelper {
+public class MyTestHelper {
 	
     public static byte[] createTestByte(){
     	byte[] tmp = {3,1,2,4};

@@ -16,7 +16,7 @@
 package navigators.smart.tom.util;
 
 import java.nio.ByteBuffer;
-import navigators.smart.tests.util.TestHelper;
+import navigators.smart.tests.util.MyTestHelper;
 
 import navigators.smart.tom.core.messages.TOMMessage;
 
@@ -45,7 +45,7 @@ public class BatchBuilderReaderTest {
         // Fill the array of bytes for the messages/signatures being batched
         
         for (int i = 0; i<numberOfMessages; i++) {
-            TOMMessage msg = new TOMMessage(0, 0, TestHelper.createTestByte());
+            TOMMessage msg = new TOMMessage(0, 0, MyTestHelper.createTestByte());
             tommsgs[i] = msg;
             ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
             msg.serialise(buf);
@@ -79,8 +79,8 @@ public class BatchBuilderReaderTest {
 		// Fill the array of bytes for the messages/signatures being batched
 		
 		for (int i = 0; i<numberOfMessages; i++) {
-			TOMMessage msg = new TOMMessage(0, 0, TestHelper.createTestByte());
-			msg.setBytes(TestHelper.createTestByte());
+			TOMMessage msg = new TOMMessage(0, 0, MyTestHelper.createTestByte());
+			msg.setBytes(MyTestHelper.createTestByte());
 			tommsgs[i] = msg;
 			ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 			msg.serialise(buf);

@@ -25,7 +25,7 @@ import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.consensus.Consensus;
 import navigators.smart.consensus.ConsensusService;
 import navigators.smart.statemanagment.SMMessage;
-import navigators.smart.tests.util.TestHelper;
+import navigators.smart.tests.util.MyTestHelper;
 import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.BatchBuilder;
@@ -73,7 +73,7 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testComputeHash() {
-		byte[] testbyte = TestHelper.createTestByte();
+		byte[] testbyte = MyTestHelper.createTestByte();
 		byte[] ret = tl.computeHash(testbyte);
 		MessageDigest md;
 		try {
@@ -108,7 +108,7 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testCreatePropose() {
-		TOMMessage msg = new TOMMessage(0, 0, TestHelper.createTestByte());
+		TOMMessage msg = new TOMMessage(0, 0, MyTestHelper.createTestByte());
 		byte[][] msgs = new byte[1][];
 		msgs[0] = msg.getBytes();
 		ConsensusService srv = mock(ConsensusService.class);
@@ -127,7 +127,7 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testDecided() {
-		TOMMessage msg = new TOMMessage(0, 0, TestHelper.createTestByte());
+		TOMMessage msg = new TOMMessage(0, 0, MyTestHelper.createTestByte());
 		TOMMessage[] array = new TOMMessage[1];
 		array[0] = msg;
 		Consensus<TOMMessage[]> cons = new Consensus<TOMMessage[]>(0l);
@@ -151,7 +151,7 @@ public class TOMLayerTest {
 	 */
 	@Test
 	public void testCheckProposedValue() {
-		TOMMessage msg = new TOMMessage(0, 0, TestHelper.createTestByte());
+		TOMMessage msg = new TOMMessage(0, 0, MyTestHelper.createTestByte());
 		byte[][] msgs = new byte[1][];
 		TOMMessage[] array = new TOMMessage[1];
 		array[0] = msg;

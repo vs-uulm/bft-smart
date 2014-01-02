@@ -18,7 +18,7 @@ package navigators.smart.tom.core.messages;
 import static org.junit.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
-import navigators.smart.tests.util.TestHelper;
+import navigators.smart.tests.util.MyTestHelper;
 
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public class TOMMessageTest {
 	
 	@Test
 	public void testMsgSize(){
-		TOMMessage msg = new TOMMessage(1, 3, TestHelper.createTestByte());
+		TOMMessage msg = new TOMMessage(1, 3, MyTestHelper.createTestByte());
 		ByteBuffer buf = ByteBuffer.allocate(1024);
 		msg.serialise(buf);
 		assert(msg.getMsgSize()==buf.position());
@@ -38,7 +38,7 @@ public class TOMMessageTest {
 
 	@Test
 	public void testSerialise() {
-		TOMMessage msg = new TOMMessage(1, 3, TestHelper.createTestByte());
+		TOMMessage msg = new TOMMessage(1, 3, MyTestHelper.createTestByte());
 		
 		ByteBuffer buf = ByteBuffer.allocate(msg.getMsgSize());
 		
@@ -54,8 +54,8 @@ public class TOMMessageTest {
 
 	@Test
 	public void testCompareTo() {
-		TOMMessage msg = new TOMMessage(1, 1, TestHelper.createTestByte());
-		TOMMessage msg2 = new TOMMessage(1, 2, TestHelper.createTestByte());
+		TOMMessage msg = new TOMMessage(1, 1, MyTestHelper.createTestByte());
+		TOMMessage msg2 = new TOMMessage(1, 2, MyTestHelper.createTestByte());
 		
 		assert(msg.compareTo(msg2)<0);
 		assert(msg2.compareTo(msg)>0);

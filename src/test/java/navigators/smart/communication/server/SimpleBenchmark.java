@@ -25,7 +25,7 @@ import navigators.smart.tom.util.Storage;
 import navigators.smart.tom.util.TOMConfiguration;
 
 
-public class Test {
+public class SimpleBenchmark {
 
     /**
      * @param args the command line arguments
