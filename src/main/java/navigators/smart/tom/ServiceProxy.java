@@ -286,9 +286,9 @@ public class ServiceProxy extends TOMSender {
 						.append(": replies:").append(Arrays.toString(replies))
 						.append(":Targets: ");
 		if (random || tommsg.isReadOnlyRequest()) {
-			s.append(group);
+			s.append(group).append(" ");
 		} else {
-			s.append("ALL");
+			s.append("ALL ");
 		}
 		s.append(tommsg);
 		log.warning(s.toString());
