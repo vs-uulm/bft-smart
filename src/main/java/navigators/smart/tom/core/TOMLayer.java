@@ -349,7 +349,7 @@ public class TOMLayer implements RequestReceiver {
 //		return clientsManager.hasPendingRequests();
 //	}
 
-	public byte[] getState() {		dt.waitForDeliveryToFinish();		return receiver.getState();
+	public byte[] getState() {//		dt.waitForDeliveryToFinish();		return dt.getAppState();
 	}		public void setState(TransferableState state){		dt.updateState(state, false);//		receiver.setState(state);	}
 
 	/**
