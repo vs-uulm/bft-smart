@@ -27,9 +27,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,7 +73,10 @@ public class Statistics {
 	// Vars for dynamic header extension of stats files
 //	private static volatile boolean headerPrinted = false;
 	private volatile String paramname = "";
-	private volatile String headerExtension = "";
+	private volatile String statsNames = "";
+	private volatile String counterNames = "";
+	private volatile List<SynchronizedSummaryStatistics> statsList = new LinkedList<SynchronizedSummaryStatistics>();
+	private volatile List<AtomicLong> counterList = new LinkedList<AtomicLong>();
 	private long start;
 	// Map holding the client statistic objects
 	private final Map<Integer, ClientStats> clientstatsmap = Collections.synchronizedMap(new HashMap<Integer, ClientStats>());
@@ -197,33 +203,50 @@ public class Statistics {
 	 *
 	 * @param name The name of the statistics to be printed later on.
 	 */
-	public void extendStats(String name) {
-		headerExtension += " "+formatStatsString(name);
+	public SynchronizedSummaryStatistics addStats(String name) {
+		statsNames += " " + formatStatsString(name);
+		SynchronizedSummaryStatistics stats = new SynchronizedSummaryStatistics();
+		statsList.add(stats);
+		return stats;
+	}
+	/**
+	 * Extend the headers of the printed stats by another statistics. This adds 4 columns to the gnuplot compatible output: the supplied name, StdDev,
+	 * Var and 95% (Confidence Interval). These 4 stats will also be printed later on when printstats with the specific stat will be called.
+	 *
+	 * @param name The name of the statistics to be printed later on.
+	 */
+	public AtomicLong addCounter(String name) {
+		counterNames += " " + name;
+		AtomicLong counter = new AtomicLong();
+		counterList.add(counter);
+		return counter;
 	}
 
 	/**
 	 * Prints the current statistics to the provided server and clientstats writers into the stats directory of the currently running test.
 	 *
 	 * @param param The Param must fit the param name that was supplied via extendParam.
-	 * @param stats The stats must correspond in their order to the extensions supplied via extendStats.
 	 */
-	public void printStats(String param, SummaryStatistics... stats) {
+	public void printStats(String param) {
 		if (!initialised.contains(SERVER_STATS_FILE)) {
 			initialised.add(SERVER_STATS_FILE);
-			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges STReqsSent STReqsReceived" + headerExtension);
+			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges STReqsSent STReqsReceived" + counterNames + statsNames);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
 		String serverstats = param 
-				+ " " + nf.format(crtt.getMean())
-				+ " " + nf.format(rtt.getMean())
+				+ " " + nf.format(crtt.getN() > 0 ? crtt.getMean() : 0)
+				+ " " + nf.format(rtt.getN() > 0 ? rtt.getMean() : 0)
 				+ " " + nf.format(dec.getMean())
 				+ " " + timeouts 
 				+ " " + viewchanges
 				+ " " + strequestssent
 				+ " " + strequestsreceived;
-		for (int i = 0; i < stats.length; i++) {
-			serverstats += " " + formatStats(stats[i]);
+		for (AtomicLong counter : counterList) {
+			serverstats += " " + counter;
+		}
+		for (SummaryStatistics stats : statsList) {
+			serverstats += " " + formatStats(stats);
 		}
 		serverstatswriter.println(serverstats);
 		serverstatswriter.flush();
@@ -244,7 +267,10 @@ public class Statistics {
 	}
 
 	public void printRunningStats(String timestamp, String output) {
-		runningstatswriter.append(timestamp).append(' ').append(TOMReceiver.getCurrentServerComQueues()).append(' ').append(TOMReceiver.getCurrentPendingRequests()).append(' ').append(output).append("\n").flush();
+		runningstatswriter.append(timestamp).append(' ')
+				.append(TOMReceiver.getCurrentServerComQueues()).append(' ')
+				.append(TOMReceiver.getCurrentPendingRequests()).append(' ')
+				.append(output).append("\n").flush();
 	}
 
 	public void printAndClose() {
