@@ -67,15 +67,15 @@ public class Statistics {
 	private Long[] sent;
 	private Long[] recv;
 	/** Timeouts on this node */
-	private volatile AtomicLong timeouts = new AtomicLong();
+	private volatile AtomicLong timeouts;
 	/** Viewchanges seen by this node */
-	private volatile AtomicLong viewchanges = new AtomicLong();
+	private volatile AtomicLong viewchanges;
 	/** State transfer requests sent by this node */
-	private volatile AtomicLong strequestssent = new AtomicLong();
+	private volatile AtomicLong strequestssent;
 	/** State transfer requests received by this node */
-	private volatile AtomicLong strequestsreceived = new AtomicLong();
+	private volatile AtomicLong strequestsreceived;
 	/** Consensus instances finished */
-	private volatile AtomicLong consensus = new AtomicLong();
+	private volatile AtomicLong consensus;
 //	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 //	private static volatile boolean headerPrinted = false;
@@ -153,7 +153,7 @@ public class Statistics {
 		
 		@Override
 		public Thread newThread(Runnable r) {
-			Thread t = new Thread("StatisticsRunner");
+			Thread t = new Thread(r, "StatisticsRunner");
 			t.setDaemon(true);
 			return t;
 		}
@@ -170,7 +170,6 @@ public class Statistics {
 		consensusduration = addStats("ConsensusDuration");
 		
 		consensus = addCounter("consensusrate/s");
-		
 		timeouts = addCounter("timeoutrate/s");
 		viewchanges = addCounter("viewchangerate/s");
 		strequestssent = addCounter("stxreqsendrate/s");
