@@ -180,6 +180,7 @@ public class Statistics {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
 		}
+		
 		ratetask = ratetimer.scheduleAtFixedRate(new Runnable() {
 			
 			@Override
@@ -356,6 +357,7 @@ public class Statistics {
 		runningstatswriter.close();
 		ratetask.cancel(true);
 		ratetimer.shutdown();
+		System.out.println("Statistics shut down.");
 	}
 
 	/**
