@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.FileHandler;
@@ -147,6 +148,8 @@ public class Statistics {
 	
 	private ScheduledExecutorService ratetimer = Executors.newSingleThreadScheduledExecutor();
 
+	private ScheduledFuture ratetask;
+	
 	private Statistics(TOMConfiguration conf) {
 		sent = new Long[conf.getN()];
 		recv = new Long[conf.getN()];
@@ -175,7 +178,7 @@ public class Statistics {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
 		}
-		ratetimer.scheduleAtFixedRate(new Runnable() {
+		ratetask = ratetimer.scheduleAtFixedRate(new Runnable() {
 			
 			@Override
 			public void run() {
@@ -349,6 +352,8 @@ public class Statistics {
 		serverstatswriter.close();
 		clientstatswriter.close();
 		runningstatswriter.close();
+		ratetask.cancel(true);
+		ratetimer.shutdown();
 	}
 
 	/**
@@ -537,4 +542,5 @@ public class Statistics {
 	public void stateTransferReqReceived(){
 		strequestsreceived.counter.incrementAndGet();
 	}
+	
 }
