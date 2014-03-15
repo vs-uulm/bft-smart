@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.FileHandler;
@@ -148,7 +149,15 @@ public class Statistics {
 			}
 	}
 	
-	private ScheduledExecutorService ratetimer = Executors.newSingleThreadScheduledExecutor();
+	private ScheduledExecutorService ratetimer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+		
+		@Override
+		public Thread newThread(Runnable r) {
+			Thread t = new Thread("StatisticsRunner");
+			t.setDaemon(true);
+			return t;
+		}
+	});
 
 	private ScheduledFuture ratetask;
 	
