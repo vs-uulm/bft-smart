@@ -265,7 +265,7 @@ public class Statistics {
 	 * @param name The name of the statistics to be printed later on.
 	 */
 	public AtomicLong addCounter(String name) {
-		statsNames += formatStatsString(name);
+		statsNames += " " + formatStatsString(name);
 		CounterHolder holder = new CounterHolder(name);
 		
 		statsList.add(holder.stats);
