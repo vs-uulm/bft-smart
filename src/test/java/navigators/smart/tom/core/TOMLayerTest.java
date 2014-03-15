@@ -131,6 +131,7 @@ public class TOMLayerTest {
 		TOMMessage[] array = new TOMMessage[1];
 		array[0] = msg;
 		Consensus<TOMMessage[]> cons = new Consensus<TOMMessage[]>(0l);
+		cons.decided(msg.getBytes(), 0, 0);
 		cons.setDeserialisedDecision(array);
 		ConsensusService srv = mock(ConsensusService.class);
 		tl.setConsensusService(srv);

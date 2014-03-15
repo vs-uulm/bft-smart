@@ -86,8 +86,7 @@ public class Statistics {
 	private final SynchronizedSummaryStatistics rtt = new SynchronizedSummaryStatistics();
 	private final SynchronizedSummaryStatistics crtt = new SynchronizedSummaryStatistics();
 	private final SynchronizedSummaryStatistics dec = new SynchronizedSummaryStatistics();
-	private final SynchronizedSummaryStatistics consensusduration = new SynchronizedSummaryStatistics();
-	private final SynchronizedSummaryStatistics decisionduration = new SynchronizedSummaryStatistics();
+	private final SynchronizedSummaryStatistics consensusduration;
 	// Static reference to have easy access from everywhere
 	public static Statistics stats;
 	
@@ -122,18 +121,18 @@ public class Statistics {
 	}
 
 	private Statistics(TOMConfiguration conf) {
-		try {
-			sent = new Long[conf.getN()];
-			recv = new Long[conf.getN()];
-			Arrays.fill(sent, 0l);
-			Arrays.fill(recv, 0l);
-			isLeader = conf.getProcessId() == 0;
+		sent = new Long[conf.getN()];
+		recv = new Long[conf.getN()];
+		Arrays.fill(sent, 0l);
+		Arrays.fill(recv, 0l);
+		isLeader = conf.getProcessId() == 0;
+		consensusduration = addStats("ConsensusDuration");
 
+		try {
 			//open statsfiles for writing
 			runningstatswriter = createStatsFileWriter(RUNNING_STATS_FILE);
 			serverstatswriter = createStatsFileWriter( SERVER_STATS_FILE);
 			clientstatswriter = createStatsFileWriter( CLIENT_STATS_FILE);
-
 		} catch (IOException ex) {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
@@ -230,13 +229,29 @@ public class Statistics {
 	public void printStats(String param) {
 		if (!initialised.contains(SERVER_STATS_FILE)) {
 			initialised.add(SERVER_STATS_FILE);
-			serverstatswriter.println(paramname + " \"Client rtt\" Rtt Decoding Timeouts Viewchanges STReqsSent STReqsReceived" + counterNames + statsNames);
+			serverstatswriter.println(paramname 
+//					+ " \"Client rtt N\""
+//					+ " \"Client rtt\""
+//					+ " \"Rtt N\""
+//					+ " Rtt"
+					+ " \"Decoding N\""
+					+ " Decoding"
+					+ " Timeouts"
+					+ " Viewchanges"
+					+ " STReqsSent"
+					+ " STReqsReceived" 
+					+ counterNames 
+					+ statsNames);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
 		}
 		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
+		nf.setGroupingUsed(false);
 		String serverstats = param 
-				+ " " + nf.format(crtt.getN() > 0 ? crtt.getMean() : 0)
-				+ " " + nf.format(rtt.getN() > 0 ? rtt.getMean() : 0)
+//				+ " " + crtt.getN()
+//				+ " " + nf.format(crtt.getN() > 0 ? crtt.getMean() : 0)
+//				+ " " + rtt.getN()
+//				+ " " + nf.format(rtt.getN() > 0 ? rtt.getMean() : 0)
+				+ " " + dec.getN()
 				+ " " + nf.format(dec.getMean())
 				+ " " + timeouts 
 				+ " " + viewchanges
@@ -289,14 +304,17 @@ public class Statistics {
 	 *
 	 * @param c
 	 */
-	public void consensusStarted(Consensus<TOMMessage> c) {
-		consensusstarts.put(c, System.currentTimeMillis());
+	public void consensusStarted(Consensus<TOMMessage[]> c) {
+		consensusstarts.put(c, System.nanoTime());
 	}
 
-	public void consensusDone(Consensus<TOMMessage> c) {
-		long time = System.currentTimeMillis();
+	public void consensusDone(Consensus<TOMMessage[]> c) {
+		long time = System.nanoTime();
 //		long consensusstart = consensusstarts.remove(c);
-		consensusduration.addValue(time - consensusstarts.remove(c));
+		Long start;
+		if ((start = consensusstarts.remove(c)) != null) {
+			consensusduration.addValue(time - start);
+		}
 	}
 
 	public void decodedMsg(int remoteId, SystemMessage sm) {
@@ -319,25 +337,25 @@ public class Statistics {
 		}
 	}
 
-	public void newRound() {
-		if (isLeader) {
-			if (start != 0) {
-				long time = System.nanoTime();
-				//calculate client round trip time
-				crtt.addValue((time - start) / 1000000);
-//				//calculate decoding time: current time - max of server replicas
-//				dec.addValue((time - getMax(recv)));
-				for (int i = 0; i < sent.length; i++) {
-					if (sent[i] != 0l && recv[i] != 0l) {
-						rtt.addValue((recv[i] - sent[i]) / 1000000);
-						sent[i] = 0l;
-						recv[i] = 0l;
-					}
-				}
-			}
-			start = System.nanoTime();
-		}
-	}
+//	public void newRound() {
+//		if (isLeader) {
+//			if (start != 0) {
+//				long time = System.nanoTime();
+//				//calculate client round trip time
+//				crtt.addValue((time - start) / 1000000);
+////				//calculate decoding time: current time - max of server replicas
+////				dec.addValue((time - getMax(recv)));
+//				for (int i = 0; i < sent.length; i++) {
+//					if (sent[i] != 0l && recv[i] != 0l) {
+//						rtt.addValue((recv[i] - sent[i]) / 1000000);
+//						sent[i] = 0l;
+//						recv[i] = 0l;
+//					}
+//				}
+//			}
+//			start = System.nanoTime();
+//		}
+//	}
 
 	public void sentMsgToServer(int remoteId) {
 		if (isfine) {
@@ -349,7 +367,7 @@ public class Statistics {
 	}
 
 	public void receivedMsgFromClient(int sender) {
-		newRound();
+//		newRound();
 		getClientStats(sender).receivedMsg();
 		if (isfine) {
 			TIMESTAMP_LOGGER.fine("[" + sender + "]Recv raw: " + System.nanoTime());
@@ -399,8 +417,8 @@ public class Statistics {
 	private void reset() {
 		rtt.clear();
 		dec.clear();
-		decisionduration.clear();
 		crtt.clear();
+		consensusduration.clear();
 	}
 
 	public static double get95ConfidenceIntervalWidth(SummaryStatistics summaryStatistics) {
@@ -410,6 +428,7 @@ public class Statistics {
 
 	public static String formatStats(SummaryStatistics stats) {
 		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
+		nf.setGroupingUsed(false);
 		StringBuilder s = new StringBuilder();
 		s.append(nf.format(stats.getMean()))
 				.append(" ")

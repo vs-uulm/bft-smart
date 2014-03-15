@@ -208,7 +208,7 @@ public class TOMLayer implements RequestReceiver {
 	 *
 	 * @param cons The decided consensus
 	 */
-	public void decided(Consensus<TOMMessage[]> cons) {
+	public void decided(Consensus<TOMMessage[]> cons) {		if(Statistics.stats != null){			Statistics.stats.consensusDone(cons);		}
 		this.dt.delivery(cons); // Delivers the consensus to the delivery thread
 	}
 

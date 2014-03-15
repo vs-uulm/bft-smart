@@ -139,12 +139,12 @@ public class Consensus<E> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Arrays.hashCode(decision);
-		result = prime * result + decisionRound;
-		result = prime
-				* result
-				+ ((deserializedDecision == null) ? 0 : deserializedDecision
-						.hashCode());
+//		result = prime * result + Arrays.hashCode(decision);
+//		result = prime * result + decisionRound;
+//		result = prime
+//				* result
+//				+ ((deserializedDecision == null) ? 0 : deserializedDecision
+//						.hashCode());
 		result = prime * result + (int) (eid ^ (eid >>> 32));
 		return result;
 	}
