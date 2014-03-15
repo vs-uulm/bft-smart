@@ -29,10 +29,12 @@ import navigators.smart.tests.util.MyTestHelper;
 import navigators.smart.tom.TOMReceiver;
 import navigators.smart.tom.core.messages.TOMMessage;
 import navigators.smart.tom.util.BatchBuilder;
+import navigators.smart.tom.util.Statistics;
 import navigators.smart.tom.util.TOMConfiguration;
 import navigators.smart.tom.util.TOMUtil;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,6 +51,7 @@ public class TOMLayerTest {
 	TOMConfiguration conf;
 	ServerCommunicationSystem cs;
 	
+	
 	/**
 	 * @throws java.lang.Exception
 	 */
@@ -57,6 +60,7 @@ public class TOMLayerTest {
 		recv = mock(TOMReceiver.class);
 		cs = mock(ServerCommunicationSystem.class);
 		conf  = new TOMConfiguration(0,"./src/main/config");
+		Statistics.init(conf);
 		tl = new TOMLayer(recv, cs, conf);
 		
 	}
@@ -66,6 +70,12 @@ public class TOMLayerTest {
 	 */
 	@After
 	public void tearDown() throws Exception {
+		
+	}
+	
+	@AfterClass
+	public static void afterClass() throws Exception {
+		Statistics.stats.close();
 	}
 
 	/**

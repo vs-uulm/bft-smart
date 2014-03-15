@@ -66,15 +66,15 @@ public class Statistics {
 	private Long[] sent;
 	private Long[] recv;
 	/** Timeouts on this node */
-	private volatile CounterHolder timeouts;
+	private volatile CounterHolder timeouts = new CounterHolder("timeouts");
 	/** Viewchanges seen by this node */
-	private volatile CounterHolder viewchanges;
+	private volatile CounterHolder viewchanges = new CounterHolder("viewchanges");
 	/** State transfer requests sent by this node */
-	private volatile CounterHolder strequestssent;
+	private volatile CounterHolder strequestssent = new CounterHolder("statetxreqssent");
 	/** State transfer requests received by this node */
-	private volatile CounterHolder strequestsreceived;
+	private volatile CounterHolder strequestsreceived = new CounterHolder("statetexreqsrecv");
 	/** Consensus instances finished */
-	private volatile CounterHolder consensus;
+	private volatile CounterHolder consensus = new CounterHolder("consensus");
 //	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 //	private static volatile boolean headerPrinted = false;
@@ -136,8 +136,10 @@ public class Statistics {
 	}
 
 	public synchronized static void init(TOMConfiguration conf) {
-		stats = new Statistics(conf);
-		Statistics.class.notifyAll();
+		if(stats == null){
+			stats = new Statistics(conf);
+			Statistics.class.notifyAll();
+		}
 	}
 	
 	public synchronized static void waitForStats() throws InterruptedException{
