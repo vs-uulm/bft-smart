@@ -67,15 +67,15 @@ public class Statistics {
 	private Long[] sent;
 	private Long[] recv;
 	/** Timeouts on this node */
-	private volatile CounterHolder timeouts = new CounterHolder("timeouts");
+	private volatile AtomicLong timeouts = new AtomicLong();
 	/** Viewchanges seen by this node */
-	private volatile CounterHolder viewchanges = new CounterHolder("viewchanges");
+	private volatile AtomicLong viewchanges = new AtomicLong();
 	/** State transfer requests sent by this node */
-	private volatile CounterHolder strequestssent = new CounterHolder("statetxreqssent");
+	private volatile AtomicLong strequestssent = new AtomicLong();
 	/** State transfer requests received by this node */
-	private volatile CounterHolder strequestsreceived = new CounterHolder("statetexreqsrecv");
+	private volatile AtomicLong strequestsreceived = new AtomicLong();
 	/** Consensus instances finished */
-	private volatile CounterHolder consensus = new CounterHolder("consensus");
+	private volatile AtomicLong consensus = new AtomicLong();
 //	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 //	private static volatile boolean headerPrinted = false;
@@ -169,16 +169,12 @@ public class Statistics {
 //		isLeader = conf.getProcessId() == 0;
 		consensusduration = addStats("ConsensusDuration");
 		
-		counterList.add(consensus);
-		statsNames += formatStatsString("consensusrate/s");
-		counterList.add(timeouts);
-		statsNames += formatStatsString("timeoutrate/s");
-		counterList.add(viewchanges);
-		statsNames += formatStatsString("viewchangerate/s");
-		counterList.add(strequestssent);
-		statsNames += formatStatsString("stxreqsendrate/s");
-		counterList.add(strequestsreceived);
-		statsNames += formatStatsString("stxreqrecvrate/s");
+		consensus = addCounter("consensusrate/s");
+		
+		timeouts = addCounter("timeoutrate/s");
+		viewchanges = addCounter("viewchangerate/s");
+		strequestssent = addCounter("stxreqsendrate/s");
+		strequestsreceived = addCounter("stxreqrecvrate/s");
 
 		try {
 			//open statsfiles for writing
@@ -384,6 +380,7 @@ public class Statistics {
 		Long start;
 		if ((start = consensusstarts.remove(c)) != null) {
 			consensusduration.addValue(time - start);
+			consensus.incrementAndGet();
 		}
 	}
 
@@ -532,28 +529,28 @@ public class Statistics {
 	 * Logs a timeout and prints it to the serverstats file when the testrun is finished.
 	 */
 	public void timeout(){
-		timeouts.counter.incrementAndGet();
+		timeouts.incrementAndGet();
 	}
 	
 	/**
 	 * Logs an actual view change and prints it to the serverstats file when the testrun is finished.
 	 */
 	public void viewChange(){
-		viewchanges.counter.incrementAndGet();
+		viewchanges.incrementAndGet();
 	}
 	
 	/**
 	 * A state transfer is requested due to a large gap between this replica and the others
 	 */
 	public void stateTransferRequested(){
-		strequestssent.counter.incrementAndGet();
+		strequestssent.incrementAndGet();
 	}
 	
 	/**
 	 * A state transfer is received
 	 */
 	public void stateTransferReqReceived(){
-		strequestsreceived.counter.incrementAndGet();
+		strequestsreceived.incrementAndGet();
 	}
 	
 }
