@@ -508,15 +508,19 @@ public class Statistics {
 		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
 		nf.setGroupingUsed(false);
 		StringBuilder s = new StringBuilder();
-		s.append(nf.format(stats.getMean()))
-				.append(" ")
-				.append(nf.format(stats.getStandardDeviation()))
-				.append(" ")
-				.append(nf.format(stats.getVariance()))
-				.append(" ")
-				.append(nf.format(get95ConfidenceIntervalWidth(stats)))
-				.append(" ")
-				.append(stats.getN());
+		if(stats.getN() == 0){
+			s.append("0 0 0 0 0"); 
+		} else {
+	s.append(nf.format(stats.getMean()))
+			.append(" ")
+			.append(nf.format(stats.getStandardDeviation()))
+			.append(" ")
+			.append(nf.format(stats.getVariance()))
+			.append(" ")
+			.append(nf.format(get95ConfidenceIntervalWidth(stats)))
+			.append(" ")
+			.append(stats.getN());
+		}
 		return s.toString();
 	}
 	
