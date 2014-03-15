@@ -69,7 +69,7 @@ public class Statistics {
 	private volatile int strequestssent;
 	/** State transfer requests received by this node */
 	private volatile int strequestsreceived;
-	private boolean isLeader;
+//	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 //	private static volatile boolean headerPrinted = false;
 	private volatile String paramname = "";
@@ -77,7 +77,7 @@ public class Statistics {
 	private volatile String counterNames = "";
 	private volatile List<SynchronizedSummaryStatistics> statsList = new LinkedList<SynchronizedSummaryStatistics>();
 	private volatile List<AtomicLong> counterList = new LinkedList<AtomicLong>();
-	private long start;
+//	private long start;
 	// Map holding the client statistic objects
 	private final Map<Integer, ClientStats> clientstatsmap = Collections.synchronizedMap(new HashMap<Integer, ClientStats>());
 	// other maps to store various interesting times
@@ -125,7 +125,7 @@ public class Statistics {
 		recv = new Long[conf.getN()];
 		Arrays.fill(sent, 0l);
 		Arrays.fill(recv, 0l);
-		isLeader = conf.getProcessId() == 0;
+//		isLeader = conf.getProcessId() == 0;
 		consensusduration = addStats("ConsensusDuration");
 
 		try {
@@ -414,11 +414,22 @@ public class Statistics {
 		return clientstats;
 	}
 
-	private void reset() {
+	public void reset() {
 		rtt.clear();
 		dec.clear();
 		crtt.clear();
 		consensusduration.clear();
+		strequestsreceived = 0;
+		strequestssent = 0;
+		timeouts = 0;
+		viewchanges = 0;
+		for(AtomicLong counter: counterList){
+			counter.set(0);
+		}
+		for(SynchronizedSummaryStatistics stats:statsList){
+			stats.clear();
+		}
+			
 	}
 
 	public static double get95ConfidenceIntervalWidth(SummaryStatistics summaryStatistics) {
