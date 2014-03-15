@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -62,21 +65,43 @@ public class Statistics {
 	private Long[] sent;
 	private Long[] recv;
 	/** Timeouts on this node */
-	private volatile int timeouts;
+	private volatile CounterHolder timeouts;
 	/** Viewchanges seen by this node */
-	private volatile int viewchanges;
+	private volatile CounterHolder viewchanges;
 	/** State transfer requests sent by this node */
-	private volatile int strequestssent;
+	private volatile CounterHolder strequestssent;
 	/** State transfer requests received by this node */
-	private volatile int strequestsreceived;
+	private volatile CounterHolder strequestsreceived;
+	/** Consensus instances finished */
+	private volatile CounterHolder consensus;
 //	private boolean isLeader;
 	// Vars for dynamic header extension of stats files
 //	private static volatile boolean headerPrinted = false;
 	private volatile String paramname = "";
 	private volatile String statsNames = "";
 	private volatile String counterNames = "";
+	
+	private static class StatsHolder {
+		public final String name;
+		public final SynchronizedSummaryStatistics stats;
+		
+		public StatsHolder(String name){
+			this.name = name;
+			this.stats = new SynchronizedSummaryStatistics();
+		}
+	}
+	private static class CounterHolder extends StatsHolder {
+		public final AtomicLong counter;
+		
+		public CounterHolder(String name){
+			super(name);
+			this.counter = new AtomicLong();
+		}
+	}
+	
 	private volatile List<SynchronizedSummaryStatistics> statsList = new LinkedList<SynchronizedSummaryStatistics>();
-	private volatile List<AtomicLong> counterList = new LinkedList<AtomicLong>();
+	
+	private volatile List<CounterHolder> counterList = new LinkedList<CounterHolder>();
 //	private long start;
 	// Map holding the client statistic objects
 	private final Map<Integer, ClientStats> clientstatsmap = Collections.synchronizedMap(new HashMap<Integer, ClientStats>());
@@ -119,6 +144,8 @@ public class Statistics {
 				Statistics.class.wait();
 			}
 	}
+	
+	private ScheduledExecutorService ratetimer = Executors.newSingleThreadScheduledExecutor();
 
 	private Statistics(TOMConfiguration conf) {
 		sent = new Long[conf.getN()];
@@ -127,6 +154,17 @@ public class Statistics {
 		Arrays.fill(recv, 0l);
 //		isLeader = conf.getProcessId() == 0;
 		consensusduration = addStats("ConsensusDuration");
+		
+		counterList.add(consensus);
+		statsNames += formatStatsString("consensusrate/s");
+		counterList.add(timeouts);
+		statsNames += formatStatsString("timeoutrate/s");
+		counterList.add(viewchanges);
+		statsNames += formatStatsString("viewchangerate/s");
+		counterList.add(strequestssent);
+		statsNames += formatStatsString("stxreqsendrate/s");
+		counterList.add(strequestsreceived);
+		statsNames += formatStatsString("stxreqrecvrate/s");
 
 		try {
 			//open statsfiles for writing
@@ -137,6 +175,13 @@ public class Statistics {
 			Logger.getLogger(Statistics.class.getName()).log(Level.SEVERE, null, ex);
 			System.exit(1);
 		}
+		ratetimer.scheduleAtFixedRate(new Runnable() {
+			
+			@Override
+			public void run() {
+				storeRates();
+			}
+		}, 1, 1, TimeUnit.SECONDS);
 	}
 	
 	/**
@@ -215,10 +260,13 @@ public class Statistics {
 	 * @param name The name of the statistics to be printed later on.
 	 */
 	public AtomicLong addCounter(String name) {
-		counterNames += " " + name;
-		AtomicLong counter = new AtomicLong();
-		counterList.add(counter);
-		return counter;
+		statsNames += formatStatsString(name);
+		CounterHolder holder = new CounterHolder(name);
+		
+		statsList.add(holder.stats);
+		counterList.add(holder);
+		
+		return holder.counter;
 	}
 
 	/**
@@ -236,10 +284,10 @@ public class Statistics {
 //					+ " Rtt"
 					+ " \"Decoding N\""
 					+ " Decoding"
-					+ " Timeouts"
-					+ " Viewchanges"
-					+ " STReqsSent"
-					+ " STReqsReceived" 
+//					+ " Timeouts"
+//					+ " Viewchanges"
+//					+ " STReqsSent"
+//					+ " STReqsReceived" 
 					+ counterNames 
 					+ statsNames);
 			clientstatswriter.println("\"Client Count\" Decoding StdDev Var \"Total Duration\" StdDev Var");
@@ -252,14 +300,11 @@ public class Statistics {
 //				+ " " + rtt.getN()
 //				+ " " + nf.format(rtt.getN() > 0 ? rtt.getMean() : 0)
 				+ " " + dec.getN()
-				+ " " + nf.format(dec.getMean())
-				+ " " + timeouts 
-				+ " " + viewchanges
-				+ " " + strequestssent
-				+ " " + strequestsreceived;
-		for (AtomicLong counter : counterList) {
-			serverstats += " " + counter;
-		}
+				+ " " + nf.format(dec.getMean());
+//				+ " " + timeouts 
+//				+ " " + viewchanges
+//				+ " " + strequestssent
+//				+ " " + strequestsreceived;
 		for (SummaryStatistics stats : statsList) {
 			serverstats += " " + formatStats(stats);
 		}
@@ -278,6 +323,13 @@ public class Statistics {
 					.append(TOMReceiver.getCurrentServerComQueuesNames())
 					.append(' ').append("\"Pending Requests\" ").append(header)
 					.append("\n").flush();
+		}
+	}
+	
+	private void storeRates(){
+		//Store and reset the current counter values. This is done every second.
+		for(CounterHolder cnt : counterList){
+			cnt.stats.addValue(cnt.counter.getAndSet(0));
 		}
 	}
 
@@ -419,12 +471,13 @@ public class Statistics {
 		dec.clear();
 		crtt.clear();
 		consensusduration.clear();
-		strequestsreceived = 0;
-		strequestssent = 0;
-		timeouts = 0;
-		viewchanges = 0;
-		for(AtomicLong counter: counterList){
-			counter.set(0);
+//		strequestsreceived = 0;
+//		strequestssent = 0;
+//		timeouts = 0;
+//		viewchanges = 0;
+		for(CounterHolder counter: counterList){
+			counter.counter.set(0);
+			counter.stats.clear();
 		}
 		for(SynchronizedSummaryStatistics stats:statsList){
 			stats.clear();
@@ -461,27 +514,27 @@ public class Statistics {
 	 * Logs a timeout and prints it to the serverstats file when the testrun is finished.
 	 */
 	public void timeout(){
-		timeouts++;
+		timeouts.counter.incrementAndGet();
 	}
 	
 	/**
 	 * Logs an actual view change and prints it to the serverstats file when the testrun is finished.
 	 */
 	public void viewChange(){
-		viewchanges++;
+		viewchanges.counter.incrementAndGet();
 	}
 	
 	/**
 	 * A state transfer is requested due to a large gap between this replica and the others
 	 */
 	public void stateTransferRequested(){
-		strequestssent++;
+		strequestssent.counter.incrementAndGet();
 	}
 	
 	/**
 	 * A state transfer is received
 	 */
 	public void stateTransferReqReceived(){
-		strequestsreceived++;
+		strequestsreceived.counter.incrementAndGet();
 	}
 }
