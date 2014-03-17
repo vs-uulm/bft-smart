@@ -68,8 +68,10 @@ public class Statistics {
 	private Long[] recv;
 	/** Timeouts on this node */
 	private volatile AtomicLong timeouts;
-	/** Viewchanges seen by this node */
+	/** View changes seen by this node */
 	private volatile AtomicLong viewchanges;
+	/** Failed view changes seen by this node */
+	private volatile AtomicLong viewchangetimeouts;
 	/** State transfer requests sent by this node */
 	private volatile AtomicLong strequestssent;
 	/** State transfer requests received by this node */
@@ -174,6 +176,7 @@ public class Statistics {
 		viewchanges = addCounter("viewchangerate/s");
 		strequestssent = addCounter("stxreqsendrate/s");
 		strequestsreceived = addCounter("stxreqrecvrate/s");
+		viewchangetimeouts = addCounter("vctimeouts/s");
 
 		try {
 			//open statsfiles for writing
@@ -540,6 +543,13 @@ public class Statistics {
 	 */
 	public void viewChange(){
 		viewchanges.incrementAndGet();
+	}
+	
+	/**
+	 * Logs an actual view change and prints it to the serverstats file when the testrun is finished.
+	 */
+	public void viewchangeTimeout(){
+		viewchangetimeouts.incrementAndGet();
 	}
 	
 	/**
