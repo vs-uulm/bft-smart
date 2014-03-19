@@ -18,7 +18,8 @@ package navigators.smart.tom.util;
 import java.security.PrivateKey;import java.security.PublicKey;import navigators.smart.communication.server.MessageVerifierFactory.VerifierType;
 public class TOMConfiguration extends Configuration {
 
-    protected int n;
+	protected static RSAKeyLoader rsaLoader;
+	protected int n;
     protected int f;
     protected int requestTimeout;
     protected int freezeInitialTimeout;
@@ -33,7 +34,6 @@ public class TOMConfiguration extends Configuration {
     protected boolean decideMessagesEnabled;
     protected boolean verifyTimestamps;
     protected boolean useSenderThread;
-    protected static RSAKeyLoader rsaLoader;
     protected int clientServerCommSystem;
     private int maxMessageSize;
     private int numNIOThreads;
@@ -43,10 +43,10 @@ public class TOMConfiguration extends Configuration {
     private boolean stateTransferEnabled;
     private int checkpoint_period;
     private int useControlFlow;
+    /** Cap for the number of pending messages each client can have */
+    private int maxPendingMessages;
     private int signatureSize;
     private long sendDelay;
-	/** Cap for the number of pending messages each client can have */
-	private int maxPendingMessages;
 	/** Shall we not use the previously implemented unfair 'fair' clienthandling 
 	 that always starts batches with client (0)*/
 	private boolean fairClientHandling;
@@ -64,10 +64,12 @@ public class TOMConfiguration extends Configuration {
         this.replyVerificationTime = conf.replyVerificationTime;
         this.maxBatchSize = conf.maxBatchSize;
         this.numberOfNonces = conf.numberOfNonces;
+        this.inQueueSize = conf.inQueueSize;
+        this.outQueueSize = conf.outQueueSize;
         this.decideMessagesEnabled = conf.decideMessagesEnabled;
         this.verifyTimestamps = conf.verifyTimestamps;
         this.useSenderThread = conf.useSenderThread;
-        this.clientServerCommSystem = conf.clientServerCommSystem;
+        this.clientServerCommSystem = conf.clientServerCommSystem;        this.maxMessageSize = conf.maxMessageSize;
         this.numNIOThreads = conf.numNIOThreads;
         this.commBuffering = conf.commBuffering;
         this.verifiertype = conf.verifiertype;
@@ -75,8 +77,6 @@ public class TOMConfiguration extends Configuration {
         this.stateTransferEnabled = conf.stateTransferEnabled;
         this.checkpoint_period = conf.checkpoint_period;
         this.useControlFlow = conf.useControlFlow;
-        this.inQueueSize = conf.inQueueSize;
-        this.outQueueSize = conf.outQueueSize;
         this.maxPendingMessages = conf.maxPendingMessages;
         this.signatureSize = conf.signatureSize;
         this.sendDelay = conf.sendDelay;

@@ -25,9 +25,12 @@ public class HostsConfig {
     private Hashtable<Integer,Config> servers = new Hashtable<Integer,Config>();
     
     
-    /** Creates a new instance of ServersConfig */
+    /** Creates a new instance of HostsConfig */
     public HostsConfig(String configHome, String fileName) {
         loadConfig(configHome, fileName);
+    }    
+    public HostsConfig(HostsConfig h) {
+    	for(Integer i : h.servers.keySet()){    		servers.put(i,new Config(h.servers.get(i)));    	}
     }
     
     private void loadConfig(String configHome, String fileName){
@@ -119,6 +122,6 @@ public class HostsConfig {
             this.id = id;
             this.host = host;
             this.port = port;
-        }
+        }		public Config(Config config) {			this.id = config.id;			this.host = config.host;			this.port = config.port;		}
     }
 }

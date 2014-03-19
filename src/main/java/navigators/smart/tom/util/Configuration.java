@@ -60,9 +60,10 @@ public class Configuration {
         this.DH_G = conf.DH_G;
         this.autoConnectLimit = conf.autoConnectLimit;
         this.configs = conf.configs;
-        this.hosts = conf.hosts;
+        this.hosts = conf.hosts;        this.hmacAlgorithm = conf.hmacAlgorithm;        this.hmacSize = conf.hmacSize;
         this.factoryclass = conf.factoryclass;
         this.ptpverifierclass = conf.ptpverifierclass;
+        this.globalverifierclass = conf.globalverifierclass;        this.hosts = new HostsConfig(conf.hosts);
     }
 
      public Configuration(Integer processId, String configHome){
