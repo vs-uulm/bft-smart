@@ -487,4 +487,4 @@ public class TOMConfiguration extends Configuration {
 
 	public boolean isFairClientHandling() {
 		return fairClientHandling;
-	}	public void setFreezeInitialTimeout(int to) {		freezeInitialTimeout = to;	}	public void setSendDelay(int delay) {		sendDelay = delay;			}}
+	}	public void setFreezeInitialTimeout(int to) {		freezeInitialTimeout = to;	}	public void setSendDelay(long delay) {		sendDelay = delay;			}}
