@@ -174,5 +174,5 @@ public abstract class SystemMessage {
 		} else if (!type.equals(other.type))
 			return false;
 		return true;
-	}
+	}	@Override	public String toString() {		return "SM [t=" + type + ", s=" + sender + "]";	}		
 }
