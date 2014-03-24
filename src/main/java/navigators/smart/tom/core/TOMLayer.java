@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import navigators.smart.clientsmanagement.ClientsManager;
+import navigators.smart.clientsmanagement.ClientsManager;
 import navigators.smart.clientsmanagement.PendingRequests;
 import navigators.smart.communication.ServerCommunicationSystem;
 import navigators.smart.communication.client.RequestReceiver;
@@ -362,5 +362,5 @@ public class TOMLayer implements RequestReceiver {
 
 	public StateManager getStateManager() {
 		return stateManager;
-	}	public void shutdown() {		dt.shutdown();			}
+	}	public void shutdown() {		dt.shutdown();			}	@Override	public void notifyChannelClosed(Integer key) {		receiver.clientDisconnected(key);	}
 }

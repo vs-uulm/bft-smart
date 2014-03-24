@@ -29,5 +29,5 @@ public interface RequestReceiver {
      *
      * @param msg The request delivered by the TOM layer
      */
-    public void requestReceived(TOMMessage msg);
+    public void requestReceived(TOMMessage msg);	public void notifyChannelClosed(Integer key);
 }

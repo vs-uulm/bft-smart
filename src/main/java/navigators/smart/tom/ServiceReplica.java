@@ -149,5 +149,4 @@ public abstract class ServiceReplica extends TOMReceiver implements Runnable {
      * @param command The command issue by the client
      * @return the reply for the request issued by the client
      */
-    public abstract byte[] executeCommand(int clientId, long timestamp, byte[] nonces, byte[] command, DebugInfo info);
-}
+    public abstract byte[] executeCommand(int clientId, long timestamp, byte[] nonces, byte[] command, DebugInfo info);    }

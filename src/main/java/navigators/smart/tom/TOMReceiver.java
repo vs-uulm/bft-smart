@@ -123,7 +123,7 @@ public abstract class TOMReceiver implements TOMRequestReceiver {
             Logger.getLogger(TOMReceiver.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
-    }
+    }        public  void clientDisconnected(Integer key){    	//OVERRIDE IF INTERESTED IN THIS INFORMATION    }
 	
 	public static String getCurrentServerComQueues(){
 		return cs.getQueueLengths();

@@ -22,9 +22,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Observer;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -72,7 +75,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
 
     private final static Logger log = Logger.getLogger(NettyClientServerCommunicationSystemServerSide.class.getCanonicalName());
     
-    private static final String PASSWORD = "newcs";    
+    private static final String PASSWORD = "newcs";  
     private RequestReceiver requestReceiver;
     private TOMConfiguration conf;
     private Hashtable<Integer,NettyClientServerSession> sessionTable;
@@ -247,6 +250,7 @@ public class NettyClientServerCommunicationSystemServerSide extends SimpleChanne
                 sessionTable.remove(key);
                 log.info("#Removed client channel with ID= " + key);
                 log.info("#active clients="+sessionTable.size());
+                requestReceiver.notifyChannelClosed(key);
                 break;
             } else {
 				log.log(Level.FINE,"Closed channel: {0}, checked channel:{1} ",new Object[]{e.getChannel(),value.getChannel()});
