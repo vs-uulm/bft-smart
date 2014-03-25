@@ -314,7 +314,7 @@ public class ServiceProxy extends TOMSender {
 				s.append("ALL ");
 			}
 			s.append(tommsg);
-			log.warning(s.toString());
+			log.info(s.toString());
 		}
 		/*
 		 * Blacklist the evil non proposer for random mode (like ebawa) or the
