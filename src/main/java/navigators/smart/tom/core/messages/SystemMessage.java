@@ -25,7 +25,7 @@ import java.util.Map;
  * This is the super-class for all other kinds of messages created by JBP
  */
 
-public abstract class SystemMessage {
+public abstract class SystemMessage implements Comparable<SystemMessage>{
 
     public enum Type {
 
@@ -174,5 +174,5 @@ public abstract class SystemMessage {
 		} else if (!type.equals(other.type))
 			return false;
 		return true;
-	}	@Override	public String toString() {		return "SM [t=" + type + ", s=" + sender + "]";	}		
+	}	@Override	public String toString() {		return "SM [t=" + type + ", s=" + sender + "]";	}	@Override	public int compareTo(SystemMessage o) {		return 0;	}			
 }

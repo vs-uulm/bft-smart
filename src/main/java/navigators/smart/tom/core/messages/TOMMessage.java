@@ -22,7 +22,7 @@ import navigators.smart.tom.util.SerialisationHelper;
 /**
  * This class represents a total ordered message
  */
-public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> {
+public class TOMMessage extends SystemMessage{
 
     private int sequence; // Sequence number defined by the client
     private byte[] content = null; // Content of the message
@@ -259,26 +259,25 @@ public class TOMMessage extends SystemMessage implements Comparable<TOMMessage> 
 //        return m;
 //    }
 
-    @SuppressWarnings("boxing")
-    public int compareTo(TOMMessage tm) {
-        final int BEFORE = -1;
-        final int EQUAL = 0;
-        final int AFTER = 1;
-
-        if (this.equals(tm))
-            return EQUAL;
-
-        if (this.getSender() < tm.getSender())
-            return BEFORE;
-        if (this.getSender() > tm.getSender())
-            return AFTER;
-
-        if (this.getSequence() < tm.getSequence())
-            return BEFORE;
-        if (this.getSequence() > tm.getSequence())
-            return AFTER;
-
-        return EQUAL;
-    }
+//    @SuppressWarnings("boxing")    @Override
+    public int compareTo(SystemMessage sm) {    	if(sm instanceof TOMMessage){    		TOMMessage tm = (TOMMessage) sm;    		final int BEFORE = -1;
+    		final int EQUAL = 0;
+    		final int AFTER = 1;
+    		
+    		if (this.equals(tm))
+    			return EQUAL;
+    		
+    		if (this.getSender() < tm.getSender())
+    			return BEFORE;
+    		if (this.getSender() > tm.getSender())
+    			return AFTER;
+    		
+    		if (this.getSequence() < tm.getSequence())
+    			return BEFORE;
+    		if (this.getSequence() > tm.getSequence())
+    			return AFTER;
+    		
+    		return EQUAL;
+    	} 		return super.compareTo(sm);    }
 }
 
