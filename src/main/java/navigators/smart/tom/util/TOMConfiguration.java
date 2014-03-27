@@ -29,8 +29,7 @@ public class TOMConfiguration extends Configuration {
     protected int replyVerificationTime;
     protected int maxBatchSize;
     protected int numberOfNonces;
-    protected int inQueueSize;
-    protected int outQueueSize;
+    protected int inQueueSize;    protected int outQueueSize;
     protected boolean decideMessagesEnabled;
     protected boolean verifyTimestamps;
     protected boolean useSenderThread;
@@ -487,4 +486,4 @@ public class TOMConfiguration extends Configuration {
 
 	public boolean isFairClientHandling() {
 		return fairClientHandling;
-	}	public void setFreezeInitialTimeout(int to) {		freezeInitialTimeout = to;	}	public void setSendDelay(long delay) {		sendDelay = delay;			}}
+	}	public void setFreezeInitialTimeout(int to) {		freezeInitialTimeout = to;	}	public void setSendDelay(long delay) {		sendDelay = delay;			}}
