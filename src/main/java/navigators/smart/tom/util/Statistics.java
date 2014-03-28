@@ -86,6 +86,7 @@ public class Statistics {
 	private volatile String counterNames = "";
 	
 	private static class StatsHolder {
+		@SuppressWarnings("unused")
 		public final String name;
 		public final SynchronizedSummaryStatistics stats;
 		
@@ -161,7 +162,7 @@ public class Statistics {
 		}
 	});
 
-	private ScheduledFuture ratetask;
+	private ScheduledFuture<?> ratetask;
 	
 	private Statistics(TOMConfiguration conf) {
 		sent = new Long[conf.getN()];
