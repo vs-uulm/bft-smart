@@ -109,7 +109,7 @@ public class TOMLayer implements RequestReceiver {
 	 * @param data The data to hash
 	 * @return Hash for teh specified TOM message
 	 */
-	public final byte[] computeHash(byte[] data) {
+	public final synchronized byte[] computeHash(byte[] data) {
 		return md.digest(data);
 	}
 
