@@ -338,4 +338,8 @@ public class ServiceProxy extends TOMSender {
 					new Object[] { blacklist });
 		}
 	}
+	
+	public void unicastToRandom(TOMMessage msg) {
+		super.doTOUnicast(r.getNextRandomReplica(), msg);
+	}
 }
